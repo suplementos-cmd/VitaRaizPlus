@@ -1,0 +1,286 @@
+﻿@model SalesCobrosGeo.Web.Models.Sales.SaleFormViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = Model.PageTitle;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">@Model.PageTitle</h1>
+    <a class="btn btn-outline-secondary" asp-controller="Sales" asp-action="Index">Volver</a>
+</div>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">Revisa los campos obligatorios.</div>
+}
+
+<form method="post" class="sale-form">
+    @Html.AntiForgeryToken()
+    <input asp-for="Input.IdV" type="hidden" />
+    <input asp-for="Input.NumVenta" type="hidden" />
+
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card mb-3">
+                <div class="card-header">Cliente y Venta</div>
+                <div class="card-body row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="Input.FechaVenta" class="form-label">Fecha de venta</label>
+                        <input asp-for="Input.FechaVenta" type="date" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.NombreCliente" class="form-label">Nombre cliente</label>
+                        <input asp-for="Input.NombreCliente" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Celular" class="form-label">Celular</label>
+                        <input asp-for="Input.Celular" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Telefono" class="form-label">Telefono</label>
+                        <input asp-for="Input.Telefono" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.Zona" class="form-label">Zona</label>
+                        <select asp-for="Input.Zona" class="form-select" asp-items="@(new SelectList(Model.Catalogs.Zones, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                            <option value="">Seleccione</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.FormaPago" class="form-label">Forma de pago</label>
+                        <select asp-for="Input.FormaPago" class="form-select" asp-items="@(new SelectList(Model.Catalogs.PaymentMethods, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                            <option value="">Seleccione</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.DiaCobro" class="form-label">Dia de cobro</label>
+                        <select asp-for="Input.DiaCobro" class="form-select" asp-items="@(new SelectList(Model.Catalogs.CollectionDays, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                            <option value="">Seleccione</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Input.ObservacionVenta" class="form-label">Observacion venta</label>
+                        <textarea asp-for="Input.ObservacionVenta" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Productos</span>
+                    <button type="button" id="btnAddProduct" class="btn btn-sm btn-outline-primary">Agregar fila</button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="productsTable">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th style="width:120px;">Cantidad</th>
+                                    <th style="width:160px;">Precio</th>
+                                    <th style="width:160px;">Subtotal</th>
+                                    <th style="width:80px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @for (var i = 0; i < Model.Input.Productos.Count; i++)
+                            {
+                                <tr>
+                                    <td>
+                                        <select name="Input.Productos[@i].ProductCode" class="form-select product-select">
+                                            <option value="">Seleccione</option>
+                                            @foreach (var p in Model.Catalogs.Products)
+                                            {
+                                                if (p.Code == Model.Input.Productos[i].ProductCode)
+                                                {
+                                                    <option value="@p.Code" data-price="@p.Price" selected>@p.Name (@p.Code)</option>
+                                                }
+                                                else
+                                                {
+                                                    <option value="@p.Code" data-price="@p.Price">@p.Name (@p.Code)</option>
+                                                }
+                                            }
+                                        </select>
+                                    </td>
+                                    <td><input name="Input.Productos[@i].Quantity" value="@Model.Input.Productos[i].Quantity" type="number" min="1" class="form-control qty-input" /></td>
+                                    <td><input name="Input.Productos[@i].UnitPrice" value="@Model.Input.Productos[i].UnitPrice" type="number" step="0.01" min="0" class="form-control price-input" /></td>
+                                    <td><input type="text" class="form-control subtotal-input" readonly /></td>
+                                    <td><button type="button" class="btn btn-sm btn-outline-danger btn-remove">X</button></td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-end fw-bold">Total: <span id="totalAmount">0.00</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-header">Asignaciones</div>
+                <div class="card-body row g-3">
+                    <div class="col-12">
+                        <label asp-for="Input.Vendedor" class="form-label">Vendedor</label>
+                        <select asp-for="Input.Vendedor" class="form-select" asp-items="@(new SelectList(Model.Catalogs.Sellers, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                            <option value="">Seleccione</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Input.Cobrador" class="form-label">Cobrador</label>
+                        <select asp-for="Input.Cobrador" class="form-select" asp-items="@(new SelectList(Model.Catalogs.Collectors, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                            <option value="">Seleccione</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Input.Usuario" class="form-label">Usuario (email)</label>
+                        <input asp-for="Input.Usuario" class="form-control" />
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Input.ComisionVendedorPct" class="form-label">% Comision vendedor</label>
+                        <input asp-for="Input.ComisionVendedorPct" type="number" step="0.01" class="form-control" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">Ubicacion y Estado</div>
+                <div class="card-body row g-3">
+                    <div class="col-12">
+                        <label asp-for="Input.Coordenadas" class="form-label">Coordenadas</label>
+                        <input asp-for="Input.Coordenadas" class="form-control" />
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Input.Coordenadas2" class="form-label">Coordenadas 2</label>
+                        <input asp-for="Input.Coordenadas2" class="form-control" />
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Input.UrlUbicacion" class="form-label">URL ubicacion</label>
+                        <input asp-for="Input.UrlUbicacion" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Estado" class="form-label">Estado</label>
+                        <input asp-for="Input.Estado" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Estado2" class="form-label">Estado2</label>
+                        <input asp-for="Input.Estado2" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Cobrar" class="form-label">Cobrar</label>
+                        <input asp-for="Input.Cobrar" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.FechaPrimerCobro" class="form-label">Fecha primer cobro</label>
+                        <input asp-for="Input.FechaPrimerCobro" type="date" class="form-control" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Fotos (ruta/url)</div>
+                <div class="card-body row g-2">
+                    <div class="col-12"><input asp-for="Input.FotoCliente" placeholder="Foto cliente" class="form-control" /></div>
+                    <div class="col-12"><input asp-for="Input.FotoFachada" placeholder="Foto fachada" class="form-control" /></div>
+                    <div class="col-12"><input asp-for="Input.FotoContrato" placeholder="Foto contrato" class="form-control" /></div>
+                    <div class="col-12"><input asp-for="Input.FotoAdd1" placeholder="Foto add 1" class="form-control" /></div>
+                    <div class="col-12"><input asp-for="Input.FotoAdd2" placeholder="Foto add 2" class="form-control" /></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-3 d-flex justify-content-end gap-2">
+        <a class="btn btn-outline-secondary" asp-controller="Sales" asp-action="Index">Cancelar</a>
+        <button type="submit" class="btn btn-success">@(Model.IsEdit ? "Guardar cambios" : "Registrar venta")</button>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+(function() {
+    const tableBody = document.querySelector('#productsTable tbody');
+    const addBtn = document.getElementById('btnAddProduct');
+    const totalNode = document.getElementById('totalAmount');
+    const products = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Catalogs.Products));
+
+    function bindRow(row) {
+        const select = row.querySelector('.product-select');
+        const qty = row.querySelector('.qty-input');
+        const price = row.querySelector('.price-input');
+        const subtotal = row.querySelector('.subtotal-input');
+
+        function recalcRow() {
+            const q = parseFloat(qty.value || '0');
+            const p = parseFloat(price.value || '0');
+            subtotal.value = (q * p).toFixed(2);
+            recalcTotal();
+        }
+
+        select.addEventListener('change', () => {
+            const selected = select.options[select.selectedIndex];
+            const autoPrice = selected && selected.dataset.price ? selected.dataset.price : '';
+            if (!price.value && autoPrice) {
+                price.value = autoPrice;
+            }
+            recalcRow();
+        });
+
+        qty.addEventListener('input', recalcRow);
+        price.addEventListener('input', recalcRow);
+
+        row.querySelector('.btn-remove').addEventListener('click', () => {
+            if (tableBody.children.length === 1) {
+                qty.value = 1;
+                price.value = '';
+                select.value = '';
+                recalcRow();
+                return;
+            }
+            row.remove();
+            reindexRows();
+            recalcTotal();
+        });
+
+        recalcRow();
+    }
+
+    function reindexRows() {
+        [...tableBody.children].forEach((row, i) => {
+            row.querySelector('.product-select').name = `Input.Productos[${i}].ProductCode`;
+            row.querySelector('.qty-input').name = `Input.Productos[${i}].Quantity`;
+            row.querySelector('.price-input').name = `Input.Productos[${i}].UnitPrice`;
+        });
+    }
+
+    function recalcTotal() {
+        let total = 0;
+        [...tableBody.querySelectorAll('.subtotal-input')].forEach(x => {
+            total += parseFloat(x.value || '0');
+        });
+        totalNode.textContent = total.toFixed(2);
+    }
+
+    addBtn.addEventListener('click', () => {
+        const i = tableBody.children.length;
+        const row = document.createElement('tr');
+        const options = ['<option value="">Seleccione</option>']
+            .concat(products.map(p => `<option value="${p.code}" data-price="${p.price}">${p.name} (${p.code})</option>`))
+            .join('');
+
+        row.innerHTML = `
+            <td><select name="Input.Productos[${i}].ProductCode" class="form-select product-select">${options}</select></td>
+            <td><input name="Input.Productos[${i}].Quantity" value="1" type="number" min="1" class="form-control qty-input" /></td>
+            <td><input name="Input.Productos[${i}].UnitPrice" type="number" step="0.01" min="0" class="form-control price-input" /></td>
+            <td><input type="text" class="form-control subtotal-input" readonly /></td>
+            <td><button type="button" class="btn btn-sm btn-outline-danger btn-remove">X</button></td>`;
+
+        tableBody.appendChild(row);
+        bindRow(row);
+    });
+
+    [...tableBody.children].forEach(bindRow);
+    reindexRows();
+})();
+</script>
+}
