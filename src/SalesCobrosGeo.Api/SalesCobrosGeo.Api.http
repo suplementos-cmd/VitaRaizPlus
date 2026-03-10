@@ -1,6 +1,27 @@
-@SalesCobrosGeo.Api_HostAddress = http://localhost:5207
+﻿@SalesCobrosGeo.Api_HostAddress = http://localhost:5207
+@Token = REPLACE_WITH_TOKEN
 
-GET {{SalesCobrosGeo.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Login as admin
+POST {{SalesCobrosGeo.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
 
-###
+{
+  "userName": "admin.demo",
+  "password": "demo123"
+}
+
+### Current user
+GET {{SalesCobrosGeo.Api_HostAddress}}/api/auth/me
+Authorization: Bearer {{Token}}
+
+### Sales team view (supervisor/admin)
+GET {{SalesCobrosGeo.Api_HostAddress}}/api/sales/team
+Authorization: Bearer {{Token}}
+
+### Register payment (collector/supervisor/admin)
+POST {{SalesCobrosGeo.Api_HostAddress}}/api/collections/register?saleId=1001&amount=50
+Authorization: Bearer {{Token}}
+
+### Audit recent (admin only)
+GET {{SalesCobrosGeo.Api_HostAddress}}/api/audit/recent?take=20
+Authorization: Bearer {{Token}}

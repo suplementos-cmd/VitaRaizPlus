@@ -20,10 +20,18 @@ Este repositorio incluye una propuesta funcional y una base tecnica para el MVP:
 - `src/SalesCobrosGeo.Web`
 - `src/SalesCobrosGeo.Shared`
 - `mobile/android`
+- `scripts`
 
-## Estado
-- Bloque 0: base de solucion completada.
-- Bloque 1: autenticacion, roles y auditoria base completados.
+## Estado actual
+- Bloque 0 completado: base de solucion y build.
+- Bloque 1 completado: autenticacion, autorizacion por roles y auditoria base.
+
+## Usuarios demo (password `demo123`)
+- `vendedor.demo`
+- `supventas.demo`
+- `cobrador.demo`
+- `supcobranza.demo`
+- `admin.demo`
 
 ## Build
 ```powershell

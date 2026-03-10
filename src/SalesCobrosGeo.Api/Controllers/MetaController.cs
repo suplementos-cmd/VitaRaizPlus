@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SalesCobrosGeo.Shared.Security;
 
 namespace SalesCobrosGeo.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = RolePolicies.AdminOnly)]
 public sealed class MetaController : ControllerBase
 {
     [HttpGet("roles")]
