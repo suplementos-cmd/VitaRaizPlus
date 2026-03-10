@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Globalization;
+using System.Text.Json;
 using SalesCobrosGeo.Web.Models.Sales;
 
 namespace SalesCobrosGeo.Web.Services.Sales;
@@ -10,11 +11,18 @@ public interface ISalesRepository
     SaleRecord? GetById(string idV);
     SaleRecord Create(SaleFormInput input);
     SaleRecord Update(string idV, SaleFormInput input);
+
+    IReadOnlyList<CollectorPortfolioItem> GetCollectorPortfolio(string? profile);
+    CollectorPortfolioItem? GetPortfolioItem(string idV, string? profile);
+    IReadOnlyList<CollectionRecord> GetCollections(string? profile = null, string? idV = null);
+    CollectionRecord RegisterCollection(CollectionFormInput input);
+    IReadOnlyList<CatalogOption> GetCollectorProfiles();
 }
 
 public sealed class JsonSalesRepository : ISalesRepository
 {
-    private readonly string _filePath;
+    private readonly string _salesFilePath;
+    private readonly string _collectionsFilePath;
     private readonly Lock _sync = new();
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
@@ -26,7 +34,8 @@ public sealed class JsonSalesRepository : ISalesRepository
     {
         var dataDirectory = Path.Combine(env.ContentRootPath, "App_Data");
         Directory.CreateDirectory(dataDirectory);
-        _filePath = Path.Combine(dataDirectory, "ventas.json");
+        _salesFilePath = Path.Combine(dataDirectory, "ventas.json");
+        _collectionsFilePath = Path.Combine(dataDirectory, "cobros.json");
         EnsureSeedData();
     }
 
@@ -36,6 +45,8 @@ public sealed class JsonSalesRepository : ISalesRepository
             Zones:
             [
                 new CatalogOption("HEROES CHALCO", "Heroes Chalco"),
+                new CatalogOption("JARDINES", "Jardines"),
+                new CatalogOption("XICO", "Xico"),
                 new CatalogOption("CENTRO", "Centro"),
                 new CatalogOption("NORTE", "Norte")
             ],
@@ -52,7 +63,8 @@ public sealed class JsonSalesRepository : ISalesRepository
                 new CatalogOption("MIERCOLES", "Miercoles"),
                 new CatalogOption("JUEVES", "Jueves"),
                 new CatalogOption("VIERNES", "Viernes"),
-                new CatalogOption("SABADO", "Sabado")
+                new CatalogOption("SABADO", "Sabado"),
+                new CatalogOption("DOMINGO", "Domingo")
             ],
             Products:
             [
@@ -70,7 +82,9 @@ public sealed class JsonSalesRepository : ISalesRepository
             [
                 new CatalogOption("SILVIA", "Silvia"),
                 new CatalogOption("MARIO", "Mario"),
-                new CatalogOption("ELENA", "Elena")
+                new CatalogOption("ELENA", "Elena"),
+                new CatalogOption("jakelinepink88@gmail.com", "jakelinepink88@gmail.com"),
+                new CatalogOption("ggab75218@gmail.com", "ggab75218@gmail.com")
             ]);
     }
 
@@ -78,7 +92,7 @@ public sealed class JsonSalesRepository : ISalesRepository
     {
         lock (_sync)
         {
-            return Load().OrderByDescending(x => x.FechaActu).ToArray();
+            return LoadSales().OrderByDescending(x => x.FechaActu).ToArray();
         }
     }
 
@@ -86,7 +100,7 @@ public sealed class JsonSalesRepository : ISalesRepository
     {
         lock (_sync)
         {
-            return Load().FirstOrDefault(x => string.Equals(x.IdV, idV, StringComparison.OrdinalIgnoreCase));
+            return LoadSales().FirstOrDefault(x => string.Equals(x.IdV, idV, StringComparison.OrdinalIgnoreCase));
         }
     }
 
@@ -94,12 +108,12 @@ public sealed class JsonSalesRepository : ISalesRepository
     {
         lock (_sync)
         {
-            var data = Load();
+            var data = LoadSales();
             var newId = Guid.NewGuid().ToString("N")[..8];
-            var nextNum = data.Count == 0 ? -100 : data.Min(x => x.NumVenta) - 1;
-            var record = Map(input, newId, nextNum);
+            var nextNum = data.Count == 0 ? 1 : data.Max(x => x.NumVenta) + 1;
+            var record = MapSale(input, newId, nextNum);
             data.Add(record);
-            Save(data);
+            SaveSales(data);
             return record;
         }
     }
@@ -108,19 +122,179 @@ public sealed class JsonSalesRepository : ISalesRepository
     {
         lock (_sync)
         {
-            var data = Load();
+            var data = LoadSales();
             var existing = data.FirstOrDefault(x => string.Equals(x.IdV, idV, StringComparison.OrdinalIgnoreCase))
                 ?? throw new InvalidOperationException("No se encontro la venta.");
 
-            var updated = Map(input, existing.IdV, existing.NumVenta);
+            var updated = MapSale(input, existing.IdV, existing.NumVenta);
             var index = data.FindIndex(x => string.Equals(x.IdV, idV, StringComparison.OrdinalIgnoreCase));
             data[index] = updated;
-            Save(data);
+            SaveSales(data);
             return updated;
         }
     }
 
-    private SaleRecord Map(SaleFormInput input, string idV, int numVenta)
+    public IReadOnlyList<CollectorPortfolioItem> GetCollectorPortfolio(string? profile)
+    {
+        lock (_sync)
+        {
+            var normalized = NormalizeProfile(profile);
+            var sales = LoadSales();
+            var collections = LoadCollections();
+
+            var query = sales.Select(sale =>
+            {
+                var saleCollections = collections.Where(c => c.IdV == sale.IdV).OrderBy(c => c.FechaCobro).ToList();
+                var abonado = saleCollections.LastOrDefault()?.ImporteAbonado ?? 0m;
+                var restante = Math.Max(0m, sale.ImporteTotal - abonado);
+                var estatus = restante <= 0 ? "LIQUIDADO" : (abonado > 0 ? "PARCIAL" : "POR INICIAR");
+                return new CollectorPortfolioItem
+                {
+                    IdV = sale.IdV,
+                    NumVenta = sale.NumVenta,
+                    NombreCliente = sale.NombreCliente,
+                    Zona = sale.Zona,
+                    DiaCobroPrevisto = sale.DiaCobro,
+                    Cobrador = string.IsNullOrWhiteSpace(sale.Cobrador) ? sale.Usuario : sale.Cobrador,
+                    ImporteTotal = sale.ImporteTotal,
+                    ImporteAbonado = abonado,
+                    ImporteRestante = restante,
+                    Estatus = estatus
+                };
+            });
+
+            if (!string.IsNullOrWhiteSpace(normalized))
+            {
+                query = query.Where(x => x.Cobrador.Equals(normalized, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return query.OrderBy(x => x.Estatus).ThenBy(x => x.NumVenta).ToArray();
+        }
+    }
+
+    public CollectorPortfolioItem? GetPortfolioItem(string idV, string? profile)
+    {
+        lock (_sync)
+        {
+            return GetCollectorPortfolio(profile).FirstOrDefault(x => x.IdV.Equals(idV, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    public IReadOnlyList<CollectionRecord> GetCollections(string? profile = null, string? idV = null)
+    {
+        lock (_sync)
+        {
+            var normalized = NormalizeProfile(profile);
+            var records = LoadCollections().AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(normalized))
+            {
+                records = records.Where(x => x.Usuario.Equals(normalized, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(idV))
+            {
+                records = records.Where(x => x.IdV.Equals(idV, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return records.OrderByDescending(x => x.FechaCaptura).ToArray();
+        }
+    }
+
+    public CollectionRecord RegisterCollection(CollectionFormInput input)
+    {
+        lock (_sync)
+        {
+            if (string.IsNullOrWhiteSpace(input.IdV))
+            {
+                throw new InvalidOperationException("Venta invalida.");
+            }
+
+            if (input.ImporteCobro <= 0)
+            {
+                throw new InvalidOperationException("El importe de cobro debe ser mayor a 0.");
+            }
+
+            if (string.IsNullOrWhiteSpace(input.Usuario))
+            {
+                throw new InvalidOperationException("Usuario cobrador es obligatorio.");
+            }
+
+            var sales = LoadSales();
+            var collections = LoadCollections();
+            var sale = sales.FirstOrDefault(x => x.IdV.Equals(input.IdV, StringComparison.OrdinalIgnoreCase))
+                ?? throw new InvalidOperationException("No se encontro la venta.");
+
+            var totalAbonado = collections.Where(x => x.IdV == sale.IdV).Select(x => x.ImporteCobro).DefaultIfEmpty(0m).Sum();
+            var restanteActual = Math.Max(0m, sale.ImporteTotal - totalAbonado);
+
+            if (input.ImporteCobro > restanteActual)
+            {
+                throw new InvalidOperationException($"El cobro no puede superar el restante ({restanteActual:0.00}).");
+            }
+
+            var nuevoAbonado = totalAbonado + input.ImporteCobro;
+            var nuevoRestante = Math.Max(0m, sale.ImporteTotal - nuevoAbonado);
+            var estatus = nuevoRestante <= 0 ? "LIQUIDADO" : (nuevoAbonado > 0 ? "PARCIAL" : "POR INICIAR");
+
+            var record = new CollectionRecord
+            {
+                IdCc = Guid.NewGuid().ToString("N")[..8],
+                IdV = sale.IdV,
+                NumVenta = sale.NumVenta,
+                NombreCliente = sale.NombreCliente,
+                ImporteCobro = input.ImporteCobro,
+                FechaCobro = input.FechaCobro,
+                ObservacionCobro = input.ObservacionCobro?.Trim(),
+                FechaCaptura = DateTime.Now,
+                ImporteTotal = sale.ImporteTotal,
+                ImporteRestante = nuevoRestante,
+                EstadoCc = "SI PAGO",
+                Usuario = input.Usuario.Trim(),
+                ImporteAbonado = nuevoAbonado,
+                Estatus = estatus,
+                Zona = sale.Zona,
+                DiaCobroPrevisto = sale.DiaCobro,
+                DiaCobrado = GetDayName(input.FechaCobro),
+                CoordenadasCobro = input.CoordenadasCobro?.Trim()
+            };
+
+            collections.Add(record);
+            SaveCollections(collections);
+
+            sale.Estado = estatus == "LIQUIDADO" ? "LIQUIDADO" : "EN COBRO";
+            sale.Estado2 = estatus == "LIQUIDADO" ? "CLOSED" : "OPEN";
+            sale.FechaActu = DateTime.Now;
+            if (sale.FechaPrimerCobro is null)
+            {
+                sale.FechaPrimerCobro = input.FechaCobro;
+            }
+            SaveSales(sales);
+
+            return record;
+        }
+    }
+
+    public IReadOnlyList<CatalogOption> GetCollectorProfiles()
+    {
+        lock (_sync)
+        {
+            var fromCatalog = GetCatalogs().Collectors.Select(x => x.Code);
+            var fromCollections = LoadCollections().Select(x => x.Usuario);
+            var fromSales = LoadSales().Select(x => x.Cobrador);
+
+            return fromCatalog
+                .Concat(fromCollections)
+                .Concat(fromSales)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x)
+                .Select(x => new CatalogOption(x, x))
+                .ToArray();
+        }
+    }
+
+    private SaleRecord MapSale(SaleFormInput input, string idV, int numVenta)
     {
         var validLines = input.Productos
             .Where(p => !string.IsNullOrWhiteSpace(p.ProductCode) && p.Quantity > 0)
@@ -184,76 +358,170 @@ public sealed class JsonSalesRepository : ISalesRepository
 
     private void EnsureSeedData()
     {
-        if (File.Exists(_filePath))
+        if (!File.Exists(_salesFilePath))
         {
-            return;
+            var seedSales = new List<SaleRecord>
+            {
+                new()
+                {
+                    IdV = "addcdb49",
+                    NumVenta = 1,
+                    FechaVenta = new DateTime(2024, 12, 10),
+                    NombreCliente = "ALEJANDRO GARCIA",
+                    Celular = "5586785348",
+                    Zona = "HEROES CHALCO",
+                    FormaPago = "SEMANAL",
+                    DiaCobro = "LUNES",
+                    FotoCliente = "VENTAS_Images/addcdb49.FOTO CLIENTE.165310.jpg",
+                    FotoFachada = "IMG_VENTAS/addcdb49.FOTO FACHADA.165310.jpg",
+                    FotoContrato = "VENTAS_Images/addcdb49.FOTO CONTRATO.165310.jpg",
+                    ObservacionVenta = "Producto precontado en dos semanas",
+                    Vendedor = "JAKE",
+                    Usuario = "avedanojenny6@gmail.com",
+                    Cobrador = "ggab75218@gmail.com",
+                    Coordenadas = "19.260839,-98.831437",
+                    FechaPrimerCobro = new DateTime(2024, 12, 13),
+                    Estado = "EN COBRO",
+                    FechaActu = new DateTime(2024, 12, 10, 10, 54, 30),
+                    Cliente = "ALEJANDRO GARCIA",
+                    Producto = "GEL TICILT",
+                    Estado2 = "OPEN",
+                    ComisionVendedorPct = 0,
+                    Cobrar = "OK",
+                    ProductosCantidad = 1,
+                    ImporteTotal = 1490,
+                    Productos =
+                    [
+                        new SaleProductLineInput
+                        {
+                            ProductCode = "GEL TICILT",
+                            Quantity = 1,
+                            UnitPrice = 1490
+                        }
+                    ]
+                }
+            };
+
+            SaveSales(seedSales);
         }
 
-        var seed = new List<SaleRecord>
+        if (!File.Exists(_collectionsFilePath))
         {
-            new()
+            var seedCollections = new List<CollectionRecord>
             {
-                IdV = "addcdb49",
-                NumVenta = -137,
-                FechaVenta = new DateTime(2024, 12, 10),
-                NombreCliente = "ALEJANDRO GARCIA",
-                Celular = "5586785348",
-                Zona = "HEROES CHALCO",
-                FormaPago = "SEMANAL",
-                DiaCobro = "LUNES",
-                FotoCliente = "VENTAS_Images/addcdb49.FOTO CLIENTE.165310.jpg",
-                FotoFachada = "IMG_VENTAS/addcdb49.FOTO FACHADA.165310.jpg",
-                FotoContrato = "VENTAS_Images/addcdb49.FOTO CONTRATO.165310.jpg",
-                ObservacionVenta = "Producto precontado en dos semanas",
-                Vendedor = "JAKE",
-                Usuario = "avedanojenny6@gmail.com",
-                Cobrador = "SILVIA",
-                Coordenadas = "19.260839,-98.831437",
-                FechaPrimerCobro = new DateTime(2024, 12, 13),
-                Estado = "LIQUIDADO BUEN CLIENTE",
-                FechaActu = new DateTime(2024, 12, 10, 10, 54, 30),
-                Cliente = "ALEJANDRO GARCIA",
-                Producto = "GEL TICILT",
-                Estado2 = "CLOSED",
-                ComisionVendedorPct = 0,
-                Cobrar = "OK",
-                ProductosCantidad = 1,
-                ImporteTotal = 1490,
-                Productos =
-                [
-                    new SaleProductLineInput
-                    {
-                        ProductCode = "GEL TICILT",
-                        Quantity = 1,
-                        UnitPrice = 1490
-                    }
-                ]
-            }
-        };
+                new()
+                {
+                    IdCc = "657592be",
+                    IdV = "a82ddb1a",
+                    NumVenta = 1,
+                    NombreCliente = "FILIBERTA ENCARNACION",
+                    ImporteCobro = 500,
+                    FechaCobro = new DateTime(2024, 10, 20),
+                    FechaCaptura = new DateTime(2024, 10, 20),
+                    ImporteTotal = 500,
+                    ImporteRestante = 0,
+                    EstadoCc = "SI PAGO",
+                    Usuario = "ggab75218@gmail.com",
+                    ImporteAbonado = 500,
+                    Estatus = "LIQUIDADO",
+                    Zona = "JARDINES",
+                    DiaCobroPrevisto = "SABADO",
+                    DiaCobrado = "DOMINGO"
+                },
+                new()
+                {
+                    IdCc = "e8b67417",
+                    IdV = "ff533734",
+                    NumVenta = 2,
+                    NombreCliente = "MANUEL MONDRAGON AGUILAR",
+                    ImporteCobro = 990,
+                    FechaCobro = new DateTime(2024, 10, 20),
+                    ObservacionCobro = "Antes de un mes $990",
+                    FechaCaptura = new DateTime(2024, 10, 20),
+                    ImporteTotal = 990,
+                    ImporteRestante = 0,
+                    EstadoCc = "SI PAGO",
+                    Usuario = "jakelinepink88@gmail.com",
+                    ImporteAbonado = 990,
+                    Estatus = "LIQUIDADO",
+                    Zona = "XICO",
+                    DiaCobroPrevisto = "VIERNES",
+                    DiaCobrado = "DOMINGO"
+                },
+                new()
+                {
+                    IdCc = "14ec1b9f",
+                    IdV = "a8490ad5",
+                    NumVenta = 3,
+                    NombreCliente = "EDITH SEGURA LOPEZ",
+                    ImporteCobro = 100,
+                    FechaCobro = new DateTime(2024, 10, 23),
+                    FechaCaptura = new DateTime(2024, 10, 24),
+                    ImporteTotal = 1190,
+                    ImporteRestante = 1090,
+                    EstadoCc = "SI PAGO",
+                    Usuario = "jakelinepink88@gmail.com",
+                    ImporteAbonado = 100,
+                    Estatus = "POR INICIAR",
+                    Zona = "CULTURAS",
+                    DiaCobroPrevisto = "MIERCOLES",
+                    DiaCobrado = "MIERCOLES"
+                }
+            };
 
-        Save(seed);
+            SaveCollections(seedCollections);
+        }
     }
 
-    private List<SaleRecord> Load()
+    private List<SaleRecord> LoadSales()
     {
-        if (!File.Exists(_filePath))
+        return LoadJson<List<SaleRecord>>(_salesFilePath) ?? [];
+    }
+
+    private List<CollectionRecord> LoadCollections()
+    {
+        return LoadJson<List<CollectionRecord>>(_collectionsFilePath) ?? [];
+    }
+
+    private T? LoadJson<T>(string filePath)
+    {
+        if (!File.Exists(filePath))
         {
-            return [];
+            return default;
         }
 
-        var raw = File.ReadAllText(_filePath);
+        var raw = File.ReadAllText(filePath);
         if (string.IsNullOrWhiteSpace(raw))
         {
-            return [];
+            return default;
         }
 
-        var data = JsonSerializer.Deserialize<List<SaleRecord>>(raw, _jsonOptions);
-        return data ?? [];
+        return JsonSerializer.Deserialize<T>(raw, _jsonOptions);
     }
 
-    private void Save(List<SaleRecord> data)
+    private void SaveSales(List<SaleRecord> data)
+    {
+        SaveJson(_salesFilePath, data);
+    }
+
+    private void SaveCollections(List<CollectionRecord> data)
+    {
+        SaveJson(_collectionsFilePath, data);
+    }
+
+    private void SaveJson<T>(string filePath, T data)
     {
         var json = JsonSerializer.Serialize(data, _jsonOptions);
-        File.WriteAllText(_filePath, json);
+        File.WriteAllText(filePath, json);
+    }
+
+    private static string NormalizeProfile(string? profile)
+    {
+        return string.IsNullOrWhiteSpace(profile) ? string.Empty : profile.Trim();
+    }
+
+    private static string GetDayName(DateTime date)
+    {
+        return date.ToString("dddd", new CultureInfo("es-ES")).ToUpperInvariant();
     }
 }
