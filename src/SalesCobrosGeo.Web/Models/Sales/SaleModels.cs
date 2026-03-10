@@ -86,6 +86,23 @@ public sealed class SaleRecord
     public List<SaleProductLineInput> Productos { get; set; } = [];
 }
 
+public sealed class SalesDayGroup
+{
+    public DateTime Day { get; set; }
+    public List<SaleRecord> Sales { get; set; } = [];
+}
+
+public sealed class SalesListViewModel
+{
+    public IReadOnlyList<SalesDayGroup> Groups { get; set; } = [];
+    public int WeeklyCount { get; set; }
+}
+
+public sealed class SaleDetailViewModel
+{
+    public SaleRecord Sale { get; set; } = new();
+}
+
 public sealed class SaleFormViewModel
 {
     public bool IsEdit { get; set; }

@@ -15,8 +15,41 @@ public sealed class SalesController : Controller
 
     public IActionResult Index()
     {
-        var sales = _repository.GetAll();
-        return View(sales);
+        var startOfWeek = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek + 1);
+        var endOfWeek = startOfWeek.AddDays(6);
+        var sales = _repository.GetAll()
+            .Where(x => x.FechaVenta.Date >= startOfWeek.Date && x.FechaVenta.Date <= endOfWeek.Date)
+            .ToList();
+
+        var grouped = sales
+            .GroupBy(x => x.FechaVenta.Date)
+            .OrderByDescending(g => g.Key)
+            .Select(g => new SalesDayGroup
+            {
+                Day = g.Key,
+                Sales = g.OrderBy(x => x.NombreCliente).ToList()
+            })
+            .ToList();
+
+        var model = new SalesListViewModel
+        {
+            Groups = grouped,
+            WeeklyCount = sales.Count
+        };
+
+        return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult Details(string id)
+    {
+        var sale = _repository.GetById(id);
+        if (sale is null)
+        {
+            return NotFound();
+        }
+
+        return View(new SaleDetailViewModel { Sale = sale });
     }
 
     [HttpGet]
@@ -50,9 +83,9 @@ public sealed class SalesController : Controller
 
         try
         {
-            _repository.Create(NormalizeInput(input));
+            var saved = _repository.Create(NormalizeInput(input));
             TempData["SalesMessage"] = "Venta registrada correctamente.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Details), new { id = saved.IdV });
         }
         catch (InvalidOperationException ex)
         {
@@ -104,9 +137,9 @@ public sealed class SalesController : Controller
 
         try
         {
-            _repository.Update(id, NormalizeInput(input));
+            var saved = _repository.Update(id, NormalizeInput(input));
             TempData["SalesMessage"] = "Venta actualizada correctamente.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Details), new { id = saved.IdV });
         }
         catch (InvalidOperationException ex)
         {
