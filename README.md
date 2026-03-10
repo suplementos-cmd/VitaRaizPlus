@@ -14,6 +14,7 @@ Este repositorio incluye una propuesta funcional y una base tecnica para el MVP:
 - `docs/mvp-plan.md`
 - `docs/block-0-checklist.md`
 - `docs/block-1-auth.md`
+- `docs/block-2-3-4.md`
 
 ## Estructura de codigo
 - `src/SalesCobrosGeo.Api`
@@ -25,6 +26,7 @@ Este repositorio incluye una propuesta funcional y una base tecnica para el MVP:
 ## Estado actual
 - Bloque 0 completado: base de solucion y build.
 - Bloque 1 completado: autenticacion, autorizacion por roles y auditoria base.
+- Bloques 2, 3 y 4 completados en API: catalogos, clientes/ventas y supervision de ventas.
 
 ## Usuarios demo (password `demo123`)
 - `vendedor.demo`
