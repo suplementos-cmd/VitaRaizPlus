@@ -93,3 +93,57 @@ public sealed class SaleFormViewModel
     public SalesCatalogs Catalogs { get; set; } = new([], [], [], [], [], []);
     public string PageTitle { get; set; } = string.Empty;
 }
+
+public sealed class CollectionRecord
+{
+    public string IdCc { get; set; } = string.Empty;
+    public string IdV { get; set; } = string.Empty;
+    public int NumVenta { get; set; }
+    public string NombreCliente { get; set; } = string.Empty;
+    public decimal ImporteCobro { get; set; }
+    public DateTime FechaCobro { get; set; }
+    public string? ObservacionCobro { get; set; }
+    public DateTime FechaCaptura { get; set; }
+    public decimal ImporteTotal { get; set; }
+    public decimal ImporteRestante { get; set; }
+    public string EstadoCc { get; set; } = string.Empty;
+    public string Usuario { get; set; } = string.Empty;
+    public decimal ImporteAbonado { get; set; }
+    public string Estatus { get; set; } = string.Empty;
+    public string Zona { get; set; } = string.Empty;
+    public string DiaCobroPrevisto { get; set; } = string.Empty;
+    public string DiaCobrado { get; set; } = string.Empty;
+    public string? CoordenadasCobro { get; set; }
+}
+
+public sealed class CollectorPortfolioItem
+{
+    public string IdV { get; set; } = string.Empty;
+    public int NumVenta { get; set; }
+    public string NombreCliente { get; set; } = string.Empty;
+    public string Zona { get; set; } = string.Empty;
+    public string DiaCobroPrevisto { get; set; } = string.Empty;
+    public string Cobrador { get; set; } = string.Empty;
+    public decimal ImporteTotal { get; set; }
+    public decimal ImporteAbonado { get; set; }
+    public decimal ImporteRestante { get; set; }
+    public string Estatus { get; set; } = string.Empty;
+}
+
+public sealed class CollectionFormInput
+{
+    public string IdV { get; set; } = string.Empty;
+    public decimal ImporteCobro { get; set; }
+    public DateTime FechaCobro { get; set; } = DateTime.Today;
+    public string? ObservacionCobro { get; set; }
+    public string Usuario { get; set; } = string.Empty;
+    public string? CoordenadasCobro { get; set; }
+}
+
+public sealed class CollectionRegisterViewModel
+{
+    public CollectorPortfolioItem? PortfolioItem { get; set; }
+    public CollectionFormInput Input { get; set; } = new();
+    public IReadOnlyList<CollectionRecord> Historial { get; set; } = [];
+    public IReadOnlyList<CatalogOption> CollectorProfiles { get; set; } = [];
+}
