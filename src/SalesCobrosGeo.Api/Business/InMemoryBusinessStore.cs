@@ -1,6 +1,6 @@
-﻿using System.Collections.Concurrent;
-using SalesCobrosGeo.Api.Contracts.Catalogs;
+﻿using SalesCobrosGeo.Api.Contracts.Catalogs;
 using SalesCobrosGeo.Api.Contracts.Clients;
+using SalesCobrosGeo.Api.Contracts.Collections;
 using SalesCobrosGeo.Api.Contracts.Sales;
 
 namespace SalesCobrosGeo.Api.Business;
@@ -33,6 +33,7 @@ public sealed class InMemoryBusinessStore : IBusinessStore
     private int _catalogVersion = 1;
     private int _clientIdentity;
     private int _saleIdentity;
+    private int _collectionIdentity;
 
     public CatalogSnapshot GetCatalogSnapshot()
     {
@@ -256,6 +257,7 @@ public sealed class InMemoryBusinessStore : IBusinessStore
     {
         lock (_sync)
         {
+            RefreshCollectionStatuses();
             return _sales
                 .Where(s => manageAll || string.Equals(s.SellerUserName, userName, StringComparison.OrdinalIgnoreCase))
                 .OrderByDescending(s => s.CreatedAtUtc)
@@ -310,6 +312,7 @@ public sealed class InMemoryBusinessStore : IBusinessStore
                 CollectionDay = request.CollectionDay.Trim(),
                 Notes = request.Notes?.Trim(),
                 Status = request.IsDraft || !canRegisterDirectly ? SaleWorkflowStatus.Draft : SaleWorkflowStatus.Registered,
+                CollectionStatus = CollectionWorkflowStatus.Pending,
                 Collectable = request.Collectable,
                 SellerCommissionPercent = request.SellerCommissionPercent,
                 CreatedAtUtc = now,
@@ -398,6 +401,7 @@ public sealed class InMemoryBusinessStore : IBusinessStore
             sale.Status = target;
             sale.UpdatedAtUtc = DateTime.UtcNow;
             sale.History.Add(new SaleHistoryEntry(sale.UpdatedAtUtc, reviewer, previous, target, request.Reason?.Trim(), "review"));
+            RefreshCollectionStatus(sale);
             return sale;
         }
     }
@@ -411,6 +415,154 @@ public sealed class InMemoryBusinessStore : IBusinessStore
             sale.UpdatedAtUtc = DateTime.UtcNow;
             sale.History.Add(new SaleHistoryEntry(sale.UpdatedAtUtc, reviewer, sale.Status, sale.Status, request.Reason?.Trim(), "assign-collector"));
             return sale;
+        }
+    }
+
+    public IReadOnlyList<CollectionSummary> GetCollectionPortfolio(string userName, bool manageAll)
+    {
+        lock (_sync)
+        {
+            RefreshCollectionStatuses();
+            return _sales
+                .Where(s => s.Status == SaleWorkflowStatus.Approved)
+                .Where(s => manageAll || string.Equals(s.CollectorUserName, userName, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(s => s.UpdatedAtUtc)
+                .Select(MapCollectionSummary)
+                .ToArray();
+        }
+    }
+
+    public SaleRecord RegisterCollection(RegisterCollectionRequest request, string collectorUserName)
+    {
+        lock (_sync)
+        {
+            if (request.Amount <= 0)
+            {
+                throw new InvalidOperationException("Collection amount must be greater than zero.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Coordinates))
+            {
+                throw new InvalidOperationException("Coordinates are required for collection.");
+            }
+
+            var sale = _sales.FirstOrDefault(s => s.Id == request.SaleId) ?? throw new InvalidOperationException("Sale not found.");
+            if (sale.Status != SaleWorkflowStatus.Approved)
+            {
+                throw new InvalidOperationException("Only approved sales can receive collections.");
+            }
+
+            if (sale.RemainingAmount <= 0)
+            {
+                throw new InvalidOperationException("Sale is already fully collected.");
+            }
+
+            if (request.Amount > sale.RemainingAmount)
+            {
+                throw new InvalidOperationException("Collection amount cannot exceed remaining balance.");
+            }
+
+            var entry = new CollectionEntry(
+                Id: ++_collectionIdentity,
+                SaleId: sale.Id,
+                Amount: request.Amount,
+                Coordinates: request.Coordinates.Trim(),
+                Notes: request.Notes?.Trim(),
+                CollectedBy: collectorUserName,
+                CollectedAtUtc: request.CollectedAtUtc ?? DateTime.UtcNow,
+                CapturedAtUtc: DateTime.UtcNow);
+
+            sale.Collections.Add(entry);
+            sale.CollectedAmount += request.Amount;
+            sale.FirstCollectionAtUtc ??= entry.CollectedAtUtc;
+            sale.CollectorUserName ??= collectorUserName;
+            sale.UpdatedAtUtc = DateTime.UtcNow;
+            RefreshCollectionStatus(sale);
+
+            if (sale.RemainingAmount <= 0)
+            {
+                var previous = sale.Status;
+                sale.Status = SaleWorkflowStatus.Closed;
+                sale.History.Add(new SaleHistoryEntry(sale.UpdatedAtUtc, collectorUserName, previous, SaleWorkflowStatus.Closed, "Auto close after full collection", "auto-close"));
+            }
+
+            return sale;
+        }
+    }
+
+    public int ReassignPortfolio(ReassignPortfolioRequest request, string supervisorUserName)
+    {
+        lock (_sync)
+        {
+            if (string.IsNullOrWhiteSpace(request.FromCollector) || string.IsNullOrWhiteSpace(request.ToCollector))
+            {
+                throw new InvalidOperationException("Both collectors are required.");
+            }
+
+            var fromCollector = request.FromCollector.Trim();
+            var toCollector = request.ToCollector.Trim();
+            var idSet = request.SaleIds?.ToHashSet() ?? [];
+
+            var candidates = _sales
+                .Where(s => s.Status == SaleWorkflowStatus.Approved)
+                .Where(s => s.CollectionStatus is CollectionWorkflowStatus.Pending or CollectionWorkflowStatus.Partial or CollectionWorkflowStatus.Overdue)
+                .Where(s => string.Equals(s.CollectorUserName, fromCollector, StringComparison.OrdinalIgnoreCase))
+                .Where(s => idSet.Count == 0 || idSet.Contains(s.Id))
+                .ToArray();
+
+            foreach (var sale in candidates)
+            {
+                sale.CollectorUserName = toCollector;
+                sale.UpdatedAtUtc = DateTime.UtcNow;
+                sale.History.Add(new SaleHistoryEntry(sale.UpdatedAtUtc, supervisorUserName, sale.Status, sale.Status, request.Reason?.Trim(), "reassign-portfolio"));
+            }
+
+            return candidates.Length;
+        }
+    }
+
+    public DashboardSummary GetDashboardSummary()
+    {
+        lock (_sync)
+        {
+            RefreshCollectionStatuses();
+            var totalSales = _sales.Count;
+            var approvedSales = _sales.Where(s => s.Status == SaleWorkflowStatus.Approved || s.Status == SaleWorkflowStatus.Closed).ToArray();
+            var totalSalesAmount = approvedSales.Sum(s => s.TotalAmount);
+            var totalCollectedAmount = approvedSales.Sum(s => s.CollectedAmount);
+            var totalPendingAmount = approvedSales.Sum(s => s.RemainingAmount);
+            var pendingCollections = approvedSales.Count(s => s.CollectionStatus == CollectionWorkflowStatus.Pending);
+            var paidCollections = approvedSales.Count(s => s.CollectionStatus == CollectionWorkflowStatus.Paid);
+            var overdueCollections = approvedSales.Count(s => s.CollectionStatus == CollectionWorkflowStatus.Overdue);
+            var activeSellers = _sales.Select(s => s.SellerUserName).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+            var activeCollectors = _sales.Where(s => !string.IsNullOrWhiteSpace(s.CollectorUserName)).Select(s => s.CollectorUserName!).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+
+            return new DashboardSummary(
+                TotalSales: totalSales,
+                TotalSalesAmount: totalSalesAmount,
+                TotalCollectedAmount: totalCollectedAmount,
+                TotalPendingAmount: totalPendingAmount,
+                PendingCollections: pendingCollections,
+                PaidCollections: paidCollections,
+                OverdueCollections: overdueCollections,
+                ActiveSellers: activeSellers,
+                ActiveCollectors: activeCollectors);
+        }
+    }
+
+    public SyncPayload GetSyncPayload()
+    {
+        lock (_sync)
+        {
+            RefreshCollectionStatuses();
+            return new SyncPayload(
+                CatalogVersion: _catalogVersion,
+                GeneratedAtUtc: DateTime.UtcNow,
+                Zones: _zones.ToArray(),
+                Products: _products.ToArray(),
+                PaymentMethods: _paymentMethods.ToArray(),
+                Clients: _clients.ToArray(),
+                Sales: _sales.OrderByDescending(s => s.UpdatedAtUtc).ToArray());
         }
     }
 
@@ -502,6 +654,62 @@ public sealed class InMemoryBusinessStore : IBusinessStore
         {
             throw new InvalidOperationException($"Payment method not found or inactive: {code}");
         }
+    }
+
+    private static CollectionSummary MapCollectionSummary(SaleRecord sale)
+    {
+        return new CollectionSummary(
+            SaleId: sale.Id,
+            SaleNumber: sale.SaleNumber,
+            ClientId: sale.ClientId,
+            SellerUserName: sale.SellerUserName,
+            CollectorUserName: sale.CollectorUserName,
+            CollectionStatus: sale.CollectionStatus,
+            TotalAmount: sale.TotalAmount,
+            CollectedAmount: sale.CollectedAmount,
+            RemainingAmount: sale.RemainingAmount,
+            CollectionDay: sale.CollectionDay,
+            UpdatedAtUtc: sale.UpdatedAtUtc);
+    }
+
+    private void RefreshCollectionStatuses()
+    {
+        foreach (var sale in _sales)
+        {
+            RefreshCollectionStatus(sale);
+        }
+    }
+
+    private void RefreshCollectionStatus(SaleRecord sale)
+    {
+        if (sale.Status is SaleWorkflowStatus.Rejected)
+        {
+            sale.CollectionStatus = CollectionWorkflowStatus.Uncollectible;
+            return;
+        }
+
+        if (sale.Status is not (SaleWorkflowStatus.Approved or SaleWorkflowStatus.Closed))
+        {
+            sale.CollectionStatus = CollectionWorkflowStatus.Pending;
+            return;
+        }
+
+        if (sale.RemainingAmount <= 0)
+        {
+            sale.CollectionStatus = CollectionWorkflowStatus.Paid;
+            return;
+        }
+
+        if (sale.CollectedAmount > 0)
+        {
+            sale.CollectionStatus = CollectionWorkflowStatus.Partial;
+            return;
+        }
+
+        var overdueLimit = sale.CreatedAtUtc.AddDays(7);
+        sale.CollectionStatus = DateTime.UtcNow > overdueLimit
+            ? CollectionWorkflowStatus.Overdue
+            : CollectionWorkflowStatus.Pending;
     }
 
     private void TouchCatalogVersion()

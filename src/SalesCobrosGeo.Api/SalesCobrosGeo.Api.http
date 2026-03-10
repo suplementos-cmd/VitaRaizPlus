@@ -2,6 +2,7 @@
 @AdminToken = REPLACE_ADMIN_TOKEN
 @SellerToken = REPLACE_SELLER_TOKEN
 @SupervisorToken = REPLACE_SUPERVISOR_TOKEN
+@CollectorToken = REPLACE_COLLECTOR_TOKEN
 
 ### Login admin
 POST {{SalesCobrosGeo.Api_HostAddress}}/api/auth/login
@@ -21,23 +22,20 @@ Content-Type: application/json
   "password": "demo123"
 }
 
+### Login collector
+POST {{SalesCobrosGeo.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "userName": "cobrador.demo",
+  "password": "demo123"
+}
+
 ### Block 2 - Catalog snapshot
 GET {{SalesCobrosGeo.Api_HostAddress}}/api/catalogs/snapshot
 Authorization: Bearer {{AdminToken}}
 
-### Block 2 - Create product (admin)
-POST {{SalesCobrosGeo.Api_HostAddress}}/api/catalogs/products
-Authorization: Bearer {{AdminToken}}
-Content-Type: application/json
-
-{
-  "code": "VRP-003",
-  "name": "VitaRaiz Plus Pack",
-  "price": 320,
-  "isActive": true
-}
-
-### Block 3 - Create client (seller)
+### Block 3 - Create client
 POST {{SalesCobrosGeo.Api_HostAddress}}/api/clients
 Authorization: Bearer {{SellerToken}}
 Content-Type: application/json
@@ -52,7 +50,7 @@ Content-Type: application/json
   "isActive": true
 }
 
-### Block 3 - Create sale (seller)
+### Block 3 - Create sale
 POST {{SalesCobrosGeo.Api_HostAddress}}/api/sales
 Authorization: Bearer {{SellerToken}}
 Content-Type: application/json
@@ -81,10 +79,6 @@ Content-Type: application/json
   }
 }
 
-### Block 4 - Review queue (supervisor/admin)
-GET {{SalesCobrosGeo.Api_HostAddress}}/api/sales/review
-Authorization: Bearer {{SupervisorToken}}
-
 ### Block 4 - Approve sale
 POST {{SalesCobrosGeo.Api_HostAddress}}/api/sales/1/review
 Authorization: Bearer {{SupervisorToken}}
@@ -94,3 +88,58 @@ Content-Type: application/json
   "action": "approve",
   "reason": "Documentacion valida"
 }
+
+### Block 5 - Portfolio assigned to collector
+GET {{SalesCobrosGeo.Api_HostAddress}}/api/collections/assigned
+Authorization: Bearer {{CollectorToken}}
+
+### Block 5 - Register payment
+POST {{SalesCobrosGeo.Api_HostAddress}}/api/collections/register
+Authorization: Bearer {{CollectorToken}}
+Content-Type: application/json
+
+{
+  "saleId": 1,
+  "amount": 150,
+  "coordinates": "-16.5001,-68.1502",
+  "notes": "Abono parcial",
+  "collectedAtUtc": "2026-03-10T16:45:00Z"
+}
+
+### Block 6 - Reassign portfolio
+POST {{SalesCobrosGeo.Api_HostAddress}}/api/collections/reassign
+Authorization: Bearer {{SupervisorToken}}
+Content-Type: application/json
+
+{
+  "fromCollector": "cobrador.demo",
+  "toCollector": "supcobranza.demo",
+  "saleIds": [1],
+  "reason": "Ajuste de carga"
+}
+
+### Block 7 - Mobile sync pull
+GET {{SalesCobrosGeo.Api_HostAddress}}/api/sync/pull
+Authorization: Bearer {{CollectorToken}}
+
+### Block 7 - Mobile sync push
+POST {{SalesCobrosGeo.Api_HostAddress}}/api/sync/push
+Authorization: Bearer {{CollectorToken}}
+Content-Type: application/json
+
+{
+  "collections": [
+    {
+      "saleId": 1,
+      "amount": 50,
+      "coordinates": "-16.5001,-68.1502",
+      "notes": "Segundo abono",
+      "collectedAtUtc": "2026-03-10T17:00:00Z"
+    }
+  ],
+  "saleUpdates": []
+}
+
+### Block 8 - Dashboard summary
+GET {{SalesCobrosGeo.Api_HostAddress}}/api/dashboard/summary
+Authorization: Bearer {{AdminToken}}

@@ -146,7 +146,10 @@ public sealed class SalesController : ControllerBase
             SellerUserName: sale.SellerUserName,
             CollectorUserName: sale.CollectorUserName,
             Status: sale.Status,
+            CollectionStatus: sale.CollectionStatus,
             TotalAmount: sale.TotalAmount,
+            CollectedAmount: sale.CollectedAmount,
+            RemainingAmount: sale.RemainingAmount,
             PaymentMethodCode: sale.PaymentMethodCode,
             CollectionDay: sale.CollectionDay,
             CreatedAtUtc: sale.CreatedAtUtc,
@@ -154,6 +157,7 @@ public sealed class SalesController : ControllerBase
             Notes: sale.Notes,
             Items: sale.Items.ToArray(),
             Evidence: sale.Evidence,
-            History: sale.History.ToArray());
+            History: sale.History.ToArray(),
+            Collections: sale.Collections.ToArray());
     }
 }
