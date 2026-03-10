@@ -1,5 +1,6 @@
 ﻿using SalesCobrosGeo.Api.Contracts.Catalogs;
 using SalesCobrosGeo.Api.Contracts.Clients;
+using SalesCobrosGeo.Api.Contracts.Collections;
 using SalesCobrosGeo.Api.Contracts.Sales;
 
 namespace SalesCobrosGeo.Api.Business;
@@ -29,4 +30,11 @@ public interface IBusinessStore
     SaleRecord UpdateSaleDraft(int id, UpdateSaleDraftRequest request, string userName, bool canManageAll);
     SaleRecord ReviewSale(int id, ReviewSaleRequest request, string reviewer);
     SaleRecord AssignCollector(int id, AssignCollectorRequest request, string reviewer);
+
+    IReadOnlyList<CollectionSummary> GetCollectionPortfolio(string userName, bool manageAll);
+    SaleRecord RegisterCollection(RegisterCollectionRequest request, string collectorUserName);
+    int ReassignPortfolio(ReassignPortfolioRequest request, string supervisorUserName);
+
+    DashboardSummary GetDashboardSummary();
+    SyncPayload GetSyncPayload();
 }

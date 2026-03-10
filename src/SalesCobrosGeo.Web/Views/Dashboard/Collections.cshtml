@@ -1,0 +1,35 @@
+﻿@model SalesCobrosGeo.Web.Models.Dashboard.DashboardPageViewModel
+@{
+    ViewData["Title"] = "Cobros";
+}
+
+<h1 class="h3 mb-3">Vista de Cobros</h1>
+<div class="card">
+    <div class="card-body table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Nro Venta</th>
+                    <th>Cobrador</th>
+                    <th>Cobrado</th>
+                    <th>Pendiente</th>
+                    <th>Estado</th>
+                    <th>Actualizado</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var row in Model.Collections)
+            {
+                <tr>
+                    <td>@row.SaleNumber</td>
+                    <td>@row.Collector</td>
+                    <td>@row.Collected.ToString("0.00")</td>
+                    <td>@row.Pending.ToString("0.00")</td>
+                    <td>@row.Status</td>
+                    <td>@row.LastUpdate</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

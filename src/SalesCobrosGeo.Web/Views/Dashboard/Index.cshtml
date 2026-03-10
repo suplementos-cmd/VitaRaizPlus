@@ -1,0 +1,88 @@
+﻿@model SalesCobrosGeo.Web.Models.Dashboard.DashboardPageViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Dashboard Operativo</h1>
+    <span class="text-muted">Actualizado: @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</span>
+</div>
+
+<div class="row g-3 mb-4">
+@foreach (var card in Model.Kpis)
+{
+    <div class="col-md-3">
+        <div class="card dashboard-card h-100">
+            <div class="card-body">
+                <div class="small text-uppercase text-muted">@card.Title</div>
+                <div class="display-6 fw-bold">@card.Value</div>
+                <div class="small text-success">@card.Trend</div>
+            </div>
+        </div>
+    </div>
+}
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Ventas Recientes</div>
+            <div class="card-body table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>Nro</th>
+                            <th>Vendedor</th>
+                            <th>Zona</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var row in Model.Sales)
+                    {
+                        <tr>
+                            <td>@row.SaleNumber</td>
+                            <td>@row.Seller</td>
+                            <td>@row.Zone</td>
+                            <td>@row.Total.ToString("0.00")</td>
+                            <td>@row.Status</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Cobranza Reciente</div>
+            <div class="card-body table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>Venta</th>
+                            <th>Cobrador</th>
+                            <th>Cobrado</th>
+                            <th>Pendiente</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var row in Model.Collections)
+                    {
+                        <tr>
+                            <td>@row.SaleNumber</td>
+                            <td>@row.Collector</td>
+                            <td>@row.Collected.ToString("0.00")</td>
+                            <td>@row.Pending.ToString("0.00")</td>
+                            <td>@row.Status</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

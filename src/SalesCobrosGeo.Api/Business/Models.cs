@@ -11,6 +11,15 @@ public enum SaleWorkflowStatus
     Closed = 7
 }
 
+public enum CollectionWorkflowStatus
+{
+    Pending = 1,
+    Partial = 2,
+    Paid = 3,
+    Overdue = 4,
+    Uncollectible = 5
+}
+
 public sealed record Zone(int Id, string Code, string Name, bool IsActive);
 public sealed record Product(int Id, string Code, string Name, decimal Price, bool IsActive);
 public sealed record PaymentMethod(int Id, string Code, string Name, bool IsActive);
@@ -44,6 +53,16 @@ public sealed record SaleHistoryEntry(
     string? Reason,
     string Action);
 
+public sealed record CollectionEntry(
+    int Id,
+    int SaleId,
+    decimal Amount,
+    string Coordinates,
+    string? Notes,
+    string CollectedBy,
+    DateTime CollectedAtUtc,
+    DateTime CapturedAtUtc);
+
 public sealed class SaleRecord
 {
     public int Id { get; init; }
@@ -55,12 +74,51 @@ public sealed class SaleRecord
     public string CollectionDay { get; set; } = string.Empty;
     public string? Notes { get; set; }
     public SaleWorkflowStatus Status { get; set; }
+    public CollectionWorkflowStatus CollectionStatus { get; set; } = CollectionWorkflowStatus.Pending;
     public bool Collectable { get; set; }
     public decimal SellerCommissionPercent { get; set; }
     public DateTime CreatedAtUtc { get; init; }
     public DateTime UpdatedAtUtc { get; set; }
+    public DateTime? FirstCollectionAtUtc { get; set; }
     public decimal TotalAmount { get; set; }
+    public decimal CollectedAmount { get; set; }
     public SaleEvidence Evidence { get; set; } = new(string.Empty, null, null, Array.Empty<string>());
     public List<SaleItem> Items { get; } = [];
     public List<SaleHistoryEntry> History { get; } = [];
+    public List<CollectionEntry> Collections { get; } = [];
+
+    public decimal RemainingAmount => Math.Max(0m, TotalAmount - CollectedAmount);
 }
+
+public sealed record CollectionSummary(
+    int SaleId,
+    string SaleNumber,
+    int ClientId,
+    string SellerUserName,
+    string? CollectorUserName,
+    CollectionWorkflowStatus CollectionStatus,
+    decimal TotalAmount,
+    decimal CollectedAmount,
+    decimal RemainingAmount,
+    string CollectionDay,
+    DateTime UpdatedAtUtc);
+
+public sealed record DashboardSummary(
+    int TotalSales,
+    decimal TotalSalesAmount,
+    decimal TotalCollectedAmount,
+    decimal TotalPendingAmount,
+    int PendingCollections,
+    int PaidCollections,
+    int OverdueCollections,
+    int ActiveSellers,
+    int ActiveCollectors);
+
+public sealed record SyncPayload(
+    int CatalogVersion,
+    DateTime GeneratedAtUtc,
+    IReadOnlyList<Zone> Zones,
+    IReadOnlyList<Product> Products,
+    IReadOnlyList<PaymentMethod> PaymentMethods,
+    IReadOnlyList<Client> Clients,
+    IReadOnlyList<SaleRecord> Sales);

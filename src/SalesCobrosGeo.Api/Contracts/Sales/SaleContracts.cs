@@ -45,7 +45,10 @@ public sealed record SaleSummaryResponse(
     string SellerUserName,
     string? CollectorUserName,
     SaleWorkflowStatus Status,
+    CollectionWorkflowStatus CollectionStatus,
     decimal TotalAmount,
+    decimal CollectedAmount,
+    decimal RemainingAmount,
     string PaymentMethodCode,
     string CollectionDay,
     DateTime CreatedAtUtc,
@@ -53,4 +56,5 @@ public sealed record SaleSummaryResponse(
     string? Notes,
     IReadOnlyList<SaleItem> Items,
     SaleEvidence Evidence,
-    IReadOnlyList<SaleHistoryEntry> History);
+    IReadOnlyList<SaleHistoryEntry> History,
+    IReadOnlyList<CollectionEntry> Collections);
