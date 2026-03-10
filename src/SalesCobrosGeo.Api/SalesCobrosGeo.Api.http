@@ -1,0 +1,96 @@
+﻿@SalesCobrosGeo.Api_HostAddress = http://localhost:5207
+@AdminToken = REPLACE_ADMIN_TOKEN
+@SellerToken = REPLACE_SELLER_TOKEN
+@SupervisorToken = REPLACE_SUPERVISOR_TOKEN
+
+### Login admin
+POST {{SalesCobrosGeo.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "userName": "admin.demo",
+  "password": "demo123"
+}
+
+### Login seller
+POST {{SalesCobrosGeo.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "userName": "vendedor.demo",
+  "password": "demo123"
+}
+
+### Block 2 - Catalog snapshot
+GET {{SalesCobrosGeo.Api_HostAddress}}/api/catalogs/snapshot
+Authorization: Bearer {{AdminToken}}
+
+### Block 2 - Create product (admin)
+POST {{SalesCobrosGeo.Api_HostAddress}}/api/catalogs/products
+Authorization: Bearer {{AdminToken}}
+Content-Type: application/json
+
+{
+  "code": "VRP-003",
+  "name": "VitaRaiz Plus Pack",
+  "price": 320,
+  "isActive": true
+}
+
+### Block 3 - Create client (seller)
+POST {{SalesCobrosGeo.Api_HostAddress}}/api/clients
+Authorization: Bearer {{SellerToken}}
+Content-Type: application/json
+
+{
+  "fullName": "Cliente Demo Uno",
+  "mobile": "77712345",
+  "phone": "22115544",
+  "zoneCode": "CENTRO",
+  "collectionDay": "Lunes",
+  "address": "Av. Principal 123",
+  "isActive": true
+}
+
+### Block 3 - Create sale (seller)
+POST {{SalesCobrosGeo.Api_HostAddress}}/api/sales
+Authorization: Bearer {{SellerToken}}
+Content-Type: application/json
+
+{
+  "clientId": 1,
+  "paymentMethodCode": "CREDITO",
+  "collectionDay": "Lunes",
+  "collectorUserName": "cobrador.demo",
+  "sellerCommissionPercent": 8,
+  "collectable": true,
+  "notes": "Venta inicial",
+  "isDraft": false,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 2,
+      "unitPrice": 120
+    }
+  ],
+  "evidence": {
+    "primaryCoordinates": "-16.5000,-68.1500",
+    "secondaryCoordinates": "-16.5002,-68.1502",
+    "locationUrl": "https://maps.google.com/?q=-16.5000,-68.1500",
+    "photoUrls": ["https://example.com/photo1.jpg"]
+  }
+}
+
+### Block 4 - Review queue (supervisor/admin)
+GET {{SalesCobrosGeo.Api_HostAddress}}/api/sales/review
+Authorization: Bearer {{SupervisorToken}}
+
+### Block 4 - Approve sale
+POST {{SalesCobrosGeo.Api_HostAddress}}/api/sales/1/review
+Authorization: Bearer {{SupervisorToken}}
+Content-Type: application/json
+
+{
+  "action": "approve",
+  "reason": "Documentacion valida"
+}

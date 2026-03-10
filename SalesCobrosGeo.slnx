@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SalesCobrosGeo.Api/SalesCobrosGeo.Api.csproj" />
+    <Project Path="src/SalesCobrosGeo.Shared/SalesCobrosGeo.Shared.csproj" />
+    <Project Path="src/SalesCobrosGeo.Web/SalesCobrosGeo.Web.csproj" />
+  </Folder>
+</Solution>
