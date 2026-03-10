@@ -1,0 +1,22 @@
+﻿## Base artifacts
+bin/
+obj/
+
+## User-specific
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Tooling caches
+.vs/
+.dotnet/
+.appdata/
+.nuget/
+
+## Logs
+*.log
+
+## OS files
+Thumbs.db
+.DS_Store
