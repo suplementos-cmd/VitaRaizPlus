@@ -114,6 +114,25 @@
                     <div class="text-end fw-bold">Total: <span id="totalAmount">0.00</span></div>
                 </div>
             </div>
+
+            <div class="card mb-3">
+                <div class="card-header">Fotos (tomar o cargar)</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-sm-6 col-lg-4">@await Html.PartialAsync("_PhotoPicker", ("Input_FotoCliente", "Foto cliente", Model.Input.FotoCliente))</div>
+                        <div class="col-sm-6 col-lg-4">@await Html.PartialAsync("_PhotoPicker", ("Input_FotoFachada", "Foto fachada", Model.Input.FotoFachada))</div>
+                        <div class="col-sm-6 col-lg-4">@await Html.PartialAsync("_PhotoPicker", ("Input_FotoContrato", "Foto contrato", Model.Input.FotoContrato))</div>
+                        <div class="col-sm-6 col-lg-4">@await Html.PartialAsync("_PhotoPicker", ("Input_FotoAdd1", "Foto add 1", Model.Input.FotoAdd1))</div>
+                        <div class="col-sm-6 col-lg-4">@await Html.PartialAsync("_PhotoPicker", ("Input_FotoAdd2", "Foto add 2", Model.Input.FotoAdd2))</div>
+                    </div>
+
+                    <input asp-for="Input.FotoCliente" type="hidden" id="Input_FotoCliente" />
+                    <input asp-for="Input.FotoFachada" type="hidden" id="Input_FotoFachada" />
+                    <input asp-for="Input.FotoContrato" type="hidden" id="Input_FotoContrato" />
+                    <input asp-for="Input.FotoAdd1" type="hidden" id="Input_FotoAdd1" />
+                    <input asp-for="Input.FotoAdd2" type="hidden" id="Input_FotoAdd2" />
+                </div>
+            </div>
         </div>
 
         <div class="col-lg-4">
@@ -147,16 +166,20 @@
                 <div class="card-header">Ubicacion y Estado</div>
                 <div class="card-body row g-3">
                     <div class="col-12">
-                        <label asp-for="Input.Coordenadas" class="form-label">Coordenadas</label>
-                        <input asp-for="Input.Coordenadas" class="form-control" />
+                        <label asp-for="Input.Coordenadas" class="form-label">Coordenadas (GPS automatico)</label>
+                        <div class="input-group">
+                            <input asp-for="Input.Coordenadas" class="form-control" id="gpsCoordinates" readonly />
+                            <button type="button" class="btn btn-outline-primary" id="btnGpsLocate">GPS</button>
+                        </div>
+                        <small id="gpsStatus" class="text-muted">Detectando ubicacion...</small>
                     </div>
                     <div class="col-12">
                         <label asp-for="Input.Coordenadas2" class="form-label">Coordenadas 2</label>
-                        <input asp-for="Input.Coordenadas2" class="form-control" />
+                        <input asp-for="Input.Coordenadas2" class="form-control" id="gpsCoordinates2" readonly />
                     </div>
                     <div class="col-12">
                         <label asp-for="Input.UrlUbicacion" class="form-label">URL ubicacion</label>
-                        <input asp-for="Input.UrlUbicacion" class="form-control" />
+                        <input asp-for="Input.UrlUbicacion" class="form-control" id="gpsUrl" readonly />
                     </div>
                     <div class="col-md-6">
                         <label asp-for="Input.Estado" class="form-label">Estado</label>
@@ -174,17 +197,6 @@
                         <label asp-for="Input.FechaPrimerCobro" class="form-label">Fecha primer cobro</label>
                         <input asp-for="Input.FechaPrimerCobro" type="date" class="form-control" />
                     </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">Fotos (ruta/url)</div>
-                <div class="card-body row g-2">
-                    <div class="col-12"><input asp-for="Input.FotoCliente" placeholder="Foto cliente" class="form-control" /></div>
-                    <div class="col-12"><input asp-for="Input.FotoFachada" placeholder="Foto fachada" class="form-control" /></div>
-                    <div class="col-12"><input asp-for="Input.FotoContrato" placeholder="Foto contrato" class="form-control" /></div>
-                    <div class="col-12"><input asp-for="Input.FotoAdd1" placeholder="Foto add 1" class="form-control" /></div>
-                    <div class="col-12"><input asp-for="Input.FotoAdd2" placeholder="Foto add 2" class="form-control" /></div>
                 </div>
             </div>
         </div>
@@ -281,6 +293,95 @@
 
     [...tableBody.children].forEach(bindRow);
     reindexRows();
+})();
+
+(function() {
+    function initPhotoPicker(key) {
+        const input = document.getElementById(key);
+        const file = document.getElementById(`${key}_file`);
+        const preview = document.getElementById(`${key}_preview`);
+        const remove = document.getElementById(`${key}_remove`);
+
+        if (!input || !file || !preview || !remove) {
+            return;
+        }
+
+        function refreshPreview() {
+            const hasValue = !!input.value;
+            preview.src = hasValue ? input.value : 'https://placehold.co/320x200?text=Sin+foto';
+            remove.disabled = !hasValue;
+        }
+
+        file.addEventListener('change', (e) => {
+            const selected = e.target.files && e.target.files[0];
+            if (!selected) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                input.value = String(ev.target?.result || '');
+                refreshPreview();
+            };
+            reader.readAsDataURL(selected);
+        });
+
+        remove.addEventListener('click', () => {
+            input.value = '';
+            file.value = '';
+            refreshPreview();
+        });
+
+        refreshPreview();
+    }
+
+    ['Input_FotoCliente','Input_FotoFachada','Input_FotoContrato','Input_FotoAdd1','Input_FotoAdd2'].forEach(initPhotoPicker);
+})();
+
+(function() {
+    const coords = document.getElementById('gpsCoordinates');
+    const coords2 = document.getElementById('gpsCoordinates2');
+    const url = document.getElementById('gpsUrl');
+    const status = document.getElementById('gpsStatus');
+    const btn = document.getElementById('btnGpsLocate');
+
+    function applyLocation(position) {
+        const lat = position.coords.latitude.toFixed(6);
+        const lng = position.coords.longitude.toFixed(6);
+        const value = `${lat}, ${lng}`;
+        coords.value = value;
+        coords2.value = value;
+        url.value = `https://maps.google.com/?q=${lat},${lng}`;
+        status.textContent = 'Ubicacion detectada correctamente.';
+    }
+
+    function detect() {
+        if (!navigator.geolocation) {
+            status.textContent = 'GPS no disponible en este dispositivo.';
+            return;
+        }
+
+        status.textContent = 'Detectando ubicacion...';
+        navigator.geolocation.getCurrentPosition(
+            applyLocation,
+            function(err) {
+                status.textContent = `No se pudo detectar GPS (${err.message}).`;
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    }
+
+    btn.addEventListener('click', detect);
+
+    if (!coords.value) {
+        detect();
+    } else {
+        status.textContent = 'Coordenadas cargadas.';
+    }
 })();
 </script>
 }
