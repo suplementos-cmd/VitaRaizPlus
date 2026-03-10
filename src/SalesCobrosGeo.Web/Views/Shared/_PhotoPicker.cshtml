@@ -1,0 +1,12 @@
+﻿@model (string InputId, string Label, string? CurrentValue)
+<div class="photo-picker" data-photo-key="@Model.InputId">
+    <div class="photo-label">@Model.Label</div>
+    <img id="@Model.InputId@("_preview")" class="photo-preview" src="https://placehold.co/320x200?text=Sin+foto" alt="@Model.Label" />
+    <div class="photo-actions">
+        <label class="btn btn-sm btn-outline-primary mb-0">
+            Tomar/Cargar
+            <input id="@Model.InputId@("_file")" type="file" accept="image/*" capture="environment" hidden />
+        </label>
+        <button id="@Model.InputId@("_remove")" type="button" class="btn btn-sm btn-outline-danger">Quitar</button>
+    </div>
+</div>
