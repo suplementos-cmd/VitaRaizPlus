@@ -1,4 +1,4 @@
-﻿namespace SalesCobrosGeo.Web.Models.Sales;
+namespace SalesCobrosGeo.Web.Models.Sales;
 
 public sealed record CatalogOption(string Code, string Name);
 public sealed record ProductOption(string Code, string Name, decimal Price);
@@ -145,6 +145,41 @@ public sealed class CollectorPortfolioItem
     public decimal ImporteAbonado { get; set; }
     public decimal ImporteRestante { get; set; }
     public string Estatus { get; set; } = string.Empty;
+    public string EstadoVenta { get; set; } = string.Empty;
+    public string? FotoCliente { get; set; }
+    public string? FotoFachada { get; set; }
+    public string? Coordenadas { get; set; }
+}
+
+public sealed class CollectorDaySummary
+{
+    public string Day { get; set; } = string.Empty;
+    public int Count { get; set; }
+}
+
+public sealed class CollectorStatusSummary
+{
+    public string Status { get; set; } = string.Empty;
+    public int Count { get; set; }
+}
+
+public sealed class CollectorZoneSummary
+{
+    public string Zone { get; set; } = string.Empty;
+    public int Count { get; set; }
+}
+
+public sealed class CollectorPortfolioViewModel
+{
+    public string? Profile { get; set; }
+    public string? SelectedDay { get; set; }
+    public string? SelectedStatus { get; set; }
+    public string? SelectedZone { get; set; }
+    public IReadOnlyList<CatalogOption> Profiles { get; set; } = [];
+    public IReadOnlyList<CollectorDaySummary> Days { get; set; } = [];
+    public IReadOnlyList<CollectorStatusSummary> Statuses { get; set; } = [];
+    public IReadOnlyList<CollectorZoneSummary> Zones { get; set; } = [];
+    public IReadOnlyList<CollectorPortfolioItem> Sales { get; set; } = [];
 }
 
 public sealed class CollectionFormInput
@@ -160,7 +195,12 @@ public sealed class CollectionFormInput
 public sealed class CollectionRegisterViewModel
 {
     public CollectorPortfolioItem? PortfolioItem { get; set; }
+    public SaleRecord? Sale { get; set; }
     public CollectionFormInput Input { get; set; } = new();
     public IReadOnlyList<CollectionRecord> Historial { get; set; } = [];
     public IReadOnlyList<CatalogOption> CollectorProfiles { get; set; } = [];
+    public string? ReturnProfile { get; set; }
+    public string? ReturnDay { get; set; }
+    public string? ReturnStatus { get; set; }
+    public string? ReturnZone { get; set; }
 }

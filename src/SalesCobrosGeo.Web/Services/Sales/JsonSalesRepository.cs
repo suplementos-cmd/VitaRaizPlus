@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text.Json;
 using SalesCobrosGeo.Web.Models.Sales;
 
@@ -525,3 +525,7 @@ public sealed class JsonSalesRepository : ISalesRepository
         return date.ToString("dddd", new CultureInfo("es-ES")).ToUpperInvariant();
     }
 }
+
+
+
+
