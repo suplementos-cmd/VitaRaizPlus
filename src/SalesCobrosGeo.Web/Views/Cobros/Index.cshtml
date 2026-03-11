@@ -1,156 +1,126 @@
-﻿@model IReadOnlyList<SalesCobrosGeo.Web.Models.Sales.CollectorPortfolioItem>
+@model IReadOnlyList<SalesCobrosGeo.Web.Models.Sales.CollectorPortfolioItem>
 @using SalesCobrosGeo.Web.Models.Sales
 @{
     ViewData["Title"] = "Perfil Cobrador";
     var profiles = ViewBag.Profiles as IReadOnlyList<CatalogOption> ?? [];
     var selected = ViewBag.Profile as string;
-    var history = ViewBag.History as IReadOnlyList<SalesCobrosGeo.Web.Models.Sales.CollectionRecord> ?? [];
+
+    var dayOrder = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["LUNES"] = 1,
+        ["MARTES"] = 2,
+        ["MIERCOLES"] = 3,
+        ["MIERCOLES"] = 3,
+        ["JUEVES"] = 4,
+        ["VIERNES"] = 5,
+        ["SABADO"] = 6,
+        ["DOMINGO"] = 7
+    };
+
+    static string NormalizeText(string? value, string fallback)
+    {
+        return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim().ToUpperInvariant();
+    }
+
+    var pending = Model
+        .Where(x => x.ImporteRestante > 0)
+        .ToList();
+
+    var grouped = pending
+        .GroupBy(x => new
+        {
+            Day = NormalizeText(x.DiaCobroPrevisto, "SIN DIA"),
+            Zone = NormalizeText(x.Zona, "SIN ZONA")
+        })
+        .OrderBy(g => dayOrder.TryGetValue(g.Key.Day, out var pos) ? pos : 99)
+        .ThenBy(g => g.Key.Day)
+        .ThenBy(g => g.Key.Zone)
+        .ToList();
 }
 
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <div>
-        <h1 class="h3 mb-0">Perfil Cobrador</h1>
-        <small class="text-muted">Ventas asignadas y registro de cobros</small>
-    </div>
-</div>
-
-@if (TempData["CobroMessage"] is string msg)
-{
-    <div class="alert alert-success">@msg</div>
-}
-
-<form method="get" class="card card-body mb-3">
-    <div class="row g-2 align-items-end">
-        <div class="col-md-6 col-lg-4">
-            <label class="form-label">Usuario cobrador</label>
-            <select class="form-select" name="profile">
-                <option value="">Todos</option>
-                @foreach (var p in profiles)
-                {
-                    if (string.Equals(selected, p.Code, StringComparison.OrdinalIgnoreCase))
-                    {
-                        <option value="@p.Code" selected>@p.Name</option>
-                    }
-                    else
-                    {
-                        <option value="@p.Code">@p.Name</option>
-                    }
-                }
-            </select>
-        </div>
-        <div class="col-md-3 col-lg-2">
-            <button class="btn btn-primary w-100" type="submit">Filtrar</button>
+<div class="collector-mobile">
+    <div class="collector-toolbar">
+        <div>
+            <h1 class="collector-title">Perfil Cobrador</h1>
+            <div class="collector-subtitle">Solo ventas pendientes, agrupadas por dia de cobro y zona</div>
         </div>
     </div>
-</form>
 
-<div class="card mb-4">
-    <div class="card-header">Cartera para cobro</div>
-    <div class="card-body table-responsive">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Num Venta</th>
-                    <th>Cliente</th>
-                    <th>Zona</th>
-                    <th>Cobrador</th>
-                    <th>Total</th>
-                    <th>Abonado</th>
-                    <th>Restante</th>
-                    <th>Estatus</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-            @if (Model.Count == 0)
-            {
-                <tr><td colspan="9" class="text-center text-muted py-4">Sin cartera para mostrar.</td></tr>
-            }
-            else
-            {
-                foreach (var row in Model)
-                {
-                    <tr>
-                        <td>@row.NumVenta</td>
-                        <td>@row.NombreCliente</td>
-                        <td>@row.Zona</td>
-                        <td>@row.Cobrador</td>
-                        <td>@row.ImporteTotal.ToString("0.00")</td>
-                        <td>@row.ImporteAbonado.ToString("0.00")</td>
-                        <td>@row.ImporteRestante.ToString("0.00")</td>
-                        <td>@row.Estatus</td>
-                        <td class="text-end">
-                            @if (row.ImporteRestante > 0)
-                            {
-                                <a class="btn btn-sm btn-outline-primary" asp-controller="Cobros" asp-action="Register" asp-route-id="@row.IdV" asp-route-profile="@selected">Registrar</a>
-                            }
-                        </td>
-                    </tr>
-                }
-            }
-            </tbody>
-        </table>
-    </div>
-</div>
+    @if (TempData["CobroMessage"] is string msg)
+    {
+        <div class="alert alert-success">@msg</div>
+    }
 
-<div class="card">
-    <div class="card-header">Historial de cobros</div>
-    <div class="card-body table-responsive">
-        <table class="table table-sm align-middle">
-            <thead>
-                <tr>
-                    <th>ID_CC</th>
-                    <th>ID_V</th>
-                    <th>NUM_VENTA</th>
-                    <th>NOMBRE CLIENTE</th>
-                    <th>IMPORTE DE COBRO</th>
-                    <th>FECHA DE COBRO</th>
-                    <th>OBSERVACION COBRO</th>
-                    <th>FECHA CAPTURA</th>
-                    <th>IMPORTE TOTAL</th>
-                    <th>IMPORTE RESTANTE</th>
-                    <th>ESTADO_CC</th>
-                    <th>USUARIO</th>
-                    <th>IMPORTE ABONADO</th>
-                    <th>ESTATUS</th>
-                    <th>ZONA</th>
-                    <th>DIA COBRO PREVISTO</th>
-                    <th>DIA COBRADO</th>
-                    <th>COORDENADAS COBRO</th>
-                </tr>
-            </thead>
-            <tbody>
-            @if (history.Count == 0)
+    <form method="get" class="collector-filter mb-3">
+        <div class="collector-filter-grid">
+            <div>
+                <label class="form-label mb-1">Usuario cobrador</label>
+                <select class="form-select" name="profile">
+                    <option value="">Todos</option>
+                    @foreach (var p in profiles)
+                    {
+                        if (string.Equals(selected, p.Code, StringComparison.OrdinalIgnoreCase))
+                        {
+                            <option value="@p.Code" selected>@p.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@p.Code">@p.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+            <button class="btn btn-primary collector-btn" type="submit">Filtrar</button>
+        </div>
+    </form>
+
+    @if (pending.Count == 0)
+    {
+        <div class="card card-body text-center text-muted">No hay ventas pendientes por cobrar.</div>
+    }
+    else
+    {
+        var currentDay = string.Empty;
+        foreach (var zoneGroup in grouped)
+        {
+            if (!string.Equals(currentDay, zoneGroup.Key.Day, StringComparison.OrdinalIgnoreCase))
             {
-                <tr><td colspan="18" class="text-center text-muted py-4">Sin cobros registrados.</td></tr>
+                currentDay = zoneGroup.Key.Day;
+                <div class="collector-day-head mt-3">
+                    <span class="collector-day-star">?</span>
+                    <span>@currentDay</span>
+                </div>
             }
-            else
-            {
-                foreach (var c in history)
-                {
-                    <tr>
-                        <td>@c.IdCc</td>
-                        <td>@c.IdV</td>
-                        <td>@c.NumVenta</td>
-                        <td>@c.NombreCliente</td>
-                        <td>@c.ImporteCobro.ToString("0.00")</td>
-                        <td>@c.FechaCobro.ToString("yyyy-MM-dd")</td>
-                        <td>@c.ObservacionCobro</td>
-                        <td>@c.FechaCaptura.ToString("yyyy-MM-dd HH:mm")</td>
-                        <td>@c.ImporteTotal.ToString("0.00")</td>
-                        <td>@c.ImporteRestante.ToString("0.00")</td>
-                        <td>@c.EstadoCc</td>
-                        <td>@c.Usuario</td>
-                        <td>@c.ImporteAbonado.ToString("0.00")</td>
-                        <td>@c.Estatus</td>
-                        <td>@c.Zona</td>
-                        <td>@c.DiaCobroPrevisto</td>
-                        <td>@c.DiaCobrado</td>
-                        <td>@c.CoordenadasCobro</td>
-                    </tr>
-                }
-            }
-            </tbody>
-        </table>
-    </div>
+
+            <section class="collector-zone-block">
+                <div class="collector-zone-head">
+                    <span class="collector-zone-name">@zoneGroup.Key.Zone</span>
+                    <span class="collector-zone-count">@zoneGroup.Count() ventas</span>
+                </div>
+
+                <div class="collector-cards">
+                    @foreach (var row in zoneGroup)
+                    {
+                        <article class="collector-card">
+                            <div class="collector-card-main">
+                                <div class="collector-client">@row.NombreCliente</div>
+                                <div class="collector-meta">Venta #@row.NumVenta</div>
+                                <div class="collector-meta">Cobrador: @row.Cobrador</div>
+                            </div>
+
+                            <div class="collector-balance">
+                                <div><span>Total</span><strong>@row.ImporteTotal.ToString("0.00")</strong></div>
+                                <div><span>Abonado</span><strong>@row.ImporteAbonado.ToString("0.00")</strong></div>
+                                <div class="collector-restante"><span>Restante</span><strong>@row.ImporteRestante.ToString("0.00")</strong></div>
+                            </div>
+
+                            <div class="collector-actions">
+                                <a class="btn btn-sm btn-outline-primary" asp-controller="Cobros" asp-action="Register" asp-route-id="@row.IdV" asp-route-profile="@selected">Registrar cobro</a>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </section>
+        }
+    }
 </div>

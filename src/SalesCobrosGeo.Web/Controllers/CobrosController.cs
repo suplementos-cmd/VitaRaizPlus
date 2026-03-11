@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using SalesCobrosGeo.Web.Models.Sales;
 using SalesCobrosGeo.Web.Services.Sales;
 
@@ -17,7 +17,6 @@ public sealed class CobrosController : Controller
     {
         ViewBag.Profile = profile;
         ViewBag.Profiles = _repository.GetCollectorProfiles();
-        ViewBag.History = _repository.GetCollections(profile);
         var portfolio = _repository.GetCollectorPortfolio(profile);
         return View(portfolio);
     }
