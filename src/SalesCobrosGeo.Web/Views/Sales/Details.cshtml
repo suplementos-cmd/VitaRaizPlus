@@ -1,4 +1,4 @@
-﻿@model SalesCobrosGeo.Web.Models.Sales.SaleDetailViewModel
+@model SalesCobrosGeo.Web.Models.Sales.SaleDetailViewModel
 @{
     ViewData["Title"] = "Detalle venta";
     var sale = Model.Sale;
@@ -6,16 +6,23 @@
 
 <div class="sales-detail-mobile">
     <div class="detail-topbar">
-        <a class="btn btn-sm btn-outline-secondary" asp-controller="Sales" asp-action="Index">← Ventas</a>
+        <a class="btn btn-sm btn-outline-secondary" asp-controller="Sales" asp-action="Index">? Ventas</a>
         <div class="detail-id">@sale.IdV</div>
         <a class="btn btn-sm btn-primary" asp-controller="Sales" asp-action="Edit" asp-route-id="@sale.IdV">Editar</a>
     </div>
 
     <div class="detail-hero">
-        <img src="@(string.IsNullOrWhiteSpace(sale.FotoFachada) ? "https://placehold.co/900x420?text=Fachada" : sale.FotoFachada)" alt="Fachada" />
+        <img class="image-previewable" data-previewable="true" src="@(string.IsNullOrWhiteSpace(sale.FotoFachada) ? "https://placehold.co/900x420?text=Fachada" : sale.FotoFachada)" alt="Fachada" loading="lazy" decoding="async" />
         <div class="detail-hero-actions">
             <a class="btn btn-light btn-sm" asp-controller="Sales" asp-action="Edit" asp-route-id="@sale.IdV">Editar fachada</a>
             <a class="btn btn-light btn-sm" asp-controller="Sales" asp-action="Edit" asp-route-id="@sale.IdV">Editar foto cliente</a>
+        </div>
+    </div>
+
+    <div class="card card-body mt-3">
+        <div class="detail-client-photo-wrap">
+            <img class="detail-client-photo image-previewable" data-previewable="true" src="@(string.IsNullOrWhiteSpace(sale.FotoCliente) ? "https://placehold.co/320x220?text=Cliente" : sale.FotoCliente)" alt="Foto cliente" loading="lazy" decoding="async" />
+            <div class="text-muted small">Toca la imagen para ampliar</div>
         </div>
     </div>
 
