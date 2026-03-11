@@ -1,88 +1,168 @@
-ï»¿@model SalesCobrosGeo.Web.Models.Dashboard.DashboardPageViewModel
+@model SalesCobrosGeo.Web.Models.Dashboard.DashboardPageViewModel
 @{
     ViewData["Title"] = "Dashboard";
+    var salesPeak = Math.Max(1m, Model.WeeklySales.Max(x => x.Amount));
+    var collectionsPeak = Math.Max(1m, Model.WeeklyCollections.Max(x => x.Amount));
+
+    string ToneClass(string tone) => tone switch
+    {
+        "success" => "dashboard-kpi success",
+        "warning" => "dashboard-kpi warning",
+        "danger" => "dashboard-kpi danger",
+        _ => "dashboard-kpi brand"
+    };
+
+    string StatusClass(string status) => status.ToUpperInvariant() switch
+    {
+        "LIQUIDADO" => "status-chip status-done",
+        "AL CORRIENTE" => "status-chip status-current",
+        "ATRASADO" => "status-chip status-late",
+        "POR INICIAR" => "status-chip status-start",
+        _ => "status-chip"
+    };
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3">Dashboard Operativo</h1>
-    <span class="text-muted">Actualizado: @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</span>
-</div>
+<div class="admin-dashboard">
+    <section class="admin-hero mb-4">
+        <div>
+            <div class="admin-eyebrow">Administrador</div>
+            <h1 class="admin-title">Dashboard operativo</h1>
+            <div class="admin-subtitle">Ventas, cobranza, cartera activa y seguimiento semanal en una sola vista</div>
+        </div>
+        <div class="admin-hero-stats">
+            <div class="admin-hero-pill">
+                <span>@Model.Portfolio.Label</span>
+                <strong>@Model.Portfolio.Value</strong>
+            </div>
+            <div class="admin-hero-pill">
+                <span>@Model.Recovery.Label</span>
+                <strong>@Model.Recovery.Value</strong>
+            </div>
+        </div>
+    </section>
 
-<div class="row g-3 mb-4">
-@foreach (var card in Model.Kpis)
-{
-    <div class="col-md-3">
-        <div class="card dashboard-card h-100">
+    <section class="admin-kpis mb-4">
+        @foreach (var card in Model.Kpis)
+        {
+            <article class="@ToneClass(card.Tone)">
+                <div class="dashboard-kpi-title">@card.Title</div>
+                <div class="dashboard-kpi-value">@card.Value</div>
+                <div class="dashboard-kpi-trend">@card.Trend</div>
+            </article>
+        }
+    </section>
+
+    <section class="admin-grid mb-4">
+        <article class="card admin-panel">
+            <div class="card-header admin-panel-head">
+                <span>Ventas semanales</span>
+                <a class="btn btn-sm btn-outline-primary" asp-action="Sales">Ver ventas</a>
+            </div>
             <div class="card-body">
-                <div class="small text-uppercase text-muted">@card.Title</div>
-                <div class="display-6 fw-bold">@card.Value</div>
-                <div class="small text-success">@card.Trend</div>
-            </div>
-        </div>
-    </div>
-}
-</div>
-
-<div class="row g-4">
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header">Ventas Recientes</div>
-            <div class="card-body table-responsive">
-                <table class="table table-sm align-middle">
-                    <thead>
-                        <tr>
-                            <th>Nro</th>
-                            <th>Vendedor</th>
-                            <th>Zona</th>
-                            <th>Total</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    @foreach (var row in Model.Sales)
+                <div class="dashboard-bars">
+                    @foreach (var item in Model.WeeklySales)
                     {
-                        <tr>
-                            <td>@row.SaleNumber</td>
-                            <td>@row.Seller</td>
-                            <td>@row.Zone</td>
-                            <td>@row.Total.ToString("0.00")</td>
-                            <td>@row.Status</td>
-                        </tr>
+                        var pct = item.Amount <= 0 ? 6m : Math.Max(8m, (item.Amount / salesPeak) * 100m);
+                        <div class="dashboard-bar-item">
+                            <div class="dashboard-bar-track"><div class="dashboard-bar-fill sales" style="height:@pct%"></div></div>
+                            <div class="dashboard-bar-label">@item.Label</div>
+                            <div class="dashboard-bar-meta">@item.SalesCount ventas</div>
+                            <div class="dashboard-bar-amount">@item.Amount.ToString("0")</div>
+                        </div>
                     }
-                    </tbody>
-                </table>
+                </div>
             </div>
-        </div>
-    </div>
+        </article>
 
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header">Cobranza Reciente</div>
-            <div class="card-body table-responsive">
-                <table class="table table-sm align-middle">
-                    <thead>
-                        <tr>
-                            <th>Venta</th>
-                            <th>Cobrador</th>
-                            <th>Cobrado</th>
-                            <th>Pendiente</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    @foreach (var row in Model.Collections)
-                    {
-                        <tr>
-                            <td>@row.SaleNumber</td>
-                            <td>@row.Collector</td>
-                            <td>@row.Collected.ToString("0.00")</td>
-                            <td>@row.Pending.ToString("0.00")</td>
-                            <td>@row.Status</td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
+        <article class="card admin-panel">
+            <div class="card-header admin-panel-head">
+                <span>Cobros semanales</span>
+                <a class="btn btn-sm btn-outline-primary" asp-action="Collections">Ver cobros</a>
             </div>
-        </div>
-    </div>
+            <div class="card-body">
+                <div class="dashboard-bars">
+                    @foreach (var item in Model.WeeklyCollections)
+                    {
+                        var pct = item.Amount <= 0 ? 6m : Math.Max(8m, (item.Amount / collectionsPeak) * 100m);
+                        <div class="dashboard-bar-item">
+                            <div class="dashboard-bar-track"><div class="dashboard-bar-fill collections" style="height:@pct%"></div></div>
+                            <div class="dashboard-bar-label">@item.Label</div>
+                            <div class="dashboard-bar-meta">@item.SalesCount movs</div>
+                            <div class="dashboard-bar-amount">@item.Amount.ToString("0")</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <section class="admin-grid mb-4">
+        <article class="card admin-panel">
+            <div class="card-header admin-panel-head">
+                <span>Zonas con pendiente</span>
+            </div>
+            <div class="card-body">
+                <div class="zone-list">
+                    @foreach (var zone in Model.Zones)
+                    {
+                        <div class="zone-row">
+                            <div>
+                                <div class="zone-name">@zone.Zone</div>
+                                <div class="zone-meta">@zone.SalesCount cuentas</div>
+                            </div>
+                            <div class="zone-amount">Bs @zone.PendingTotal.ToString("0,0.##")</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </article>
+
+        <article class="card admin-panel">
+            <div class="card-header admin-panel-head">
+                <span>Ventas recientes</span>
+            </div>
+            <div class="card-body">
+                <div class="activity-list">
+                    @foreach (var row in Model.Sales.Take(5))
+                    {
+                        <div class="activity-row">
+                            <div>
+                                <div class="activity-title">@row.ClientName</div>
+                                <div class="activity-meta">@row.SaleNumber • @row.Seller • @row.Zone</div>
+                            </div>
+                            <div class="activity-side">
+                                <div class="activity-amount">Bs @row.Total.ToString("0.##")</div>
+                                <div class="@StatusClass(row.Status)">@row.Status</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <section class="admin-grid">
+        <article class="card admin-panel">
+            <div class="card-header admin-panel-head">
+                <span>Cobros recientes</span>
+            </div>
+            <div class="card-body">
+                <div class="activity-list">
+                    @foreach (var row in Model.Collections.Take(5))
+                    {
+                        <div class="activity-row">
+                            <div>
+                                <div class="activity-title">@row.ClientName</div>
+                                <div class="activity-meta">@row.SaleNumber • @row.Collector</div>
+                            </div>
+                            <div class="activity-side">
+                                <div class="activity-amount">Bs @row.Collected.ToString("0.##")</div>
+                                <div class="@StatusClass(row.Status)">@row.Status</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </article>
+    </section>
 </div>

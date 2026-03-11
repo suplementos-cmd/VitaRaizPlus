@@ -1,35 +1,41 @@
-﻿@model SalesCobrosGeo.Web.Models.Dashboard.DashboardPageViewModel
+@model SalesCobrosGeo.Web.Models.Dashboard.DashboardPageViewModel
 @{
     ViewData["Title"] = "Cobros";
+
+    string StatusClass(string status) => status.ToUpperInvariant() switch
+    {
+        "LIQUIDADO" => "status-chip status-done",
+        "AL CORRIENTE" => "status-chip status-current",
+        "ATRASADO" => "status-chip status-late",
+        "POR INICIAR" => "status-chip status-start",
+        _ => "status-chip"
+    };
 }
 
-<h1 class="h3 mb-3">Vista de Cobros</h1>
-<div class="card">
-    <div class="card-body table-responsive">
-        <table class="table table-striped align-middle">
-            <thead>
-                <tr>
-                    <th>Nro Venta</th>
-                    <th>Cobrador</th>
-                    <th>Cobrado</th>
-                    <th>Pendiente</th>
-                    <th>Estado</th>
-                    <th>Actualizado</th>
-                </tr>
-            </thead>
-            <tbody>
-            @foreach (var row in Model.Collections)
-            {
-                <tr>
-                    <td>@row.SaleNumber</td>
-                    <td>@row.Collector</td>
-                    <td>@row.Collected.ToString("0.00")</td>
-                    <td>@row.Pending.ToString("0.00")</td>
-                    <td>@row.Status</td>
-                    <td>@row.LastUpdate</td>
-                </tr>
-            }
-            </tbody>
-        </table>
+<div class="admin-list-page">
+    <div class="admin-list-topbar">
+        <div>
+            <h1 class="admin-list-title">Vista de cobros</h1>
+            <div class="admin-list-subtitle">Movimientos recientes y estado de recuperacion</div>
+        </div>
+        <a class="btn btn-outline-secondary" asp-action="Index">Volver al dashboard</a>
+    </div>
+
+    <div class="admin-record-list">
+        @foreach (var row in Model.Collections)
+        {
+            <article class="admin-record-card">
+                <div>
+                    <div class="admin-record-title">@row.ClientName</div>
+                    <div class="admin-record-meta">@row.SaleNumber</div>
+                    <div class="admin-record-meta">@row.Collector</div>
+                </div>
+                <div>
+                    <div class="admin-record-amount">Bs @row.Collected.ToString("0.##")</div>
+                    <div class="admin-record-meta">Pendiente Bs @row.Pending.ToString("0.##")</div>
+                </div>
+                <div class="@StatusClass(row.Status)">@row.Status</div>
+            </article>
+        }
     </div>
 </div>
