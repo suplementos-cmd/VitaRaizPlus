@@ -1,7 +1,7 @@
 ﻿@model (string InputId, string Label, string? CurrentValue)
 <div class="photo-picker" data-photo-key="@Model.InputId">
     <div class="photo-label">@Model.Label</div>
-    <img id="@Model.InputId@("_preview")" class="photo-preview" src="https://placehold.co/320x200?text=Sin+foto" alt="@Model.Label" />
+    <img id="@Model.InputId@("_preview")" class="photo-preview image-previewable" data-previewable="true" src="https://placehold.co/320x200?text=Sin+foto" alt="@Model.Label" loading="lazy" decoding="async" />
     <div class="photo-actions">
         <label class="btn btn-sm btn-outline-primary mb-0">
             Tomar/Cargar
