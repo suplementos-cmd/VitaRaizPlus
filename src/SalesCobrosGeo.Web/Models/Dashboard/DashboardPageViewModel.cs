@@ -1,8 +1,12 @@
-namespace SalesCobrosGeo.Web.Models.Dashboard;
+﻿namespace SalesCobrosGeo.Web.Models.Dashboard;
 
 public sealed record KpiCard(string Title, string Value, string Trend, string Tone);
 
-public sealed record DashboardMiniStat(string Label, string Value);
+public sealed record DashboardPeriodInfo(string Scope, int Offset, string Label, string Subtitle);
+
+public sealed record SellerPerformanceSummary(string Seller, int TotalSales, int ClosedSales, decimal TotalAmount);
+
+public sealed record CollectionGroupingSummary(string Key, string Label, int Count, decimal Amount);
 
 public sealed record SaleRow(
     string SaleNumber,
@@ -20,18 +24,15 @@ public sealed record CollectionRow(
     decimal Pending,
     string Status,
     string LastUpdate,
-    string ClientName);
-
-public sealed record ZoneSummary(string Zone, int SalesCount, decimal PendingTotal);
-
-public sealed record DailySummary(string Label, int SalesCount, decimal Amount);
+    string ClientName,
+    string Zone,
+    string DayLabel);
 
 public sealed record DashboardPageViewModel(
+    DashboardPeriodInfo Period,
+    string CollectionGrouping,
     IReadOnlyList<KpiCard> Kpis,
+    IReadOnlyList<SellerPerformanceSummary> SellerSummaries,
+    IReadOnlyList<CollectionGroupingSummary> CollectionSummaries,
     IReadOnlyList<SaleRow> Sales,
-    IReadOnlyList<CollectionRow> Collections,
-    IReadOnlyList<ZoneSummary> Zones,
-    IReadOnlyList<DailySummary> WeeklySales,
-    IReadOnlyList<DailySummary> WeeklyCollections,
-    DashboardMiniStat Portfolio,
-    DashboardMiniStat Recovery);
+    IReadOnlyList<CollectionRow> Collections);

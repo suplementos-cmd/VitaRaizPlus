@@ -1,14 +1,17 @@
-@model SalesCobrosGeo.Web.Models.Sales.CollectionRegisterViewModel
+﻿@model SalesCobrosGeo.Web.Models.Sales.CollectionRegisterViewModel
 @using Microsoft.AspNetCore.Mvc.Rendering
 @{
     ViewData["Title"] = "Registrar Cobro";
     var sale = Model.Sale;
+    string ResolveImage(string? path, string fallback) =>
+        string.IsNullOrWhiteSpace(path) ? fallback :
+        (path.StartsWith("http", StringComparison.OrdinalIgnoreCase) || path.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/")
+            ? path
+            : "/" + path);
     var mainPhoto = string.IsNullOrWhiteSpace(sale?.FotoFachada)
-        ? (string.IsNullOrWhiteSpace(sale?.FotoCliente) ? "https://placehold.co/900x420?text=Venta" : sale!.FotoCliente)
-        : sale.FotoFachada;
-    var clientPhoto = string.IsNullOrWhiteSpace(sale?.FotoCliente)
-        ? "https://placehold.co/240x180?text=Cliente"
-        : sale!.FotoCliente;
+        ? ResolveImage(sale?.FotoCliente, "https://placehold.co/900x420?text=Venta")
+        : ResolveImage(sale.FotoFachada, "https://placehold.co/900x420?text=Venta");
+    var clientPhoto = ResolveImage(sale?.FotoCliente, "https://placehold.co/240x180?text=Cliente");
 
     string StatusClass(string status) => status.ToUpperInvariant() switch
     {
@@ -50,7 +53,7 @@
                     <div>
                         <div class="collector-register-client">@Model.PortfolioItem.NombreCliente</div>
                         <div class="collector-register-meta">Venta #@Model.PortfolioItem.NumVenta</div>
-                        <div class="collector-register-meta">@Model.PortfolioItem.Zona � @Model.PortfolioItem.DiaCobroPrevisto</div>
+                        <div class="collector-register-meta">@Model.PortfolioItem.Zona • @Model.PortfolioItem.DiaCobroPrevisto</div>
                     </div>
                 </div>
             </div>

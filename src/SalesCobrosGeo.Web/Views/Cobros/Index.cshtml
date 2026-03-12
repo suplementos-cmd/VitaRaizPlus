@@ -1,7 +1,12 @@
-@model SalesCobrosGeo.Web.Models.Sales.CollectorPortfolioViewModel
+﻿@model SalesCobrosGeo.Web.Models.Sales.CollectorPortfolioViewModel
 @{
     ViewData["Title"] = "Perfil Cobrador";
     var totalRestante = Model.Sales.Sum(x => x.ImporteRestante);
+    string ResolveImage(string? path, string fallback) =>
+        string.IsNullOrWhiteSpace(path) ? fallback :
+        (path.StartsWith("http", StringComparison.OrdinalIgnoreCase) || path.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/")
+            ? path
+            : "/" + path);
 
     string StatusClass(string status) => status.ToUpperInvariant() switch
     {
@@ -166,8 +171,8 @@
                     @foreach (var item in Model.Sales)
                     {
                         var photo = string.IsNullOrWhiteSpace(item.FotoCliente)
-                            ? (string.IsNullOrWhiteSpace(item.FotoFachada) ? "https://placehold.co/160x120?text=Venta" : item.FotoFachada)
-                            : item.FotoCliente;
+                            ? ResolveImage(item.FotoFachada, "https://placehold.co/160x120?text=Venta")
+                            : ResolveImage(item.FotoCliente, "https://placehold.co/160x120?text=Venta");
 
                         <a class="collector-sale-card" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@Model.SelectedZone">
                             <img class="collector-sale-photo" src="@photo" alt="@item.NombreCliente" loading="lazy" decoding="async" />

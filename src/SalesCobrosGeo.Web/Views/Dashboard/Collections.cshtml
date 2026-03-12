@@ -1,6 +1,7 @@
-@model SalesCobrosGeo.Web.Models.Dashboard.DashboardPageViewModel
+﻿@model SalesCobrosGeo.Web.Models.Dashboard.DashboardPageViewModel
 @{
     ViewData["Title"] = "Cobros";
+    var value = Context.Request.Query["value"].ToString();
 
     string StatusClass(string status) => status.ToUpperInvariant() switch
     {
@@ -10,32 +11,46 @@
         "POR INICIAR" => "status-chip status-start",
         _ => "status-chip"
     };
+
+    string GroupLabel(string grouping) => grouping switch
+    {
+        "collector" => "cobrador",
+        "day" => "dia",
+        _ => "zona"
+    };
 }
 
 <div class="admin-list-page">
     <div class="admin-list-topbar">
         <div>
-            <h1 class="admin-list-title">Vista de cobros</h1>
-            <div class="admin-list-subtitle">Movimientos recientes y estado de recuperacion</div>
+            <h1 class="admin-list-title">Cobros por @GroupLabel(Model.CollectionGrouping)</h1>
+            <div class="admin-list-subtitle">Periodo: @Model.Period.Label @(string.IsNullOrWhiteSpace(value) ? string.Empty : $"• {value}")</div>
         </div>
-        <a class="btn btn-outline-secondary" asp-action="Index">Volver al dashboard</a>
+        <a class="btn btn-outline-secondary" asp-action="Index" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="@Model.CollectionGrouping">Volver al dashboard</a>
     </div>
 
     <div class="admin-record-list">
-        @foreach (var row in Model.Collections)
+        @if (Model.Collections.Count == 0)
         {
-            <article class="admin-record-card">
-                <div>
-                    <div class="admin-record-title">@row.ClientName</div>
-                    <div class="admin-record-meta">@row.SaleNumber</div>
-                    <div class="admin-record-meta">@row.Collector</div>
-                </div>
-                <div>
-                    <div class="admin-record-amount">Bs @row.Collected.ToString("0.##")</div>
-                    <div class="admin-record-meta">Pendiente Bs @row.Pending.ToString("0.##")</div>
-                </div>
-                <div class="@StatusClass(row.Status)">@row.Status</div>
-            </article>
+            <div class="card card-body text-center text-muted">Sin cobros para esta seleccion.</div>
+        }
+        else
+        {
+            @foreach (var row in Model.Collections)
+            {
+                <article class="admin-record-card">
+                    <div>
+                        <div class="admin-record-title">@row.ClientName</div>
+                        <div class="admin-record-meta">@row.SaleNumber</div>
+                        <div class="admin-record-meta">@row.Collector • @row.Zone • @row.DayLabel</div>
+                    </div>
+                    <div>
+                        <div class="admin-record-amount">Bs @row.Collected.ToString("0.##")</div>
+                        <div class="admin-record-meta">Pendiente Bs @row.Pending.ToString("0.##")</div>
+                    </div>
+                    <div class="@StatusClass(row.Status)">@row.Status</div>
+                </article>
+            }
         }
     </div>
 </div>
