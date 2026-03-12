@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SalesCobrosGeo.Web.Models.Sales;
 using SalesCobrosGeo.Web.Services.Sales;
 using System.Globalization;
@@ -34,7 +34,7 @@ public sealed class CobrosController : Controller
         _repository = repository;
     }
 
-    public IActionResult Index(string? profile = null, string? day = null, string? status = null, string? zone = null)
+    public IActionResult Index(string? profile = null, string? day = null, string? status = null, string? zone = null, bool all = false)
     {
         var portfolio = _repository.GetCollectorPortfolio(profile)
             .Where(x => x.ImporteRestante > 0)
@@ -62,6 +62,7 @@ public sealed class CobrosController : Controller
             SelectedDay = selectedDay,
             SelectedStatus = selectedStatus,
             SelectedZone = selectedZone,
+            ShowAll = all,
             Profiles = _repository.GetCollectorProfiles(),
             Days = portfolio
                 .GroupBy(x => NormalizeKey(x.DiaCobroPrevisto))
@@ -93,7 +94,7 @@ public sealed class CobrosController : Controller
                     Count = g.Count()
                 })
                 .ToArray(),
-            Sales = byZone
+            Sales = (all ? portfolio : byZone)
                 .OrderBy(x => x.NumVenta)
                 .ToArray()
         };

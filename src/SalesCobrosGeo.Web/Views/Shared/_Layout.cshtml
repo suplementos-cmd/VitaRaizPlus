@@ -60,7 +60,7 @@
             </div>
         </div>
 
-        <div class="container app-content">
+        <div class="container-fluid app-content app-frame">
             <main role="main" class="pb-3 page-enter">
                 @RenderBody()
             </main>
@@ -86,7 +86,7 @@
         </nav>
 
         <footer class="border-top footer text-muted">
-            <div class="container">
+            <div class="container-fluid app-footer-inner">
                 &copy; 2026 - VitaRaizPlus
             </div>
         </footer>
@@ -98,6 +98,3 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-
-
-

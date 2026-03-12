@@ -16,6 +16,15 @@
         "LIQUIDADO" => "status-chip status-done",
         _ => "status-chip"
     };
+
+    string StatusIcon(string status) => status.ToUpperInvariant() switch
+    {
+        "POR INICIAR" => "PI",
+        "AL CORRIENTE" => "AC",
+        "ATRASADO" => "AT",
+        "LIQUIDADO" => "OK",
+        _ => "ES"
+    };
 }
 
 <div class="collector-hub">
@@ -23,6 +32,22 @@
         <div>
             <h1 class="collector-hub-title">Cobros</h1>
             <div class="collector-hub-subtitle">Ruta por dia, estado, zona y ventas pendientes</div>
+        </div>
+        <div class="collector-hub-actions">
+            @if (Model.ShowAll)
+            {
+                <a class="btn btn-outline-secondary collector-icon-btn" asp-action="Index" asp-route-profile="@Model.Profile">
+                    <span class="btn-icon-mobile">GR</span>
+                    <span class="btn-text-mobile">Agrupado</span>
+                </a>
+            }
+            else
+            {
+                <a class="btn btn-outline-primary collector-icon-btn" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-all="true">
+                    <span class="btn-icon-mobile">TO</span>
+                    <span class="btn-text-mobile">Ver todos</span>
+                </a>
+            }
         </div>
     </div>
 
@@ -35,6 +60,7 @@
         <input type="hidden" name="day" value="@Model.SelectedDay" />
         <input type="hidden" name="status" value="@Model.SelectedStatus" />
         <input type="hidden" name="zone" value="@Model.SelectedZone" />
+        <input type="hidden" name="all" value="@(Model.ShowAll ? "true" : "false")" />
         <div class="collector-filter-grid">
             <div>
                 <label class="form-label mb-1">Cobrador</label>
@@ -76,10 +102,13 @@
         }
     </div>
 
-    @if (!string.IsNullOrWhiteSpace(Model.SelectedDay))
+    @if (!string.IsNullOrWhiteSpace(Model.SelectedDay) || Model.ShowAll)
     {
         <div class="collector-level-banner mb-3">
-            <div class="collector-level-chip">@Model.SelectedDay</div>
+            @if (!string.IsNullOrWhiteSpace(Model.SelectedDay))
+            {
+                <div class="collector-level-chip">@Model.SelectedDay</div>
+            }
             @if (!string.IsNullOrWhiteSpace(Model.SelectedStatus))
             {
                 <div class="collector-level-chip">@Model.SelectedStatus</div>
@@ -87,6 +116,10 @@
             @if (!string.IsNullOrWhiteSpace(Model.SelectedZone))
             {
                 <div class="collector-level-chip">@Model.SelectedZone</div>
+            }
+            @if (Model.ShowAll)
+            {
+                <div class="collector-level-chip">TODAS</div>
             }
             @if (Model.Sales.Count > 0)
             {
@@ -102,7 +135,39 @@
         </div>
     }
 
-    @if (string.IsNullOrWhiteSpace(Model.SelectedDay))
+    @if (Model.ShowAll)
+    {
+        <section>
+            <div class="collector-section-title">Todas las cuentas pendientes</div>
+            <div class="collector-sales-list all-view">
+                @foreach (var item in Model.Sales)
+                {
+                    var photo = string.IsNullOrWhiteSpace(item.FotoCliente)
+                        ? ResolveImage(item.FotoFachada, "https://placehold.co/160x120?text=Venta")
+                        : ResolveImage(item.FotoCliente, "https://placehold.co/160x120?text=Venta");
+
+                    <a class="collector-sale-card compact" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@Model.SelectedZone">
+                        <img class="collector-sale-photo" src="@photo" alt="@item.NombreCliente" loading="lazy" decoding="async" />
+                        <div class="collector-sale-main">
+                            <div class="collector-sale-main-top">
+                                <div class="collector-sale-client">@item.NombreCliente</div>
+                                <div class="collector-sale-rest">@item.ImporteRestante.ToString("0.00")</div>
+                            </div>
+                            <div class="collector-sale-meta">Venta #@item.NumVenta • @item.Zona</div>
+                            <div class="collector-sale-meta">@item.DiaCobroPrevisto • @item.Cobrador</div>
+                        </div>
+                        <div class="collector-sale-side compact">
+                            <div class="@StatusClass(item.Estatus)">
+                                <span class="status-icon-mobile">@StatusIcon(item.Estatus)</span>
+                                <span class="status-text-mobile">@item.Estatus</span>
+                            </div>
+                        </div>
+                    </a>
+                }
+            </div>
+        </section>
+    }
+    else if (string.IsNullOrWhiteSpace(Model.SelectedDay))
     {
         <section>
             <div class="collector-section-title">Dias con ventas pendientes</div>
@@ -132,8 +197,11 @@
             <div class="collector-choice-grid">
                 @foreach (var item in Model.Statuses)
                 {
-                    <a class="collector-choice-card" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@item.Status">
-                        <div class="@StatusClass(item.Status)">@item.Status</div>
+                    <a class="collector-choice-card compact-status" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@item.Status">
+                        <div class="@StatusClass(item.Status)">
+                            <span class="status-icon-mobile">@StatusIcon(item.Status)</span>
+                            <span class="status-text-mobile">@item.Status</span>
+                        </div>
                         <div class="collector-choice-value">@item.Count</div>
                         <div class="collector-choice-meta">ventas</div>
                     </a>
@@ -174,17 +242,21 @@
                             ? ResolveImage(item.FotoFachada, "https://placehold.co/160x120?text=Venta")
                             : ResolveImage(item.FotoCliente, "https://placehold.co/160x120?text=Venta");
 
-                        <a class="collector-sale-card" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@Model.SelectedZone">
+                        <a class="collector-sale-card compact" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@Model.SelectedZone">
                             <img class="collector-sale-photo" src="@photo" alt="@item.NombreCliente" loading="lazy" decoding="async" />
                             <div class="collector-sale-main">
-                                <div class="collector-sale-client">@item.NombreCliente</div>
-                                <div class="collector-sale-meta">Venta #@item.NumVenta</div>
-                                <div class="collector-sale-meta">@item.Zona</div>
-                                <div class="@StatusClass(item.Estatus)">@item.Estatus</div>
+                                <div class="collector-sale-main-top">
+                                    <div class="collector-sale-client">@item.NombreCliente</div>
+                                    <div class="collector-sale-rest">@item.ImporteRestante.ToString("0.00")</div>
+                                </div>
+                                <div class="collector-sale-meta">Venta #@item.NumVenta • @item.Zona</div>
+                                <div class="collector-sale-meta">@item.DiaCobroPrevisto • @item.Cobrador</div>
                             </div>
-                            <div class="collector-sale-side">
-                                <div class="collector-sale-rest">@item.ImporteRestante.ToString("0.00")</div>
-                                <div class="collector-sale-caption">restante</div>
+                            <div class="collector-sale-side compact">
+                                <div class="@StatusClass(item.Estatus)">
+                                    <span class="status-icon-mobile">@StatusIcon(item.Estatus)</span>
+                                    <span class="status-text-mobile">@item.Estatus</span>
+                                </div>
                             </div>
                         </a>
                     }
