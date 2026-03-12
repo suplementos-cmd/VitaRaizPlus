@@ -31,7 +31,7 @@
                 @(string.IsNullOrWhiteSpace(day) ? string.Empty : $" • {DateTime.Parse(day).ToString("ddd dd/MM", new System.Globalization.CultureInfo("es-ES"))}")
             </div>
         </div>
-        <a class="btn btn-outline-secondary" asp-action="Index" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="@Model.CollectionGrouping">Volver al dashboard</a>
+        <a class="btn btn-outline-secondary" asp-action="Index" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="@Model.CollectionGrouping">Volver al dashboard</a>
     </div>
 
     <div class="admin-record-list">
