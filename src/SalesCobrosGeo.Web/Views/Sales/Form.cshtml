@@ -1,4 +1,4 @@
-﻿@model SalesCobrosGeo.Web.Models.Sales.SaleFormViewModel
+@model SalesCobrosGeo.Web.Models.Sales.SaleFormViewModel
 @using Microsoft.AspNetCore.Mvc.Rendering
 @{
     ViewData["Title"] = Model.PageTitle;
@@ -348,8 +348,9 @@
         const file = document.getElementById(`${key}_file`);
         const preview = document.getElementById(`${key}_preview`);
         const remove = document.getElementById(`${key}_remove`);
+        const picker = document.querySelector(`[data-photo-key="${key}"]`);
 
-        if (!input || !file || !preview || !remove) {
+        if (!input || !file || !preview || !remove || !picker) {
             return;
         }
 
@@ -357,6 +358,8 @@
             const hasValue = !!input.value;
             preview.src = hasValue ? input.value : 'https://placehold.co/320x200?text=Sin+foto';
             remove.disabled = !hasValue;
+            picker.classList.toggle('has-image', hasValue);
+            picker.classList.remove('is-loading');
         }
 
         file.addEventListener('change', async (e) => {
@@ -364,6 +367,8 @@
             if (!selected) {
                 return;
             }
+
+            picker.classList.add('is-loading');
 
             try {
                 const compressed = await compressImage(selected);
@@ -434,4 +439,5 @@
 })();
 </script>
 }
+
 

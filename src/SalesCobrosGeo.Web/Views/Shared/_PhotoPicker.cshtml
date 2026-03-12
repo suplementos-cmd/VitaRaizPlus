@@ -1,12 +1,19 @@
-﻿@model (string InputId, string Label, string? CurrentValue)
+@model (string InputId, string Label, string? CurrentValue)
 <div class="photo-picker" data-photo-key="@Model.InputId">
-    <div class="photo-label">@Model.Label</div>
-    <img id="@Model.InputId@("_preview")" class="photo-preview image-previewable" data-previewable="true" src="https://placehold.co/320x200?text=Sin+foto" alt="@Model.Label" loading="lazy" decoding="async" />
+    <div class="photo-head">
+        <div class="photo-label">@Model.Label</div>
+        <span class="photo-hint">Toca para ampliar</span>
+    </div>
+    <div class="photo-preview-wrap">
+        <img id="@Model.InputId@("_preview")" class="photo-preview image-previewable" data-previewable="true" src="https://placehold.co/320x200?text=Sin+foto" alt="@Model.Label" loading="lazy" decoding="async" />
+        <div class="photo-empty-state">Sin foto</div>
+        <div class="photo-loading-state" aria-hidden="true">Procesando...</div>
+    </div>
     <div class="photo-actions">
-        <label class="btn btn-sm btn-outline-primary mb-0">
-            Tomar/Cargar
+        <label class="btn btn-sm btn-outline-primary mb-0 photo-action-btn">
+            Tomar / Cargar
             <input id="@Model.InputId@("_file")" type="file" accept="image/*" capture="environment" hidden />
         </label>
-        <button id="@Model.InputId@("_remove")" type="button" class="btn btn-sm btn-outline-danger">Quitar</button>
+        <button id="@Model.InputId@("_remove")" type="button" class="btn btn-sm btn-outline-danger photo-action-btn">Quitar</button>
     </div>
 </div>
