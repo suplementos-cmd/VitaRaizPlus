@@ -1,85 +1,56 @@
-@model SalesCobrosGeo.Web.Models.Dashboard.DashboardPageViewModel
+ï»¿@model SalesCobrosGeo.Web.Models.Dashboard.DashboardPageViewModel
 @{
     ViewData["Title"] = "Dashboard";
-    var salesPeak = Math.Max(1m, Model.WeeklySales.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.DailySummary("", "", 0, 0m)).Max(x => x.Amount));
-    var collectionsPeak = Math.Max(1m, Model.WeeklyCollections.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.DailySummary("", "", 0, 0m)).Max(x => x.Amount));
-    var sellerPeak = Math.Max(1m, Model.SellerSummaries.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.SellerPerformanceSummary("", 0, 0, 0m)).Max(x => x.TotalAmount));
-    var groupPeak = Math.Max(1m, Model.CollectionSummaries.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.CollectionGroupingSummary("", "", 0, 0m)).Max(x => x.Amount));
 
-    string ToneClass(string tone) => tone switch
-    {
-        "success" => "dashboard-kpi success",
-        "warning" => "dashboard-kpi warning",
-        "danger" => "dashboard-kpi danger",
-        _ => "dashboard-kpi brand"
-    };
-
-    string GroupLabel(string grouping) => grouping switch
-    {
-        "collector" => "cobrador",
-        "day" => "dia",
-        _ => "zona"
-    };
+    var salesDayPeak = Math.Max(1m, Model.WeeklySales.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.DailySummary("", "", 0, 0m)).Max(x => (decimal)x.Count));
+    var collectionDayPeak = Math.Max(1m, Model.WeeklyCollections.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.DailySummary("", "", 0, 0m)).Max(x => x.Amount));
+    var salesZonePeak = Math.Max(1m, Model.SalesByZone.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.CollectionGroupingSummary("", "", 0, 0m)).Max(x => (decimal)x.Count));
+    var collectionsZonePeak = Math.Max(1m, Model.CollectionsByZone.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.CollectionGroupingSummary("", "", 0, 0m)).Max(x => x.Amount));
+    var collectionsCollectorPeak = Math.Max(1m, Model.CollectionsByCollector.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.CollectionGroupingSummary("", "", 0, 0m)).Max(x => x.Amount));
 }
 
 <div class="admin-dashboard">
-    <section class="admin-hero mb-4">
-        <div>
-            <div class="admin-eyebrow">Administrador</div>
-            <h1 class="admin-title">Dashboard operativo</h1>
-            <div class="admin-subtitle">Resumen por semana o mes con acceso rapido a detalle total y filtros por barra.</div>
-        </div>
-        <div class="admin-hero-stats">
-            <form method="get" class="dashboard-period-form">
-                <input type="hidden" name="collectionsBy" value="@Model.CollectionGrouping" />
-                <div class="dashboard-period-controls">
-                    <div class="dashboard-period-scope">
-                        <a class="period-chip @(Model.Period.Scope == "week" ? "active" : string.Empty)" asp-action="Index" asp-route-scope="week" asp-route-offset="0" asp-route-collectionsBy="@Model.CollectionGrouping">Semana</a>
-                        <a class="period-chip @(Model.Period.Scope == "month" ? "active" : string.Empty)" asp-action="Index" asp-route-scope="month" asp-route-offset="0" asp-route-collectionsBy="@Model.CollectionGrouping">Mes</a>
-                    </div>
-                    <div class="dashboard-period-nav">
-                        <a class="btn btn-sm btn-outline-light" asp-action="Index" asp-route-scope="@Model.Period.Scope" asp-route-offset="@(Model.Period.Offset - 1)" asp-route-collectionsBy="@Model.CollectionGrouping">Anterior</a>
-                        <div class="dashboard-period-current">
-                            <strong>@Model.Period.Label</strong>
-                            <span>@Model.Period.Subtitle</span>
-                        </div>
-                        <a class="btn btn-sm btn-outline-light" asp-action="Index" asp-route-scope="@Model.Period.Scope" asp-route-offset="@(Model.Period.Offset + 1)" asp-route-collectionsBy="@Model.CollectionGrouping">Siguiente</a>
-                    </div>
+    <section class="dashboard-filter-bar mb-4">
+        <form method="get" class="dashboard-period-form">
+            <div class="dashboard-period-controls compact">
+                <div class="dashboard-period-scope">
+                    <a class="period-chip @(Model.Period.Scope == "week" ? "active" : string.Empty)" asp-action="Index" asp-route-scope="week" asp-route-offset="0">Semana</a>
+                    <a class="period-chip @(Model.Period.Scope == "month" ? "active" : string.Empty)" asp-action="Index" asp-route-scope="month" asp-route-offset="0">Mes</a>
                 </div>
-            </form>
-        </div>
+                <div class="dashboard-period-nav compact">
+                    <a class="btn btn-sm btn-outline-primary" asp-action="Index" asp-route-scope="@Model.Period.Scope" asp-route-offset="@(Model.Period.Offset - 1)">Anterior</a>
+                    <div class="dashboard-period-current compact">
+                        <strong>@Model.Period.Label</strong>
+                        <span>@Model.Period.Subtitle</span>
+                    </div>
+                    <a class="btn btn-sm btn-outline-primary" asp-action="Index" asp-route-scope="@Model.Period.Scope" asp-route-offset="@(Model.Period.Offset + 1)">Siguiente</a>
+                </div>
+            </div>
+        </form>
     </section>
 
-    <section class="admin-kpis mb-4">
-        @foreach (var card in Model.Kpis)
-        {
-            <article class="@ToneClass(card.Tone)">
-                <div class="dashboard-kpi-title">@card.Title</div>
-                <div class="dashboard-kpi-value">@card.Value</div>
-                <div class="dashboard-kpi-trend">@card.Trend</div>
-            </article>
-        }
-    </section>
-
-    <section class="admin-grid mb-4">
+    <section class="dashboard-chart-grid">
         <article class="card admin-panel dashboard-chart-panel">
             <div class="card-header admin-panel-head dashboard-chart-head">
-                <span>Ventas semanales</span>
-                <a class="btn btn-sm btn-outline-primary" asp-action="Sales" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset">Ver ventas</a>
+                <div>
+                    <div class="dashboard-panel-total-label">Total ventas</div>
+                    <strong class="dashboard-panel-total-value">Bs @Model.WeeklySales.Sum(x => x.Amount).ToString("0,0.##")</strong>
+                </div>
+                <a class="btn btn-sm btn-outline-primary" asp-action="Sales" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset">Ver detalle</a>
             </div>
             <div class="card-body">
                 <div class="dashboard-bars-wrap">
                     <div class="dashboard-bars dashboard-bars-scroll">
                         @foreach (var item in Model.WeeklySales)
                         {
-                            var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / salesPeak) * 100m);
+                            var pct = item.Count <= 0 ? 8m : Math.Max(10m, ((decimal)item.Count / salesDayPeak) * 100m);
                             <a class="dashboard-bar-item dashboard-bar-card" asp-action="Sales" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-day="@item.Key">
                                 <div class="dashboard-bar-track">
+                                    <span class="dashboard-bar-tag">@item.Count</span>
                                     <div class="dashboard-bar-fill sales" style="height:@pct%"></div>
                                 </div>
                                 <div class="dashboard-bar-label">@item.Label</div>
                                 <div class="dashboard-bar-meta">@item.Count ventas</div>
-                                <div class="dashboard-bar-amount">@item.Amount.ToString("0")</div>
                             </a>
                         }
                     </div>
@@ -89,95 +60,112 @@
 
         <article class="card admin-panel dashboard-chart-panel">
             <div class="card-header admin-panel-head dashboard-chart-head">
-                <span>Cobros semanales</span>
-                <a class="btn btn-sm btn-outline-primary" asp-action="Collections" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="@Model.CollectionGrouping">Ver cobros</a>
+                <div>
+                    <div class="dashboard-panel-total-label">Total cobros</div>
+                    <strong class="dashboard-panel-total-value">Bs @Model.WeeklyCollections.Sum(x => x.Amount).ToString("0,0.##")</strong>
+                </div>
+                <a class="btn btn-sm btn-outline-primary" asp-action="Collections" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="day">Ver detalle</a>
             </div>
             <div class="card-body">
                 <div class="dashboard-bars-wrap">
                     <div class="dashboard-bars dashboard-bars-scroll">
                         @foreach (var item in Model.WeeklyCollections)
                         {
-                            var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / collectionsPeak) * 100m);
-                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="@Model.CollectionGrouping" asp-route-day="@item.Key">
+                            var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / collectionDayPeak) * 100m);
+                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="day" asp-route-day="@item.Key">
                                 <div class="dashboard-bar-track">
+                                    <span class="dashboard-bar-tag money">@item.Amount.ToString("0")</span>
                                     <div class="dashboard-bar-fill collections" style="height:@pct%"></div>
                                 </div>
                                 <div class="dashboard-bar-label">@item.Label</div>
-                                <div class="dashboard-bar-meta">@item.Count cobros</div>
-                                <div class="dashboard-bar-amount">@item.Amount.ToString("0")</div>
+                                <div class="dashboard-bar-meta">Bs @item.Amount.ToString("0")</div>
                             </a>
                         }
                     </div>
                 </div>
             </div>
         </article>
-    </section>
 
-    <section class="admin-grid mb-4">
-        <article class="card admin-panel">
-            <div class="card-header admin-panel-head">
-                <span>Ventas por vendedora</span>
+        <article class="card admin-panel dashboard-chart-panel">
+            <div class="card-header admin-panel-head dashboard-chart-head">
+                <div>
+                    <div class="dashboard-panel-total-label">Total ventas por zona</div>
+                    <strong class="dashboard-panel-total-value">@Model.SalesByZone.Sum(x => x.Count) ventas</strong>
+                </div>
                 <a class="btn btn-sm btn-outline-primary" asp-action="Sales" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset">Ver detalle</a>
             </div>
             <div class="card-body">
-                <div class="dashboard-summary-list">
-                    @if (Model.SellerSummaries.Count == 0)
-                    {
-                        <div class="text-muted text-center">Sin ventas en este periodo.</div>
-                    }
-                    else
-                    {
-                        @foreach (var row in Model.SellerSummaries)
+                <div class="dashboard-bars-wrap">
+                    <div class="dashboard-bars dashboard-bars-scroll wide-labels">
+                        @foreach (var item in Model.SalesByZone)
                         {
-                            var pct = row.TotalAmount <= 0 ? 8m : Math.Max(10m, (row.TotalAmount / sellerPeak) * 100m);
-                            <a class="dashboard-summary-card" asp-action="Sales" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-seller="@row.Seller">
-                                <div class="dashboard-summary-top">
-                                    <div>
-                                        <div class="dashboard-summary-title">@row.Seller</div>
-                                        <div class="dashboard-summary-meta">@row.TotalSales totales • @row.ClosedSales cerradas</div>
-                                    </div>
-                                    <div class="dashboard-summary-amount">Bs @row.TotalAmount.ToString("0,0.##")</div>
+                            var pct = item.Count <= 0 ? 8m : Math.Max(10m, ((decimal)item.Count / salesZonePeak) * 100m);
+                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Sales" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-zone="@item.Key">
+                                <div class="dashboard-bar-track">
+                                    <span class="dashboard-bar-tag">@item.Count</span>
+                                    <div class="dashboard-bar-fill sales" style="height:@pct%"></div>
                                 </div>
-                                <div class="dashboard-inline-bar"><div class="dashboard-inline-fill sales" style="width:@pct%"></div></div>
+                                <div class="dashboard-bar-label zone">@item.Label</div>
+                                <div class="dashboard-bar-meta">@item.Count ventas</div>
                             </a>
                         }
-                    }
+                    </div>
                 </div>
             </div>
         </article>
 
-        <article class="card admin-panel">
-            <div class="card-header admin-panel-head">
-                <span>Cobros por @GroupLabel(Model.CollectionGrouping)</span>
-                <div class="dashboard-group-switches">
-                    <a class="period-chip @(Model.CollectionGrouping == "zone" ? "active" : string.Empty)" asp-action="Index" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="zone">Zona</a>
-                    <a class="period-chip @(Model.CollectionGrouping == "collector" ? "active" : string.Empty)" asp-action="Index" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="collector">Cobrador</a>
-                    <a class="period-chip @(Model.CollectionGrouping == "day" ? "active" : string.Empty)" asp-action="Index" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="day">Dia</a>
+        <article class="card admin-panel dashboard-chart-panel">
+            <div class="card-header admin-panel-head dashboard-chart-head">
+                <div>
+                    <div class="dashboard-panel-total-label">Total cobros por zona</div>
+                    <strong class="dashboard-panel-total-value">Bs @Model.CollectionsByZone.Sum(x => x.Amount).ToString("0,0.##")</strong>
                 </div>
+                <a class="btn btn-sm btn-outline-primary" asp-action="Collections" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="zone">Ver detalle</a>
             </div>
             <div class="card-body">
-                <div class="dashboard-summary-list">
-                    @if (Model.CollectionSummaries.Count == 0)
-                    {
-                        <div class="text-muted text-center">Sin cobros en este periodo.</div>
-                    }
-                    else
-                    {
-                        @foreach (var row in Model.CollectionSummaries)
+                <div class="dashboard-bars-wrap">
+                    <div class="dashboard-bars dashboard-bars-scroll wide-labels">
+                        @foreach (var item in Model.CollectionsByZone)
                         {
-                            var pct = row.Amount <= 0 ? 8m : Math.Max(10m, (row.Amount / groupPeak) * 100m);
-                            <a class="dashboard-summary-card" asp-action="Collections" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="@Model.CollectionGrouping" asp-route-value="@row.Key">
-                                <div class="dashboard-summary-top">
-                                    <div>
-                                        <div class="dashboard-summary-title">@row.Label</div>
-                                        <div class="dashboard-summary-meta">@row.Count movimientos</div>
-                                    </div>
-                                    <div class="dashboard-summary-amount">Bs @row.Amount.ToString("0,0.##")</div>
+                            var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / collectionsZonePeak) * 100m);
+                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="zone" asp-route-value="@item.Key">
+                                <div class="dashboard-bar-track">
+                                    <span class="dashboard-bar-tag money">@item.Amount.ToString("0")</span>
+                                    <div class="dashboard-bar-fill collections" style="height:@pct%"></div>
                                 </div>
-                                <div class="dashboard-inline-bar"><div class="dashboard-inline-fill collections" style="width:@pct%"></div></div>
+                                <div class="dashboard-bar-label zone">@item.Label</div>
+                                <div class="dashboard-bar-meta">Bs @item.Amount.ToString("0")</div>
                             </a>
                         }
-                    }
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <article class="card admin-panel dashboard-chart-panel dashboard-chart-panel-full">
+            <div class="card-header admin-panel-head dashboard-chart-head">
+                <div>
+                    <div class="dashboard-panel-total-label">Total cobros por cobrador</div>
+                    <strong class="dashboard-panel-total-value">Bs @Model.CollectionsByCollector.Sum(x => x.Amount).ToString("0,0.##")</strong>
+                </div>
+                <a class="btn btn-sm btn-outline-primary" asp-action="Collections" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="collector">Ver detalle</a>
+            </div>
+            <div class="card-body">
+                <div class="dashboard-bars-wrap">
+                    <div class="dashboard-bars dashboard-bars-scroll wide-labels collectors">
+                        @foreach (var item in Model.CollectionsByCollector)
+                        {
+                            var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / collectionsCollectorPeak) * 100m);
+                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="collector" asp-route-value="@item.Key">
+                                <div class="dashboard-bar-track">
+                                    <span class="dashboard-bar-tag money">@item.Amount.ToString("0")</span>
+                                    <div class="dashboard-bar-fill collector" style="height:@pct%"></div>
+                                </div>
+                                <div class="dashboard-bar-label zone">@item.Label</div>
+                                <div class="dashboard-bar-meta">Bs @item.Amount.ToString("0")</div>
+                            </a>
+                        }
+                    </div>
                 </div>
             </div>
         </article>

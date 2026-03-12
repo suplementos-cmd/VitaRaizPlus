@@ -19,9 +19,9 @@ public sealed class DashboardController : Controller
         return View(BuildModel(scope, offset, collectionsBy));
     }
 
-    public IActionResult Sales(string scope = "week", int offset = 0, string? seller = null, string? day = null)
+    public IActionResult Sales(string scope = "week", int offset = 0, string? seller = null, string? zone = null, string? day = null)
     {
-        return View(BuildModel(scope, offset, "zone", sellerFilter: seller, salesDay: day));
+        return View(BuildModel(scope, offset, "zone", sellerFilter: seller, salesZone: zone, salesDay: day));
     }
 
     public IActionResult Collections(string scope = "week", int offset = 0, string collectionsBy = "zone", string? value = null, string? day = null)
@@ -29,7 +29,15 @@ public sealed class DashboardController : Controller
         return View(BuildModel(scope, offset, collectionsBy, collectionValue: value, collectionDay: day));
     }
 
-    private DashboardPageViewModel BuildModel(string? scope, int offset, string? collectionsBy, string? sellerFilter = null, string? collectionValue = null, string? salesDay = null, string? collectionDay = null)
+    private DashboardPageViewModel BuildModel(
+        string? scope,
+        int offset,
+        string? collectionsBy,
+        string? sellerFilter = null,
+        string? salesZone = null,
+        string? collectionValue = null,
+        string? salesDay = null,
+        string? collectionDay = null)
     {
         var period = BuildPeriod(scope, offset, DateTime.Today);
         var grouping = NormalizeGrouping(collectionsBy);
@@ -69,21 +77,43 @@ public sealed class DashboardController : Controller
             .GroupBy(x => string.IsNullOrWhiteSpace(x.Vendedor) ? "SIN VENDEDOR" : x.Vendedor)
             .OrderByDescending(g => g.Sum(x => x.ImporteTotal))
             .ThenBy(g => g.Key)
-            .Select(g => new SellerPerformanceSummary(
+            .Select(g => new CollectionGroupingSummary(
+                g.Key,
                 g.Key,
                 g.Count(),
-                g.Count(IsClosedSale),
                 g.Sum(x => x.ImporteTotal)))
             .ToArray();
 
-        var collectionSummaries = collectionsInPeriod
-            .GroupBy(x => GetCollectionGroupKey(x, grouping))
-            .Where(g => !string.IsNullOrWhiteSpace(g.Key))
+        var salesByZone = salesInPeriod
+            .GroupBy(x => string.IsNullOrWhiteSpace(x.Zona) ? "SIN ZONA" : x.Zona)
+            .OrderByDescending(g => g.Count())
+            .ThenByDescending(g => g.Sum(x => x.ImporteTotal))
+            .ThenBy(g => g.Key)
+            .Select(g => new CollectionGroupingSummary(
+                g.Key,
+                g.Key,
+                g.Count(),
+                g.Sum(x => x.ImporteTotal)))
+            .ToArray();
+
+        var collectionsByZone = collectionsInPeriod
+            .GroupBy(x => string.IsNullOrWhiteSpace(x.Zona) ? "SIN ZONA" : x.Zona)
             .OrderByDescending(g => g.Sum(x => x.ImporteCobro))
             .ThenBy(g => g.Key)
             .Select(g => new CollectionGroupingSummary(
                 g.Key,
-                GetCollectionGroupLabel(g.First(), grouping),
+                g.Key,
+                g.Count(),
+                g.Sum(x => x.ImporteCobro)))
+            .ToArray();
+
+        var collectionsByCollector = collectionsInPeriod
+            .GroupBy(x => string.IsNullOrWhiteSpace(x.Usuario) ? "SIN COBRADOR" : x.Usuario)
+            .OrderByDescending(g => g.Sum(x => x.ImporteCobro))
+            .ThenBy(g => g.Key)
+            .Select(g => new CollectionGroupingSummary(
+                g.Key,
+                g.Key,
                 g.Count(),
                 g.Sum(x => x.ImporteCobro)))
             .ToArray();
@@ -92,6 +122,10 @@ public sealed class DashboardController : Controller
         if (!string.IsNullOrWhiteSpace(sellerFilter))
         {
             filteredSales = filteredSales.Where(x => string.Equals(x.Vendedor, sellerFilter, StringComparison.OrdinalIgnoreCase));
+        }
+        if (!string.IsNullOrWhiteSpace(salesZone))
+        {
+            filteredSales = filteredSales.Where(x => string.Equals(x.Zona, salesZone, StringComparison.OrdinalIgnoreCase));
         }
         if (DateTime.TryParse(salesDay, out var salesDayDate))
         {
@@ -141,7 +175,9 @@ public sealed class DashboardController : Controller
             weeklySales,
             weeklyCollections,
             sellerSummaries,
-            collectionSummaries,
+            salesByZone,
+            collectionsByZone,
+            collectionsByCollector,
             saleRows,
             collectionRows);
     }
@@ -172,13 +208,6 @@ public sealed class DashboardController : Controller
             collections.Where(x => x.FechaCobro.Date == day.Date).Sum(x => x.ImporteCobro)));
     }
 
-    private static bool IsClosedSale(Models.Sales.SaleRecord sale)
-    {
-        return sale.Estado2.Equals("CLOSED", StringComparison.OrdinalIgnoreCase)
-            || sale.Estado.Contains("LIQUIDADO", StringComparison.OrdinalIgnoreCase)
-            || sale.Estado.Contains("CANCEL", StringComparison.OrdinalIgnoreCase);
-    }
-
     private static string NormalizeGrouping(string? grouping)
     {
         return grouping?.Trim().ToLowerInvariant() switch
@@ -195,16 +224,6 @@ public sealed class DashboardController : Controller
         {
             "collector" => string.IsNullOrWhiteSpace(row.Usuario) ? "SIN COBRADOR" : row.Usuario,
             "day" => row.FechaCobro.ToString("yyyy-MM-dd"),
-            _ => string.IsNullOrWhiteSpace(row.Zona) ? "SIN ZONA" : row.Zona
-        };
-    }
-
-    private static string GetCollectionGroupLabel(Models.Sales.CollectionRecord row, string grouping)
-    {
-        return grouping switch
-        {
-            "collector" => string.IsNullOrWhiteSpace(row.Usuario) ? "SIN COBRADOR" : row.Usuario,
-            "day" => row.FechaCobro.ToString("ddd dd/MM", new CultureInfo("es-ES")),
             _ => string.IsNullOrWhiteSpace(row.Zona) ? "SIN ZONA" : row.Zona
         };
     }
