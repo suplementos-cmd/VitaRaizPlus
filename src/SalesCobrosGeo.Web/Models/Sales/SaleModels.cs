@@ -1,4 +1,4 @@
-namespace SalesCobrosGeo.Web.Models.Sales;
+﻿namespace SalesCobrosGeo.Web.Models.Sales;
 
 public sealed record CatalogOption(string Code, string Name);
 public sealed record ProductOption(string Code, string Name, decimal Price);
@@ -92,9 +92,17 @@ public sealed class SalesDayGroup
     public List<SaleRecord> Sales { get; set; } = [];
 }
 
+public sealed class SalesWeekGroup
+{
+    public DateTime WeekStart { get; set; }
+    public DateTime WeekEnd { get; set; }
+    public bool IsCurrentWeek { get; set; }
+    public List<SalesDayGroup> Days { get; set; } = [];
+}
+
 public sealed class SalesListViewModel
 {
-    public IReadOnlyList<SalesDayGroup> Groups { get; set; } = [];
+    public IReadOnlyList<SalesWeekGroup> Weeks { get; set; } = [];
     public int WeeklyCount { get; set; }
 }
 
@@ -175,6 +183,7 @@ public sealed class CollectorPortfolioViewModel
     public string? SelectedDay { get; set; }
     public string? SelectedStatus { get; set; }
     public string? SelectedZone { get; set; }
+    public bool ShowAll { get; set; }
     public IReadOnlyList<CatalogOption> Profiles { get; set; } = [];
     public IReadOnlyList<CollectorDaySummary> Days { get; set; } = [];
     public IReadOnlyList<CollectorStatusSummary> Statuses { get; set; } = [];

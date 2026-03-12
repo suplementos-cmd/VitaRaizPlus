@@ -15,26 +15,34 @@ public sealed class SalesController : Controller
 
     public IActionResult Index()
     {
-        var startOfWeek = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek + 1);
-        var endOfWeek = startOfWeek.AddDays(6);
-        var sales = _repository.GetAll()
-            .Where(x => x.FechaVenta.Date >= startOfWeek.Date && x.FechaVenta.Date <= endOfWeek.Date)
-            .ToList();
+        var today = DateTime.Today;
+        var currentWeekStart = StartOfWeek(today);
+        var currentWeekEnd = currentWeekStart.AddDays(6);
+        var sales = _repository.GetAll().ToList();
 
-        var grouped = sales
-            .GroupBy(x => x.FechaVenta.Date)
+        var weeks = sales
+            .GroupBy(x => StartOfWeek(x.FechaVenta.Date))
             .OrderByDescending(g => g.Key)
-            .Select(g => new SalesDayGroup
+            .Select(g => new SalesWeekGroup
             {
-                Day = g.Key,
-                Sales = g.OrderBy(x => x.NombreCliente).ToList()
+                WeekStart = g.Key,
+                WeekEnd = g.Key.AddDays(6),
+                IsCurrentWeek = g.Key == currentWeekStart,
+                Days = g.GroupBy(x => x.FechaVenta.Date)
+                    .OrderByDescending(x => x.Key)
+                    .Select(x => new SalesDayGroup
+                    {
+                        Day = x.Key,
+                        Sales = x.OrderBy(item => item.NombreCliente).ToList()
+                    })
+                    .ToList()
             })
             .ToList();
 
         var model = new SalesListViewModel
         {
-            Groups = grouped,
-            WeeklyCount = sales.Count
+            Weeks = weeks,
+            WeeklyCount = sales.Count(x => x.FechaVenta.Date >= currentWeekStart && x.FechaVenta.Date <= currentWeekEnd)
         };
 
         return View(model);
@@ -152,6 +160,17 @@ public sealed class SalesController : Controller
                 Input = NormalizeInput(input)
             });
         }
+    }
+
+    private static DateTime StartOfWeek(DateTime date)
+    {
+        var day = (int)date.DayOfWeek;
+        if (day == 0)
+        {
+            day = 7;
+        }
+
+        return date.Date.AddDays(1 - day);
     }
 
     private static SaleFormInput BuildDefaultInput()

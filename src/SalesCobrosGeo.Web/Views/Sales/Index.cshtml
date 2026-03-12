@@ -12,7 +12,7 @@
     <div class="ventas-toolbar">
         <div>
             <div class="ventas-title">Perfil ventas</div>
-            <div class="ventas-subtitle">Vista semanal agrupada por dia</div>
+            <div class="ventas-subtitle">Ventas agrupadas por semana y dia</div>
         </div>
         <a class="btn btn-primary btn-add" asp-controller="Sales" asp-action="Create">+ Agregar</a>
     </div>
@@ -22,35 +22,57 @@
         <div class="alert alert-success mt-2">@msg</div>
     }
 
-    @if (Model.Groups.Count == 0)
+    @if (Model.Weeks.Count == 0)
     {
-        <div class="card mt-3"><div class="card-body text-center text-muted">No hay ventas registradas esta semana.</div></div>
+        <div class="card mt-3"><div class="card-body text-center text-muted">No hay ventas registradas.</div></div>
     }
     else
     {
-        foreach (var group in Model.Groups)
+        foreach (var week in Model.Weeks)
         {
-            <div class="day-header">
-                <span class="day-bullet">*</span>
-                <span>@group.Day.ToString("d/M/yyyy")</span>
-                <span class="day-count">@group.Sales.Count</span>
-            </div>
+            <details class="sales-week-accordion" @(week.IsCurrentWeek ? "open" : null)>
+                <summary class="sales-week-summary">
+                    <div>
+                        <div class="sales-week-title">Semana @week.WeekStart.ToString("dd/MM") - @week.WeekEnd.ToString("dd/MM")</div>
+                        <div class="sales-week-meta">@week.Days.Sum(x => x.Sales.Count) ventas</div>
+                    </div>
+                    <span class="sales-week-toggle">+</span>
+                </summary>
 
-            foreach (var sale in group.Sales)
-            {
-                <a class="sale-touch-card" asp-controller="Sales" asp-action="Details" asp-route-id="@sale.IdV">
-                    <div class="sale-images">
-                        <img class="image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoFachada, "https://placehold.co/96x72?text=Fachada")" alt="Fachada" loading="lazy" decoding="async" />
-                        <img class="image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoCliente, "https://placehold.co/96x72?text=Cliente")" alt="Cliente" loading="lazy" decoding="async" />
-                    </div>
-                    <div class="sale-main">
-                        <div class="sale-client">@sale.NombreCliente</div>
-                        <div class="sale-meta">@sale.Coordenadas</div>
-                        <div class="sale-meta">@sale.Zona • @sale.FormaPago</div>
-                    </div>
-                    <div class="sale-amount">@sale.ImporteTotal.ToString("0,0")</div>
-                </a>
-            }
+                <div class="sales-week-body">
+                    @foreach (var group in week.Days)
+                    {
+                        <div class="day-header compact">
+                            <span>@group.Day.ToString("ddd dd/MM")</span>
+                            <span class="day-count">@group.Sales.Count</span>
+                        </div>
+
+                        foreach (var sale in group.Sales)
+                        {
+                            <a class="sale-touch-card compact" asp-controller="Sales" asp-action="Details" asp-route-id="@sale.IdV">
+                                <div class="sale-images compact">
+                                    <img class="image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoFachada, "https://placehold.co/96x72?text=Fachada")" alt="Fachada" loading="lazy" decoding="async" />
+                                    <img class="image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoCliente, "https://placehold.co/96x72?text=Cliente")" alt="Cliente" loading="lazy" decoding="async" />
+                                </div>
+                                <div class="sale-main compact">
+                                    <div class="sale-main-top">
+                                        <div class="sale-client">@sale.NombreCliente</div>
+                                        <div class="sale-amount">@sale.ImporteTotal.ToString("0,0")</div>
+                                    </div>
+                                    <div class="sale-meta-row">
+                                        <span>@sale.Zona</span>
+                                        <span>@sale.FormaPago</span>
+                                    </div>
+                                    <div class="sale-meta-row muted">
+                                        <span>Venta #@sale.NumVenta</span>
+                                        <span>@sale.DiaCobro</span>
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                    }
+                </div>
+            </details>
         }
     }
 </div>
