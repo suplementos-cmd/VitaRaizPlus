@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Cobros";
     var value = Context.Request.Query["value"].ToString();
+    var day = Context.Request.Query["day"].ToString();
 
     string StatusClass(string status) => status.ToUpperInvariant() switch
     {
@@ -24,7 +25,11 @@
     <div class="admin-list-topbar">
         <div>
             <h1 class="admin-list-title">Cobros por @GroupLabel(Model.CollectionGrouping)</h1>
-            <div class="admin-list-subtitle">Periodo: @Model.Period.Label @(string.IsNullOrWhiteSpace(value) ? string.Empty : $"• {value}")</div>
+            <div class="admin-list-subtitle">
+                Periodo: @Model.Period.Label
+                @(string.IsNullOrWhiteSpace(value) ? string.Empty : $" • {value}")
+                @(string.IsNullOrWhiteSpace(day) ? string.Empty : $" • {DateTime.Parse(day).ToString("ddd dd/MM", new System.Globalization.CultureInfo("es-ES"))}")
+            </div>
         </div>
         <a class="btn btn-outline-secondary" asp-action="Index" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="@Model.CollectionGrouping">Volver al dashboard</a>
     </div>

@@ -8,6 +8,8 @@ public sealed record SellerPerformanceSummary(string Seller, int TotalSales, int
 
 public sealed record CollectionGroupingSummary(string Key, string Label, int Count, decimal Amount);
 
+public sealed record DailySummary(string Key, string Label, int Count, decimal Amount);
+
 public sealed record SaleRow(
     string SaleNumber,
     string Seller,
@@ -32,6 +34,8 @@ public sealed record DashboardPageViewModel(
     DashboardPeriodInfo Period,
     string CollectionGrouping,
     IReadOnlyList<KpiCard> Kpis,
+    IReadOnlyList<DailySummary> WeeklySales,
+    IReadOnlyList<DailySummary> WeeklyCollections,
     IReadOnlyList<SellerPerformanceSummary> SellerSummaries,
     IReadOnlyList<CollectionGroupingSummary> CollectionSummaries,
     IReadOnlyList<SaleRow> Sales,

@@ -16,21 +16,20 @@ public sealed class DashboardController : Controller
 
     public IActionResult Index(string scope = "week", int offset = 0, string collectionsBy = "zone")
     {
-        var model = BuildModel(scope, offset, collectionsBy);
-        return View(model);
+        return View(BuildModel(scope, offset, collectionsBy));
     }
 
-    public IActionResult Sales(string scope = "week", int offset = 0, string? seller = null)
+    public IActionResult Sales(string scope = "week", int offset = 0, string? seller = null, string? day = null)
     {
-        return View(BuildModel(scope, offset, "zone", sellerFilter: seller));
+        return View(BuildModel(scope, offset, "zone", sellerFilter: seller, salesDay: day));
     }
 
-    public IActionResult Collections(string scope = "week", int offset = 0, string collectionsBy = "zone", string? value = null)
+    public IActionResult Collections(string scope = "week", int offset = 0, string collectionsBy = "zone", string? value = null, string? day = null)
     {
-        return View(BuildModel(scope, offset, collectionsBy, collectionValue: value));
+        return View(BuildModel(scope, offset, collectionsBy, collectionValue: value, collectionDay: day));
     }
 
-    private DashboardPageViewModel BuildModel(string? scope, int offset, string? collectionsBy, string? sellerFilter = null, string? collectionValue = null)
+    private DashboardPageViewModel BuildModel(string? scope, int offset, string? collectionsBy, string? sellerFilter = null, string? collectionValue = null, string? salesDay = null, string? collectionDay = null)
     {
         var period = BuildPeriod(scope, offset, DateTime.Today);
         var grouping = NormalizeGrouping(collectionsBy);
@@ -63,6 +62,9 @@ public sealed class DashboardController : Controller
             new KpiCard("Atrasadas", portfolio.Count(x => x.Estatus.Equals("ATRASADO", StringComparison.OrdinalIgnoreCase)).ToString(), "seguimiento prioritario", "danger")
         };
 
+        var weeklySales = BuildDailySales(salesInPeriod, period).ToArray();
+        var weeklyCollections = BuildDailyCollections(collectionsInPeriod, period).ToArray();
+
         var sellerSummaries = salesInPeriod
             .GroupBy(x => string.IsNullOrWhiteSpace(x.Vendedor) ? "SIN VENDEDOR" : x.Vendedor)
             .OrderByDescending(g => g.Sum(x => x.ImporteTotal))
@@ -86,13 +88,25 @@ public sealed class DashboardController : Controller
                 g.Sum(x => x.ImporteCobro)))
             .ToArray();
 
-        var filteredSales = string.IsNullOrWhiteSpace(sellerFilter)
-            ? salesInPeriod
-            : salesInPeriod.Where(x => string.Equals(x.Vendedor, sellerFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+        var filteredSales = salesInPeriod.AsEnumerable();
+        if (!string.IsNullOrWhiteSpace(sellerFilter))
+        {
+            filteredSales = filteredSales.Where(x => string.Equals(x.Vendedor, sellerFilter, StringComparison.OrdinalIgnoreCase));
+        }
+        if (DateTime.TryParse(salesDay, out var salesDayDate))
+        {
+            filteredSales = filteredSales.Where(x => x.FechaVenta.Date == salesDayDate.Date);
+        }
 
-        var filteredCollections = string.IsNullOrWhiteSpace(collectionValue)
-            ? collectionsInPeriod
-            : collectionsInPeriod.Where(x => string.Equals(GetCollectionGroupKey(x, grouping), collectionValue, StringComparison.OrdinalIgnoreCase)).ToList();
+        var filteredCollections = collectionsInPeriod.AsEnumerable();
+        if (!string.IsNullOrWhiteSpace(collectionValue))
+        {
+            filteredCollections = filteredCollections.Where(x => string.Equals(GetCollectionGroupKey(x, grouping), collectionValue, StringComparison.OrdinalIgnoreCase));
+        }
+        if (DateTime.TryParse(collectionDay, out var collectionDayDate))
+        {
+            filteredCollections = filteredCollections.Where(x => x.FechaCobro.Date == collectionDayDate.Date);
+        }
 
         var saleRows = filteredSales
             .OrderByDescending(x => x.FechaActu)
@@ -117,17 +131,45 @@ public sealed class DashboardController : Controller
                 x.FechaCaptura.ToString("dd/MM/yyyy HH:mm"),
                 x.NombreCliente,
                 x.Zona,
-                x.FechaCobro.ToString("ddd dd", CultureInfo.InvariantCulture)))
+                x.FechaCobro.ToString("ddd dd", new CultureInfo("es-ES"))))
             .ToArray();
 
         return new DashboardPageViewModel(
             new DashboardPeriodInfo(period.Scope, period.Offset, period.Label, period.Subtitle),
             grouping,
             kpis,
+            weeklySales,
+            weeklyCollections,
             sellerSummaries,
             collectionSummaries,
             saleRows,
             collectionRows);
+    }
+
+    private static IEnumerable<DailySummary> BuildDailySales(IReadOnlyList<Models.Sales.SaleRecord> sales, (DateTime Start, DateTime End, string Scope, int Offset, string Label, string Subtitle) period)
+    {
+        var days = period.Scope == "month"
+            ? Enumerable.Range(0, (period.End - period.Start).Days + 1).Select(i => period.Start.AddDays(i))
+            : Enumerable.Range(0, 7).Select(i => period.Start.AddDays(i));
+
+        return days.Select(day => new DailySummary(
+            day.ToString("yyyy-MM-dd"),
+            day.ToString("ddd dd", new CultureInfo("es-ES")),
+            sales.Count(x => x.FechaVenta.Date == day.Date),
+            sales.Where(x => x.FechaVenta.Date == day.Date).Sum(x => x.ImporteTotal)));
+    }
+
+    private static IEnumerable<DailySummary> BuildDailyCollections(IReadOnlyList<Models.Sales.CollectionRecord> collections, (DateTime Start, DateTime End, string Scope, int Offset, string Label, string Subtitle) period)
+    {
+        var days = period.Scope == "month"
+            ? Enumerable.Range(0, (period.End - period.Start).Days + 1).Select(i => period.Start.AddDays(i))
+            : Enumerable.Range(0, 7).Select(i => period.Start.AddDays(i));
+
+        return days.Select(day => new DailySummary(
+            day.ToString("yyyy-MM-dd"),
+            day.ToString("ddd dd", new CultureInfo("es-ES")),
+            collections.Count(x => x.FechaCobro.Date == day.Date),
+            collections.Where(x => x.FechaCobro.Date == day.Date).Sum(x => x.ImporteCobro)));
     }
 
     private static bool IsClosedSale(Models.Sales.SaleRecord sale)

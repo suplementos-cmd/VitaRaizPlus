@@ -1,8 +1,10 @@
-﻿@model SalesCobrosGeo.Web.Models.Dashboard.DashboardPageViewModel
+@model SalesCobrosGeo.Web.Models.Dashboard.DashboardPageViewModel
 @{
     ViewData["Title"] = "Dashboard";
-    var salesPeak = Math.Max(1m, Model.SellerSummaries.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.SellerPerformanceSummary("", 0, 0, 0m)).Max(x => x.TotalAmount));
-    var collectionsPeak = Math.Max(1m, Model.CollectionSummaries.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.CollectionGroupingSummary("", "", 0, 0m)).Max(x => x.Amount));
+    var salesPeak = Math.Max(1m, Model.WeeklySales.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.DailySummary("", "", 0, 0m)).Max(x => x.Amount));
+    var collectionsPeak = Math.Max(1m, Model.WeeklyCollections.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.DailySummary("", "", 0, 0m)).Max(x => x.Amount));
+    var sellerPeak = Math.Max(1m, Model.SellerSummaries.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.SellerPerformanceSummary("", 0, 0, 0m)).Max(x => x.TotalAmount));
+    var groupPeak = Math.Max(1m, Model.CollectionSummaries.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.CollectionGroupingSummary("", "", 0, 0m)).Max(x => x.Amount));
 
     string ToneClass(string tone) => tone switch
     {
@@ -25,7 +27,7 @@
         <div>
             <div class="admin-eyebrow">Administrador</div>
             <h1 class="admin-title">Dashboard operativo</h1>
-            <div class="admin-subtitle">Totales por periodo, ventas por vendedora y cobros segmentados para navegar al detalle</div>
+            <div class="admin-subtitle">Resumen por semana o mes con acceso rapido a detalle total y filtros por barra.</div>
         </div>
         <div class="admin-hero-stats">
             <form method="get" class="dashboard-period-form">
@@ -60,6 +62,58 @@
     </section>
 
     <section class="admin-grid mb-4">
+        <article class="card admin-panel dashboard-chart-panel">
+            <div class="card-header admin-panel-head dashboard-chart-head">
+                <span>Ventas semanales</span>
+                <a class="btn btn-sm btn-outline-primary" asp-action="Sales" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset">Ver ventas</a>
+            </div>
+            <div class="card-body">
+                <div class="dashboard-bars-wrap">
+                    <div class="dashboard-bars dashboard-bars-scroll">
+                        @foreach (var item in Model.WeeklySales)
+                        {
+                            var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / salesPeak) * 100m);
+                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Sales" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-day="@item.Key">
+                                <div class="dashboard-bar-track">
+                                    <div class="dashboard-bar-fill sales" style="height:@pct%"></div>
+                                </div>
+                                <div class="dashboard-bar-label">@item.Label</div>
+                                <div class="dashboard-bar-meta">@item.Count ventas</div>
+                                <div class="dashboard-bar-amount">@item.Amount.ToString("0")</div>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <article class="card admin-panel dashboard-chart-panel">
+            <div class="card-header admin-panel-head dashboard-chart-head">
+                <span>Cobros semanales</span>
+                <a class="btn btn-sm btn-outline-primary" asp-action="Collections" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="@Model.CollectionGrouping">Ver cobros</a>
+            </div>
+            <div class="card-body">
+                <div class="dashboard-bars-wrap">
+                    <div class="dashboard-bars dashboard-bars-scroll">
+                        @foreach (var item in Model.WeeklyCollections)
+                        {
+                            var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / collectionsPeak) * 100m);
+                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="@Model.CollectionGrouping" asp-route-day="@item.Key">
+                                <div class="dashboard-bar-track">
+                                    <div class="dashboard-bar-fill collections" style="height:@pct%"></div>
+                                </div>
+                                <div class="dashboard-bar-label">@item.Label</div>
+                                <div class="dashboard-bar-meta">@item.Count cobros</div>
+                                <div class="dashboard-bar-amount">@item.Amount.ToString("0")</div>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <section class="admin-grid mb-4">
         <article class="card admin-panel">
             <div class="card-header admin-panel-head">
                 <span>Ventas por vendedora</span>
@@ -75,12 +129,12 @@
                     {
                         @foreach (var row in Model.SellerSummaries)
                         {
-                            var pct = row.TotalAmount <= 0 ? 8m : Math.Max(10m, (row.TotalAmount / salesPeak) * 100m);
+                            var pct = row.TotalAmount <= 0 ? 8m : Math.Max(10m, (row.TotalAmount / sellerPeak) * 100m);
                             <a class="dashboard-summary-card" asp-action="Sales" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-seller="@row.Seller">
                                 <div class="dashboard-summary-top">
                                     <div>
                                         <div class="dashboard-summary-title">@row.Seller</div>
-                                        <div class="dashboard-summary-meta">@row.TotalSales ventas • @row.ClosedSales cerradas</div>
+                                        <div class="dashboard-summary-meta">@row.TotalSales totales � @row.ClosedSales cerradas</div>
                                     </div>
                                     <div class="dashboard-summary-amount">Bs @row.TotalAmount.ToString("0,0.##")</div>
                                 </div>
@@ -111,7 +165,7 @@
                     {
                         @foreach (var row in Model.CollectionSummaries)
                         {
-                            var pct = row.Amount <= 0 ? 8m : Math.Max(10m, (row.Amount / collectionsPeak) * 100m);
+                            var pct = row.Amount <= 0 ? 8m : Math.Max(10m, (row.Amount / groupPeak) * 100m);
                             <a class="dashboard-summary-card" asp-action="Collections" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset" asp-route-collectionsBy="@Model.CollectionGrouping" asp-route-value="@row.Key">
                                 <div class="dashboard-summary-top">
                                     <div>
