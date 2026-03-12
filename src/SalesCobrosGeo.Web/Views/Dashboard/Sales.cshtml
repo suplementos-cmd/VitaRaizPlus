@@ -1,6 +1,7 @@
-@model SalesCobrosGeo.Web.Models.Dashboard.DashboardPageViewModel
+﻿@model SalesCobrosGeo.Web.Models.Dashboard.DashboardPageViewModel
 @{
     ViewData["Title"] = "Ventas";
+    var seller = Context.Request.Query["seller"].ToString();
 
     string StatusClass(string status) => status.ToUpperInvariant() switch
     {
@@ -15,27 +16,34 @@
 <div class="admin-list-page">
     <div class="admin-list-topbar">
         <div>
-            <h1 class="admin-list-title">Vista de ventas</h1>
-            <div class="admin-list-subtitle">Resumen responsive de actividad comercial</div>
+            <h1 class="admin-list-title">Ventas por vendedora</h1>
+            <div class="admin-list-subtitle">Periodo: @Model.Period.Label @(string.IsNullOrWhiteSpace(seller) ? string.Empty : $"• {seller}")</div>
         </div>
-        <a class="btn btn-outline-secondary" asp-action="Index">Volver al dashboard</a>
+        <a class="btn btn-outline-secondary" asp-action="Index" asp-route-scope="@Model.Period.Scope" asp-route-offset="@Model.Period.Offset">Volver al dashboard</a>
     </div>
 
     <div class="admin-record-list">
-        @foreach (var row in Model.Sales)
+        @if (Model.Sales.Count == 0)
         {
-            <article class="admin-record-card">
-                <div>
-                    <div class="admin-record-title">@row.ClientName</div>
-                    <div class="admin-record-meta">@row.SaleNumber</div>
-                    <div class="admin-record-meta">@row.Seller � @row.Zone</div>
-                </div>
-                <div>
-                    <div class="admin-record-amount">Bs @row.Total.ToString("0.##")</div>
-                    <div class="admin-record-meta">@row.UpdatedAt</div>
-                </div>
-                <div class="@StatusClass(row.Status)">@row.Status</div>
-            </article>
+            <div class="card card-body text-center text-muted">Sin ventas para esta seleccion.</div>
+        }
+        else
+        {
+            @foreach (var row in Model.Sales)
+            {
+                <article class="admin-record-card">
+                    <div>
+                        <div class="admin-record-title">@row.ClientName</div>
+                        <div class="admin-record-meta">@row.SaleNumber</div>
+                        <div class="admin-record-meta">@row.Seller • @row.Zone</div>
+                    </div>
+                    <div>
+                        <div class="admin-record-amount">Bs @row.Total.ToString("0.##")</div>
+                        <div class="admin-record-meta">@row.UpdatedAt</div>
+                    </div>
+                    <div class="@StatusClass(row.Status)">@row.Status</div>
+                </article>
+            }
         }
     </div>
 </div>

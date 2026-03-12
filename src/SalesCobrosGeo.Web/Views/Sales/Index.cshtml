@@ -1,6 +1,11 @@
-@model SalesCobrosGeo.Web.Models.Sales.SalesListViewModel
+﻿@model SalesCobrosGeo.Web.Models.Sales.SalesListViewModel
 @{
     ViewData["Title"] = "Perfil ventas";
+    string ResolveImage(string? path, string fallback) =>
+        string.IsNullOrWhiteSpace(path) ? fallback :
+        (path.StartsWith("http", StringComparison.OrdinalIgnoreCase) || path.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/")
+            ? path
+            : "/" + path);
 }
 
 <div class="ventas-mobile">
@@ -26,7 +31,7 @@
         foreach (var group in Model.Groups)
         {
             <div class="day-header">
-                <span class="day-bullet">?</span>
+                <span class="day-bullet">*</span>
                 <span>@group.Day.ToString("d/M/yyyy")</span>
                 <span class="day-count">@group.Sales.Count</span>
             </div>
@@ -35,13 +40,13 @@
             {
                 <a class="sale-touch-card" asp-controller="Sales" asp-action="Details" asp-route-id="@sale.IdV">
                     <div class="sale-images">
-                        <img class="image-previewable" data-previewable="true" src="@(string.IsNullOrWhiteSpace(sale.FotoFachada) ? "https://placehold.co/96x72?text=Fachada" : sale.FotoFachada)" alt="Fachada" loading="lazy" decoding="async" />
-                        <img class="image-previewable" data-previewable="true" src="@(string.IsNullOrWhiteSpace(sale.FotoCliente) ? "https://placehold.co/96x72?text=Cliente" : sale.FotoCliente)" alt="Cliente" loading="lazy" decoding="async" />
+                        <img class="image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoFachada, "https://placehold.co/96x72?text=Fachada")" alt="Fachada" loading="lazy" decoding="async" />
+                        <img class="image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoCliente, "https://placehold.co/96x72?text=Cliente")" alt="Cliente" loading="lazy" decoding="async" />
                     </div>
                     <div class="sale-main">
                         <div class="sale-client">@sale.NombreCliente</div>
                         <div class="sale-meta">@sale.Coordenadas</div>
-                        <div class="sale-meta">@sale.Zona � @sale.FormaPago</div>
+                        <div class="sale-meta">@sale.Zona • @sale.FormaPago</div>
                     </div>
                     <div class="sale-amount">@sale.ImporteTotal.ToString("0,0")</div>
                 </a>
