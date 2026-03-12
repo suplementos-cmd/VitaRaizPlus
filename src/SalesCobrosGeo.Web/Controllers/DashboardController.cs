@@ -14,24 +14,24 @@ public sealed class DashboardController : Controller
         _repository = repository;
     }
 
-    public IActionResult Index(string scope = "week", int offset = 0, string collectionsBy = "zone")
+    public IActionResult Index(DateTime? from, DateTime? to, string collectionsBy = "zone")
     {
-        return View(BuildModel(scope, offset, collectionsBy));
+        return View(BuildModel(from, to, collectionsBy));
     }
 
-    public IActionResult Sales(string scope = "week", int offset = 0, string? seller = null, string? zone = null, string? day = null)
+    public IActionResult Sales(DateTime? from, DateTime? to, string? seller = null, string? zone = null, string? day = null)
     {
-        return View(BuildModel(scope, offset, "zone", sellerFilter: seller, salesZone: zone, salesDay: day));
+        return View(BuildModel(from, to, "zone", sellerFilter: seller, salesZone: zone, salesDay: day));
     }
 
-    public IActionResult Collections(string scope = "week", int offset = 0, string collectionsBy = "zone", string? value = null, string? day = null)
+    public IActionResult Collections(DateTime? from, DateTime? to, string collectionsBy = "zone", string? value = null, string? day = null)
     {
-        return View(BuildModel(scope, offset, collectionsBy, collectionValue: value, collectionDay: day));
+        return View(BuildModel(from, to, collectionsBy, collectionValue: value, collectionDay: day));
     }
 
     private DashboardPageViewModel BuildModel(
-        string? scope,
-        int offset,
+        DateTime? from,
+        DateTime? to,
         string? collectionsBy,
         string? sellerFilter = null,
         string? salesZone = null,
@@ -39,7 +39,7 @@ public sealed class DashboardController : Controller
         string? salesDay = null,
         string? collectionDay = null)
     {
-        var period = BuildPeriod(scope, offset, DateTime.Today);
+        var period = BuildPeriod(from, to, DateTime.Today);
         var grouping = NormalizeGrouping(collectionsBy);
 
         var allSales = _repository.GetAll();
@@ -77,11 +77,7 @@ public sealed class DashboardController : Controller
             .GroupBy(x => string.IsNullOrWhiteSpace(x.Vendedor) ? "SIN VENDEDOR" : x.Vendedor)
             .OrderByDescending(g => g.Sum(x => x.ImporteTotal))
             .ThenBy(g => g.Key)
-            .Select(g => new CollectionGroupingSummary(
-                g.Key,
-                g.Key,
-                g.Count(),
-                g.Sum(x => x.ImporteTotal)))
+            .Select(g => new CollectionGroupingSummary(g.Key, g.Key, g.Count(), g.Sum(x => x.ImporteTotal)))
             .ToArray();
 
         var salesByZone = salesInPeriod
@@ -89,33 +85,21 @@ public sealed class DashboardController : Controller
             .OrderByDescending(g => g.Count())
             .ThenByDescending(g => g.Sum(x => x.ImporteTotal))
             .ThenBy(g => g.Key)
-            .Select(g => new CollectionGroupingSummary(
-                g.Key,
-                g.Key,
-                g.Count(),
-                g.Sum(x => x.ImporteTotal)))
+            .Select(g => new CollectionGroupingSummary(g.Key, g.Key, g.Count(), g.Sum(x => x.ImporteTotal)))
             .ToArray();
 
         var collectionsByZone = collectionsInPeriod
             .GroupBy(x => string.IsNullOrWhiteSpace(x.Zona) ? "SIN ZONA" : x.Zona)
             .OrderByDescending(g => g.Sum(x => x.ImporteCobro))
             .ThenBy(g => g.Key)
-            .Select(g => new CollectionGroupingSummary(
-                g.Key,
-                g.Key,
-                g.Count(),
-                g.Sum(x => x.ImporteCobro)))
+            .Select(g => new CollectionGroupingSummary(g.Key, g.Key, g.Count(), g.Sum(x => x.ImporteCobro)))
             .ToArray();
 
         var collectionsByCollector = collectionsInPeriod
             .GroupBy(x => string.IsNullOrWhiteSpace(x.Usuario) ? "SIN COBRADOR" : x.Usuario)
             .OrderByDescending(g => g.Sum(x => x.ImporteCobro))
             .ThenBy(g => g.Key)
-            .Select(g => new CollectionGroupingSummary(
-                g.Key,
-                g.Key,
-                g.Count(),
-                g.Sum(x => x.ImporteCobro)))
+            .Select(g => new CollectionGroupingSummary(g.Key, g.Key, g.Count(), g.Sum(x => x.ImporteCobro)))
             .ToArray();
 
         var filteredSales = salesInPeriod.AsEnumerable();
@@ -169,7 +153,7 @@ public sealed class DashboardController : Controller
             .ToArray();
 
         return new DashboardPageViewModel(
-            new DashboardPeriodInfo(period.Scope, period.Offset, period.Label, period.Subtitle),
+            new DashboardPeriodInfo(period.Start, period.End, period.Label, period.Subtitle),
             grouping,
             kpis,
             weeklySales,
@@ -182,11 +166,10 @@ public sealed class DashboardController : Controller
             collectionRows);
     }
 
-    private static IEnumerable<DailySummary> BuildDailySales(IReadOnlyList<Models.Sales.SaleRecord> sales, (DateTime Start, DateTime End, string Scope, int Offset, string Label, string Subtitle) period)
+    private static IEnumerable<DailySummary> BuildDailySales(IReadOnlyList<Models.Sales.SaleRecord> sales, (DateTime Start, DateTime End, string Label, string Subtitle) period)
     {
-        var days = period.Scope == "month"
-            ? Enumerable.Range(0, (period.End - period.Start).Days + 1).Select(i => period.Start.AddDays(i))
-            : Enumerable.Range(0, 7).Select(i => period.Start.AddDays(i));
+        var totalDays = (period.End - period.Start).Days + 1;
+        var days = Enumerable.Range(0, totalDays).Select(i => period.Start.AddDays(i));
 
         return days.Select(day => new DailySummary(
             day.ToString("yyyy-MM-dd"),
@@ -195,11 +178,10 @@ public sealed class DashboardController : Controller
             sales.Where(x => x.FechaVenta.Date == day.Date).Sum(x => x.ImporteTotal)));
     }
 
-    private static IEnumerable<DailySummary> BuildDailyCollections(IReadOnlyList<Models.Sales.CollectionRecord> collections, (DateTime Start, DateTime End, string Scope, int Offset, string Label, string Subtitle) period)
+    private static IEnumerable<DailySummary> BuildDailyCollections(IReadOnlyList<Models.Sales.CollectionRecord> collections, (DateTime Start, DateTime End, string Label, string Subtitle) period)
     {
-        var days = period.Scope == "month"
-            ? Enumerable.Range(0, (period.End - period.Start).Days + 1).Select(i => period.Start.AddDays(i))
-            : Enumerable.Range(0, 7).Select(i => period.Start.AddDays(i));
+        var totalDays = (period.End - period.Start).Days + 1;
+        var days = Enumerable.Range(0, totalDays).Select(i => period.Start.AddDays(i));
 
         return days.Select(day => new DailySummary(
             day.ToString("yyyy-MM-dd"),
@@ -228,32 +210,28 @@ public sealed class DashboardController : Controller
         };
     }
 
-    private static (DateTime Start, DateTime End, string Scope, int Offset, string Label, string Subtitle) BuildPeriod(string? scope, int offset, DateTime today)
+    private static (DateTime Start, DateTime End, string Label, string Subtitle) BuildPeriod(DateTime? from, DateTime? to, DateTime today)
     {
-        var normalized = string.Equals(scope, "month", StringComparison.OrdinalIgnoreCase) ? "month" : "week";
+        var diff = ((int)today.DayOfWeek + 6) % 7;
+        var defaultStart = today.Date.AddDays(-diff);
+        var defaultEnd = defaultStart.AddDays(6);
 
-        if (normalized == "month")
+        var start = (from ?? defaultStart).Date;
+        var end = (to ?? defaultEnd).Date;
+        if (end < start)
         {
-            var first = new DateTime(today.Year, today.Month, 1).AddMonths(offset);
-            var last = first.AddMonths(1).AddDays(-1);
-            return (first, last, normalized, offset, first.ToString("MMMM yyyy", new CultureInfo("es-ES")), "Periodo mensual");
+            (start, end) = (end, start);
         }
 
-        var diff = ((int)today.DayOfWeek + 6) % 7;
-        var monday = today.Date.AddDays(-diff).AddDays(offset * 7);
-        var sunday = monday.AddDays(6);
-        return (monday, sunday, normalized, offset, $"{monday:dd/MM} - {sunday:dd/MM}", "Semana seleccionada");
+        return (start, end, $"{start:dd/MM/yyyy} - {end:dd/MM/yyyy}", "Rango seleccionado");
     }
 
-    private static (DateTime Start, DateTime End) BuildComparisonPeriod((DateTime Start, DateTime End, string Scope, int Offset, string Label, string Subtitle) period)
+    private static (DateTime Start, DateTime End) BuildComparisonPeriod((DateTime Start, DateTime End, string Label, string Subtitle) period)
     {
-        if (period.Scope == "month")
-        {
-            var start = period.Start.AddMonths(-1);
-            return (start, start.AddMonths(1).AddDays(-1));
-        }
-
-        return (period.Start.AddDays(-7), period.End.AddDays(-7));
+        var span = (period.End - period.Start).Days + 1;
+        var end = period.Start.AddDays(-1);
+        var start = end.AddDays(-(span - 1));
+        return (start, end);
     }
 
     private static string BuildTrend(decimal current, decimal previous)

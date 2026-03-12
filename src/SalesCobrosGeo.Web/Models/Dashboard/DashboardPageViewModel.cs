@@ -2,9 +2,7 @@
 
 public sealed record KpiCard(string Title, string Value, string Trend, string Tone);
 
-public sealed record DashboardPeriodInfo(string Scope, int Offset, string Label, string Subtitle);
-
-public sealed record SellerPerformanceSummary(string Seller, int TotalSales, int ClosedSales, decimal TotalAmount);
+public sealed record DashboardPeriodInfo(DateTime Start, DateTime End, string Label, string Subtitle);
 
 public sealed record CollectionGroupingSummary(string Key, string Label, int Count, decimal Amount);
 
