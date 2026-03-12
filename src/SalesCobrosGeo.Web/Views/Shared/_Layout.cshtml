@@ -29,16 +29,16 @@
                     <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                         <ul class="navbar-nav flex-grow-1">
                             <li class="nav-item">
-                                <a class="nav-link text-light @(currentController == "Home" && currentAction == "Index" ? "active" : string.Empty)" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a>
+                                <a class="nav-link text-light @(currentController == "Home" && currentAction == "Index" ? "active" : string.Empty)" asp-area="" asp-controller="Home" asp-action="Index"><span class="nav-icon" aria-hidden="true">¦</span><span class="nav-label">Inicio</span></a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-light @(currentController == "Dashboard" && currentAction == "Index" ? "active" : string.Empty)" asp-area="" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+                                <a class="nav-link text-light @(currentController == "Dashboard" && currentAction == "Index" ? "active" : string.Empty)" asp-area="" asp-controller="Dashboard" asp-action="Index"><span class="nav-icon" aria-hidden="true">?</span><span class="nav-label">Dashboard</span></a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-light @(currentController == "Sales" ? "active" : string.Empty)" asp-area="" asp-controller="Sales" asp-action="Index">Ventas</a>
+                                <a class="nav-link text-light @(currentController == "Sales" ? "active" : string.Empty)" asp-area="" asp-controller="Sales" asp-action="Index"><span class="nav-icon" aria-hidden="true">?</span><span class="nav-label">Ventas</span></a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-light @(currentController == "Cobros" ? "active" : string.Empty)" asp-area="" asp-controller="Cobros" asp-action="Index">Perfil Cobrador</a>
+                                <a class="nav-link text-light @(currentController == "Cobros" ? "active" : string.Empty)" asp-area="" asp-controller="Cobros" asp-action="Index"><span class="nav-icon" aria-hidden="true">?</span><span class="nav-label">Cobros</span></a>
                             </li>
                         </ul>
                     </div>
@@ -53,9 +53,9 @@
             </div>
             <div class="offcanvas-body">
                 <div class="mobile-more-links">
-                    <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Sales">Resumen ventas</a>
-                    <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Collections">Resumen cobros</a>
-                    <a class="mobile-more-link" asp-controller="Home" asp-action="Privacy">Privacidad</a>
+                    <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Sales"><span class="nav-icon" aria-hidden="true">?</span><span class="nav-label">Resumen ventas</span></a>
+                    <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Collections"><span class="nav-icon" aria-hidden="true">?</span><span class="nav-label">Resumen cobros</span></a>
+                    <a class="mobile-more-link" asp-controller="Home" asp-action="Privacy"><span class="nav-icon" aria-hidden="true">•</span><span class="nav-label">Privacidad</span></a>
                 </div>
             </div>
         </div>
@@ -68,19 +68,19 @@
 
         <nav class="mobile-bottom-nav" aria-label="Menu principal movil">
             <a class="mobile-bottom-link @(currentController == "Home" && currentAction == "Index" ? "active" : string.Empty)" asp-controller="Home" asp-action="Index">
-                <span class="mobile-bottom-icon">IN</span>
+                <span class="mobile-bottom-icon" aria-hidden="true">¦</span>
                 <span class="mobile-bottom-text">Inicio</span>
             </a>
             <a class="mobile-bottom-link @(currentController == "Dashboard" && currentAction == "Index" ? "active" : string.Empty)" asp-controller="Dashboard" asp-action="Index">
-                <span class="mobile-bottom-icon">DB</span>
+                <span class="mobile-bottom-icon" aria-hidden="true">?</span>
                 <span class="mobile-bottom-text">Panel</span>
             </a>
             <a class="mobile-bottom-link @(currentController == "Sales" ? "active" : string.Empty)" asp-controller="Sales" asp-action="Index">
-                <span class="mobile-bottom-icon">VT</span>
+                <span class="mobile-bottom-icon" aria-hidden="true">?</span>
                 <span class="mobile-bottom-text">Ventas</span>
             </a>
             <a class="mobile-bottom-link @(currentController == "Cobros" ? "active" : string.Empty)" asp-controller="Cobros" asp-action="Index">
-                <span class="mobile-bottom-icon">CB</span>
+                <span class="mobile-bottom-icon" aria-hidden="true">?</span>
                 <span class="mobile-bottom-text">Cobros</span>
             </a>
         </nav>
