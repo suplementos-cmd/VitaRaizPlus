@@ -36,7 +36,9 @@ public sealed record DashboardPageViewModel(
     IReadOnlyList<KpiCard> Kpis,
     IReadOnlyList<DailySummary> WeeklySales,
     IReadOnlyList<DailySummary> WeeklyCollections,
-    IReadOnlyList<SellerPerformanceSummary> SellerSummaries,
-    IReadOnlyList<CollectionGroupingSummary> CollectionSummaries,
+    IReadOnlyList<CollectionGroupingSummary> SellerSummaries,
+    IReadOnlyList<CollectionGroupingSummary> SalesByZone,
+    IReadOnlyList<CollectionGroupingSummary> CollectionsByZone,
+    IReadOnlyList<CollectionGroupingSummary> CollectionsByCollector,
     IReadOnlyList<SaleRow> Sales,
     IReadOnlyList<CollectionRow> Collections);
