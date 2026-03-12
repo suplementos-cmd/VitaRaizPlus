@@ -1,0 +1,93 @@
+﻿@model SalesCobrosGeo.Web.Models.Maintenance.MaintenancePageViewModel
+@{
+    ViewData["Title"] = "Mantenimiento";
+    var current = Model.Sections.First(x => x.Key == Model.SelectedSection);
+
+    string ToneClass(string tone) => tone switch
+    {
+        "success" => "maintenance-badge success",
+        "warning" => "maintenance-badge warning",
+        "danger" => "maintenance-badge danger",
+        _ => "maintenance-badge brand"
+    };
+
+    string StatClass(string tone) => tone switch
+    {
+        "success" => "maintenance-stat success",
+        "warning" => "maintenance-stat warning",
+        "danger" => "maintenance-stat danger",
+        _ => "maintenance-stat brand"
+    };
+}
+
+<div class="maintenance-page">
+    <section class="maintenance-hero">
+        <div>
+            <div class="maintenance-eyebrow">Mantenimiento</div>
+            <h1 class="maintenance-title">Catalogos y personal</h1>
+            <div class="maintenance-subtitle">Panel base para revisar configuracion comercial, zonas, productos y equipo operativo.</div>
+        </div>
+        <div class="maintenance-hero-actions">
+            <a class="btn btn-primary" asp-controller="Sales" asp-action="Create">Nueva venta</a>
+            <a class="btn btn-outline-primary" asp-controller="Dashboard" asp-action="Index">Ir al dashboard</a>
+        </div>
+    </section>
+
+    <section class="maintenance-stats">
+        @foreach (var item in Model.Stats)
+        {
+            <article class="@StatClass(item.Tone)">
+                <div class="maintenance-stat-label">@item.Title</div>
+                <strong class="maintenance-stat-value">@item.Value</strong>
+            </article>
+        }
+    </section>
+
+    <section class="maintenance-layout">
+        <aside class="maintenance-sidebar">
+            <div class="maintenance-sidebar-title">Secciones</div>
+            <div class="maintenance-nav">
+                @foreach (var navItem in Model.Sections)
+                {
+                    <a class="maintenance-nav-link @(navItem.Key == Model.SelectedSection ? "active" : string.Empty)"
+                       asp-action="Index"
+                       asp-route-section="@navItem.Key">
+                        <span>@navItem.Title</span>
+                        <small>@navItem.Items.Count</small>
+                    </a>
+                }
+            </div>
+        </aside>
+
+        <div class="maintenance-content">
+            <section class="maintenance-section-head">
+                <div>
+                    <h2 class="maintenance-section-title">@current.Title</h2>
+                    <div class="maintenance-section-subtitle">@current.Subtitle</div>
+                </div>
+                <div class="maintenance-section-summary">@current.Summary</div>
+            </section>
+
+            <section class="maintenance-grid">
+                @foreach (var item in current.Items)
+                {
+                    <article class="maintenance-card">
+                        <div class="maintenance-card-top">
+                            <div>
+                                <div class="maintenance-card-title">@item.Name</div>
+                                <div class="maintenance-card-code">@item.Code</div>
+                            </div>
+                            <span class="@ToneClass(item.Tone)">@item.Badge</span>
+                        </div>
+                        <div class="maintenance-card-detail">@item.Detail</div>
+                        <div class="maintenance-card-actions">
+                            <button type="button" class="btn btn-sm btn-outline-primary">Editar</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary">Ver</button>
+                        </div>
+                    </article>
+                }
+            </section>
+        </div>
+    </section>
+</div>
+
