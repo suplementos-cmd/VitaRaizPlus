@@ -1,0 +1,20 @@
+﻿@model SalesCobrosGeo.Web.Models.Shared.PageHeaderViewModel
+
+<header class="app-page-header">
+    <div class="app-page-header-main">
+        @if (!string.IsNullOrWhiteSpace(Model.Eyebrow))
+        {
+            <div class="app-page-eyebrow">@Model.Eyebrow</div>
+        }
+        <h1 class="app-page-title">@Model.Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Model.Subtitle))
+        {
+            <div class="app-page-subtitle">@Model.Subtitle</div>
+        }
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Summary))
+    {
+        <div class="app-page-summary">@Model.Summary</div>
+    }
+</header>

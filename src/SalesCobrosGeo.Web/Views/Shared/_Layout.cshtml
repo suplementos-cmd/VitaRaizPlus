@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="~/css/modules/sales.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/modules/collections.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/modules/maintenance.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/modules/administration.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/SalesCobrosGeo.Web.styles.css" asp-append-version="true" />
 </head>
 <body>
@@ -46,6 +47,9 @@
                             <li class="nav-item">
                                 <a class="nav-link text-light @(currentController == "Maintenance" ? "active" : string.Empty)" asp-area="" asp-controller="Maintenance" asp-action="Index"><span class="nav-icon" aria-hidden="true">MT</span><span class="nav-label">Mantenimiento</span></a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-light @(currentController == "Administration" ? "active" : string.Empty)" asp-area="" asp-controller="Administration" asp-action="Users"><span class="nav-icon" aria-hidden="true">US</span><span class="nav-label">Usuarios</span></a>
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -60,6 +64,7 @@
             <div class="offcanvas-body">
                 <div class="mobile-more-links">
                     <a class="mobile-more-link" asp-controller="Maintenance" asp-action="Index"><span class="nav-icon" aria-hidden="true">MT</span><span class="nav-label">Mantenimiento</span></a>
+                    <a class="mobile-more-link" asp-controller="Administration" asp-action="Users"><span class="nav-icon" aria-hidden="true">US</span><span class="nav-label">Usuarios y permisos</span></a>
                     <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Sales"><span class="nav-icon" aria-hidden="true">RV</span><span class="nav-label">Resumen ventas</span></a>
                     <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Collections"><span class="nav-icon" aria-hidden="true">RC</span><span class="nav-label">Resumen cobros</span></a>
                     <a class="mobile-more-link" asp-controller="Home" asp-action="Privacy"><span class="nav-icon" aria-hidden="true">PR</span><span class="nav-label">Privacidad</span></a>
@@ -68,7 +73,7 @@
         </div>
 
         <div class="container-fluid app-content app-frame">
-            <main role="main" class="pb-3 page-enter">
+            <main role="main" class="pb-3 page-enter app-main">
                 @RenderBody()
             </main>
         </div>
@@ -105,3 +110,5 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+
+

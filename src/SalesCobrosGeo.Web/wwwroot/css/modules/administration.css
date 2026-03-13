@@ -1,0 +1,231 @@
+﻿.admin-users-page {
+  gap: 14px;
+}
+
+.admin-users-actions {
+  justify-content: flex-end;
+}
+
+.admin-users-role-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-role-card {
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--role-primary) 14%, #dce6f1);
+  background: linear-gradient(180deg, var(--role-surface) 0%, rgba(255,255,255,0.98) 100%);
+  box-shadow: var(--shadow-soft);
+}
+
+.admin-role-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-role-code {
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--role-primary);
+}
+
+.admin-role-title {
+  margin: 4px 0 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #1f3048;
+}
+
+.admin-role-theme {
+  display: flex;
+  gap: 6px;
+}
+
+.admin-role-theme span {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(20, 31, 48, 0.08);
+}
+
+.admin-role-summary {
+  margin-top: 10px;
+  color: #5e6c7d;
+  font-size: 0.9rem;
+}
+
+.admin-role-block {
+  margin-top: 12px;
+}
+
+.admin-role-block-title {
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #6c7a8f;
+}
+
+.admin-role-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-role-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #eff5fb;
+  color: #33445c;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.admin-permission-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-permission-row {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid #dde6f2;
+  background: rgba(255,255,255,0.86);
+}
+
+.admin-permission-row strong,
+.admin-permission-row span,
+.admin-permission-row small {
+  display: block;
+}
+
+.admin-permission-row span {
+  margin-top: 3px;
+  font-weight: 700;
+  color: #24344c;
+}
+
+.admin-permission-row small {
+  margin-top: 4px;
+  color: #68768b;
+}
+
+.admin-users-table-shell {
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid #dce6f1;
+  background: rgba(255,255,255,0.92);
+  box-shadow: var(--shadow-soft);
+}
+
+.admin-users-table-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.admin-users-table-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.admin-users-table-subtitle {
+  color: #677489;
+}
+
+.admin-users-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-user-card {
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid #dfe7f2;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: var(--shadow-soft);
+}
+
+.admin-user-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-user-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #213149;
+}
+
+.admin-user-email,
+.admin-user-meta {
+  font-size: 0.84rem;
+  color: #667489;
+}
+
+.admin-user-meta {
+  margin-top: 6px;
+}
+
+.admin-user-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+@media (max-width: 1199px) {
+  .admin-users-role-grid,
+  .admin-users-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-users-actions,
+  .admin-user-actions {
+    flex-direction: column;
+  }
+
+  .admin-users-actions .btn,
+  .admin-user-actions .btn {
+    width: 100%;
+  }
+
+  .admin-users-role-grid,
+  .admin-users-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-role-card,
+  .admin-users-table-shell,
+  .admin-user-card {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .admin-role-title,
+  .admin-users-table-title {
+    font-size: 1.05rem;
+  }
+
+  .admin-role-summary,
+  .admin-users-table-subtitle {
+    font-size: 0.82rem;
+  }
+}
