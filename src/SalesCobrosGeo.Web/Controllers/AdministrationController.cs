@@ -85,7 +85,17 @@ public sealed class AdministrationController : Controller
                 session.LastLocationSource))
             .ToArray();
 
-        return View(new AdministrationPageViewModel(roles, users, sessions));
+        var auditTrail = _sessionTracker.GetAuditTrail()
+            .Select(entry => new AdminAuditCard(
+                entry.Timestamp,
+                entry.EventType,
+                entry.Username,
+                entry.Description,
+                entry.Path,
+                entry.Coordinates))
+            .ToArray();
+
+        return View(new AdministrationPageViewModel(roles, users, sessions, auditTrail));
     }
 
     [HttpPost]

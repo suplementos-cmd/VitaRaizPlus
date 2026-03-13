@@ -150,4 +150,29 @@
             }
         </div>
     </section>
+
+    <section class="admin-users-table-shell">
+        <div class="admin-users-table-head">
+            <div>
+                <h2 class="admin-users-table-title">Bitacora de auditoria</h2>
+                <div class="admin-users-table-subtitle">Eventos recientes de acceso, bloqueo, logout forzado, actividad y actualizaciones de ubicacion.</div>
+            </div>
+        </div>
+
+        <div class="admin-audit-list">
+            @foreach (var entry in Model.AuditTrail)
+            {
+                <article class="admin-audit-item">
+                    <div class="admin-audit-top">
+                        <strong>@entry.EventType</strong>
+                        <span>@entry.Timestamp</span>
+                    </div>
+                    <div class="admin-session-meta">Usuario: @entry.Username</div>
+                    <div class="admin-session-meta">@entry.Description</div>
+                    <div class="admin-session-meta">Ruta: @entry.Path</div>
+                    <div class="admin-session-meta">Coordenadas: @entry.Coordinates</div>
+                </article>
+            }
+        </div>
+    </section>
 </div>

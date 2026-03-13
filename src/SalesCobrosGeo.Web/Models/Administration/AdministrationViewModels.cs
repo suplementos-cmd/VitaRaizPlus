@@ -34,7 +34,16 @@ public sealed record AdminSessionCard(
     string LastCoordinates,
     string LastLocationSource);
 
+public sealed record AdminAuditCard(
+    string Timestamp,
+    string EventType,
+    string Username,
+    string Description,
+    string Path,
+    string Coordinates);
+
 public sealed record AdministrationPageViewModel(
     IReadOnlyList<RoleProfileCard> Roles,
     IReadOnlyList<AdminUserCard> Users,
-    IReadOnlyList<AdminSessionCard> Sessions);
+    IReadOnlyList<AdminSessionCard> Sessions,
+    IReadOnlyList<AdminAuditCard> AuditTrail);

@@ -1,4 +1,5 @@
 @using SalesCobrosGeo.Web.Security
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
     var currentController = (ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty);
     var currentAction = (ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty);
@@ -12,12 +13,14 @@
     var canCollections = isAuthenticated && User.HasPermission(AppPermissions.CollectionsView);
     var canMaintenance = isAuthenticated && User.HasPermission(AppPermissions.MaintenanceView);
     var canAdministration = isAuthenticated && User.HasPermission(AppPermissions.AdministrationView);
+    var antiForgeryToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
 }
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="request-verification-token" content="@antiForgeryToken" />
     <title>@ViewData["Title"] - VitaRaizPlus</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
@@ -31,7 +34,7 @@
     <link rel="stylesheet" href="~/css/modules/security.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/SalesCobrosGeo.Web.styles.css" asp-append-version="true" />
 </head>
-<body data-role-theme="@theme">
+<body data-role-theme="@theme" data-authenticated="@(isAuthenticated ? "true" : "false")">
     <div class="app-shell">
         <header class="app-header-shell">
             <nav class="navbar navbar-expand-lg navbar-dark app-topbar">

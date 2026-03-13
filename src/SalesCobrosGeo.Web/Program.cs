@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SalesCobrosGeo.Web.Data;
 using SalesCobrosGeo.Web.Security;
 using SalesCobrosGeo.Web.Services.Sales;
 
@@ -13,8 +15,16 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
 });
 builder.Services.AddSingleton<ISalesRepository, JsonSalesRepository>();
-builder.Services.AddSingleton<IApplicationUserService, InMemoryApplicationUserService>();
-builder.Services.AddSingleton<IUserSessionTracker, InMemoryUserSessionTracker>();
+
+var dataPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data");
+Directory.CreateDirectory(dataPath);
+var securityDbPath = Path.Combine(dataPath, "security.db");
+
+builder.Services.AddDbContext<AppSecurityDbContext>(options =>
+    options.UseSqlite($"Data Source={securityDbPath}"));
+builder.Services.AddScoped<SecurityDatabaseInitializer>();
+builder.Services.AddScoped<IApplicationUserService, SqliteApplicationUserService>();
+builder.Services.AddScoped<IUserSessionTracker, SqliteUserSessionTracker>();
 
 builder.Services.AddAntiforgery(options =>
 {
@@ -69,6 +79,12 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var initializer = scope.ServiceProvider.GetRequiredService<SecurityDatabaseInitializer>();
+    initializer.Initialize();
+}
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -86,11 +102,12 @@ app.Use(async (context, next) =>
     context.Response.Headers["X-Content-Type-Options"] = "nosniff";
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
     context.Response.Headers["Permissions-Policy"] = "geolocation=(self), camera=(self)";
-    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:;";
+    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self';";
 
     if (context.User.Identity?.IsAuthenticated == true)
     {
-        var tracker = context.RequestServices.GetRequiredService<IUserSessionTracker>();
+        using var scope = app.Services.CreateScope();
+        var tracker = scope.ServiceProvider.GetRequiredService<IUserSessionTracker>();
         if (!tracker.IsSessionValid(context.User))
         {
             await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

@@ -86,6 +86,14 @@ public sealed class AccountController : Controller
         return RedirectToAction(nameof(Login));
     }
 
+    [Authorize]
+    [HttpPost]
+    public IActionResult Heartbeat([FromBody] HeartbeatInput input)
+    {
+        _sessionTracker.UpdateCoordinates(User.Identity?.Name ?? string.Empty, input.Coordinates, "Heartbeat web");
+        return Json(new { ok = true });
+    }
+
     [AllowAnonymous]
     [HttpGet]
     public IActionResult AccessDenied()
