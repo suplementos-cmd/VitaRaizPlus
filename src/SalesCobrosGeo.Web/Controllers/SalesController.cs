@@ -1,16 +1,21 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SalesCobrosGeo.Web.Models.Sales;
+using SalesCobrosGeo.Web.Security;
 using SalesCobrosGeo.Web.Services.Sales;
 
 namespace SalesCobrosGeo.Web.Controllers;
 
+[Authorize(Policy = AppPolicies.SalesAccess)]
 public sealed class SalesController : Controller
 {
     private readonly ISalesRepository _repository;
+    private readonly IUserSessionTracker _sessionTracker;
 
-    public SalesController(ISalesRepository repository)
+    public SalesController(ISalesRepository repository, IUserSessionTracker sessionTracker)
     {
         _repository = repository;
+        _sessionTracker = sessionTracker;
     }
 
     public IActionResult Index()
@@ -92,6 +97,7 @@ public sealed class SalesController : Controller
         try
         {
             var saved = _repository.Create(NormalizeInput(input));
+            _sessionTracker.UpdateCoordinates(User.Identity?.Name ?? string.Empty, saved.Coordenadas, "Venta registrada");
             TempData["SalesMessage"] = "Venta registrada correctamente.";
             return RedirectToAction(nameof(Details), new { id = saved.IdV });
         }
@@ -146,6 +152,7 @@ public sealed class SalesController : Controller
         try
         {
             var saved = _repository.Update(id, NormalizeInput(input));
+            _sessionTracker.UpdateCoordinates(User.Identity?.Name ?? string.Empty, saved.Coordenadas, "Venta actualizada");
             TempData["SalesMessage"] = "Venta actualizada correctamente.";
             return RedirectToAction(nameof(Details), new { id = saved.IdV });
         }

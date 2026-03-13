@@ -1,6 +1,17 @@
-﻿@{
+@using SalesCobrosGeo.Web.Security
+@{
     var currentController = (ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty);
     var currentAction = (ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty);
+    var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+    var theme = isAuthenticated ? User.GetTheme() : "public";
+    var displayName = isAuthenticated ? User.GetDisplayName() : "Invitado";
+    var displayRole = isAuthenticated ? User.GetDisplayRole() : "Acceso publico";
+
+    var canDashboard = isAuthenticated && User.HasPermission(AppPermissions.DashboardView);
+    var canSales = isAuthenticated && User.HasPermission(AppPermissions.SalesView);
+    var canCollections = isAuthenticated && User.HasPermission(AppPermissions.CollectionsView);
+    var canMaintenance = isAuthenticated && User.HasPermission(AppPermissions.MaintenanceView);
+    var canAdministration = isAuthenticated && User.HasPermission(AppPermissions.AdministrationView);
 }
 <!DOCTYPE html>
 <html lang="es">
@@ -17,60 +28,112 @@
     <link rel="stylesheet" href="~/css/modules/collections.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/modules/maintenance.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/modules/administration.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/modules/security.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/SalesCobrosGeo.Web.styles.css" asp-append-version="true" />
 </head>
-<body>
+<body data-role-theme="@theme">
     <div class="app-shell">
         <header class="app-header-shell">
             <nav class="navbar navbar-expand-lg navbar-dark app-topbar">
                 <div class="container-fluid app-topbar-inner">
                     <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">VitaRaizPlus</a>
 
-                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMoreMenu" aria-controls="mobileMoreMenu" aria-label="Abrir menu">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
+                    @if (isAuthenticated)
+                    {
+                        <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMoreMenu" aria-controls="mobileMoreMenu" aria-label="Abrir menu">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                    }
 
                     <div class="navbar-collapse collapse d-lg-flex justify-content-between">
-                        <ul class="navbar-nav app-main-nav">
-                            <li class="nav-item">
-                                <a class="nav-link text-light @(currentController == "Home" && currentAction == "Index" ? "active" : string.Empty)" asp-area="" asp-controller="Home" asp-action="Index"><span class="nav-icon" aria-hidden="true">IN</span><span class="nav-label">Inicio</span></a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-light @(currentController == "Dashboard" && currentAction == "Index" ? "active" : string.Empty)" asp-area="" asp-controller="Dashboard" asp-action="Index"><span class="nav-icon" aria-hidden="true">DA</span><span class="nav-label">Dashboard</span></a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-light @(currentController == "Sales" ? "active" : string.Empty)" asp-area="" asp-controller="Sales" asp-action="Index"><span class="nav-icon" aria-hidden="true">VE</span><span class="nav-label">Ventas</span></a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-light @(currentController == "Cobros" ? "active" : string.Empty)" asp-area="" asp-controller="Cobros" asp-action="Index"><span class="nav-icon" aria-hidden="true">CO</span><span class="nav-label">Cobros</span></a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-light @(currentController == "Maintenance" ? "active" : string.Empty)" asp-area="" asp-controller="Maintenance" asp-action="Index"><span class="nav-icon" aria-hidden="true">MT</span><span class="nav-label">Mantenimiento</span></a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-light @(currentController == "Administration" ? "active" : string.Empty)" asp-area="" asp-controller="Administration" asp-action="Users"><span class="nav-icon" aria-hidden="true">US</span><span class="nav-label">Usuarios</span></a>
-                            </li>
-                        </ul>
+                        @if (isAuthenticated)
+                        {
+                            <ul class="navbar-nav app-main-nav">
+                                <li class="nav-item">
+                                    <a class="nav-link text-light @(currentController == "Home" && currentAction == "Index" ? "active" : string.Empty)" asp-area="" asp-controller="Home" asp-action="Index"><span class="nav-icon" aria-hidden="true">IN</span><span class="nav-label">Inicio</span></a>
+                                </li>
+                                @if (canDashboard)
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link text-light @(currentController == "Dashboard" && currentAction == "Index" ? "active" : string.Empty)" asp-area="" asp-controller="Dashboard" asp-action="Index"><span class="nav-icon" aria-hidden="true">DA</span><span class="nav-label">Dashboard</span></a>
+                                    </li>
+                                }
+                                @if (canSales)
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link text-light @(currentController == "Sales" ? "active" : string.Empty)" asp-area="" asp-controller="Sales" asp-action="Index"><span class="nav-icon" aria-hidden="true">VE</span><span class="nav-label">Ventas</span></a>
+                                    </li>
+                                }
+                                @if (canCollections)
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link text-light @(currentController == "Cobros" ? "active" : string.Empty)" asp-area="" asp-controller="Cobros" asp-action="Index"><span class="nav-icon" aria-hidden="true">CO</span><span class="nav-label">Cobros</span></a>
+                                    </li>
+                                }
+                                @if (canMaintenance)
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link text-light @(currentController == "Maintenance" ? "active" : string.Empty)" asp-area="" asp-controller="Maintenance" asp-action="Index"><span class="nav-icon" aria-hidden="true">MT</span><span class="nav-label">Mantenimiento</span></a>
+                                    </li>
+                                }
+                                @if (canAdministration)
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link text-light @(currentController == "Administration" ? "active" : string.Empty)" asp-area="" asp-controller="Administration" asp-action="Users"><span class="nav-icon" aria-hidden="true">US</span><span class="nav-label">Usuarios</span></a>
+                                    </li>
+                                }
+                            </ul>
+                        }
+
+                        <div class="app-user-panel">
+                            @if (isAuthenticated)
+                            {
+                                <div class="app-user-chip">
+                                    <strong>@displayName</strong>
+                                    <small>@displayRole</small>
+                                </div>
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="app-logout-form">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-light">Salir</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <a class="btn btn-sm btn-light" asp-controller="Account" asp-action="Login">Ingresar</a>
+                            }
+                        </div>
                     </div>
                 </div>
             </nav>
         </header>
 
-        <div class="offcanvas offcanvas-end mobile-more-menu" tabindex="-1" id="mobileMoreMenu" aria-labelledby="mobileMoreMenuLabel">
-            <div class="offcanvas-header">
-                <h5 class="offcanvas-title" id="mobileMoreMenuLabel">Mas accesos</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
-            </div>
-            <div class="offcanvas-body">
-                <div class="mobile-more-links">
-                    <a class="mobile-more-link" asp-controller="Maintenance" asp-action="Index"><span class="nav-icon" aria-hidden="true">MT</span><span class="nav-label">Mantenimiento</span></a>
-                    <a class="mobile-more-link" asp-controller="Administration" asp-action="Users"><span class="nav-icon" aria-hidden="true">US</span><span class="nav-label">Usuarios y permisos</span></a>
-                    <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Sales"><span class="nav-icon" aria-hidden="true">RV</span><span class="nav-label">Resumen ventas</span></a>
-                    <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Collections"><span class="nav-icon" aria-hidden="true">RC</span><span class="nav-label">Resumen cobros</span></a>
-                    <a class="mobile-more-link" asp-controller="Home" asp-action="Privacy"><span class="nav-icon" aria-hidden="true">PR</span><span class="nav-label">Privacidad</span></a>
+        @if (isAuthenticated)
+        {
+            <div class="offcanvas offcanvas-end mobile-more-menu" tabindex="-1" id="mobileMoreMenu" aria-labelledby="mobileMoreMenuLabel">
+                <div class="offcanvas-header">
+                    <h5 class="offcanvas-title" id="mobileMoreMenuLabel">Mas accesos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+                </div>
+                <div class="offcanvas-body">
+                    <div class="mobile-more-links">
+                        @if (canMaintenance)
+                        {
+                            <a class="mobile-more-link" asp-controller="Maintenance" asp-action="Index"><span class="nav-icon" aria-hidden="true">MT</span><span class="nav-label">Mantenimiento</span></a>
+                        }
+                        @if (canAdministration)
+                        {
+                            <a class="mobile-more-link" asp-controller="Administration" asp-action="Users"><span class="nav-icon" aria-hidden="true">US</span><span class="nav-label">Usuarios y permisos</span></a>
+                        }
+                        @if (canDashboard)
+                        {
+                            <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Sales"><span class="nav-icon" aria-hidden="true">RV</span><span class="nav-label">Resumen ventas</span></a>
+                            <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Collections"><span class="nav-icon" aria-hidden="true">RC</span><span class="nav-label">Resumen cobros</span></a>
+                        }
+                        <a class="mobile-more-link" asp-controller="Home" asp-action="Privacy"><span class="nav-icon" aria-hidden="true">PR</span><span class="nav-label">Privacidad</span></a>
+                    </div>
                 </div>
             </div>
-        </div>
+        }
 
         <div class="container-fluid app-content app-frame">
             <main role="main" class="pb-3 page-enter app-main">
@@ -78,24 +141,36 @@
             </main>
         </div>
 
-        <nav class="mobile-bottom-nav" aria-label="Menu principal movil">
-            <a class="mobile-bottom-link @(currentController == "Home" && currentAction == "Index" ? "active" : string.Empty)" asp-controller="Home" asp-action="Index">
-                <span class="mobile-bottom-icon" aria-hidden="true">IN</span>
-                <span class="mobile-bottom-text">Inicio</span>
-            </a>
-            <a class="mobile-bottom-link @(currentController == "Dashboard" && currentAction == "Index" ? "active" : string.Empty)" asp-controller="Dashboard" asp-action="Index">
-                <span class="mobile-bottom-icon" aria-hidden="true">DA</span>
-                <span class="mobile-bottom-text">Panel</span>
-            </a>
-            <a class="mobile-bottom-link @(currentController == "Sales" ? "active" : string.Empty)" asp-controller="Sales" asp-action="Index">
-                <span class="mobile-bottom-icon" aria-hidden="true">VE</span>
-                <span class="mobile-bottom-text">Ventas</span>
-            </a>
-            <a class="mobile-bottom-link @(currentController == "Cobros" ? "active" : string.Empty)" asp-controller="Cobros" asp-action="Index">
-                <span class="mobile-bottom-icon" aria-hidden="true">CO</span>
-                <span class="mobile-bottom-text">Cobros</span>
-            </a>
-        </nav>
+        @if (isAuthenticated)
+        {
+            <nav class="mobile-bottom-nav" aria-label="Menu principal movil">
+                <a class="mobile-bottom-link @(currentController == "Home" && currentAction == "Index" ? "active" : string.Empty)" asp-controller="Home" asp-action="Index">
+                    <span class="mobile-bottom-icon" aria-hidden="true">IN</span>
+                    <span class="mobile-bottom-text">Inicio</span>
+                </a>
+                @if (canDashboard)
+                {
+                    <a class="mobile-bottom-link @(currentController == "Dashboard" && currentAction == "Index" ? "active" : string.Empty)" asp-controller="Dashboard" asp-action="Index">
+                        <span class="mobile-bottom-icon" aria-hidden="true">DA</span>
+                        <span class="mobile-bottom-text">Panel</span>
+                    </a>
+                }
+                @if (canSales)
+                {
+                    <a class="mobile-bottom-link @(currentController == "Sales" ? "active" : string.Empty)" asp-controller="Sales" asp-action="Index">
+                        <span class="mobile-bottom-icon" aria-hidden="true">VE</span>
+                        <span class="mobile-bottom-text">Ventas</span>
+                    </a>
+                }
+                @if (canCollections)
+                {
+                    <a class="mobile-bottom-link @(currentController == "Cobros" ? "active" : string.Empty)" asp-controller="Cobros" asp-action="Index">
+                        <span class="mobile-bottom-icon" aria-hidden="true">CO</span>
+                        <span class="mobile-bottom-text">Cobros</span>
+                    </a>
+                }
+            </nav>
+        }
 
         <footer class="border-top footer text-muted">
             <div class="container-fluid app-footer-inner">
@@ -110,5 +185,3 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-
-

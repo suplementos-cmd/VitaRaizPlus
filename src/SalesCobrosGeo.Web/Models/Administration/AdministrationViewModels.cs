@@ -1,4 +1,4 @@
-﻿namespace SalesCobrosGeo.Web.Models.Administration;
+namespace SalesCobrosGeo.Web.Models.Administration;
 
 public sealed record RoleTheme(string Name, string PrimaryColor, string AccentColor, string SurfaceColor);
 
@@ -14,12 +14,27 @@ public sealed record RoleProfileCard(
 
 public sealed record AdminUserCard(
     string Name,
-    string Email,
+    string Username,
     string RoleCode,
     string Zone,
     string Status,
-    string LastAccess);
+    string AccessLabel);
+
+public sealed record AdminSessionCard(
+    string Username,
+    string DisplayName,
+    string RoleLabel,
+    string Zone,
+    bool IsActive,
+    bool IsConnected,
+    string LastSeen,
+    string LastPath,
+    string LastIp,
+    string LastUserAgent,
+    string LastCoordinates,
+    string LastLocationSource);
 
 public sealed record AdministrationPageViewModel(
     IReadOnlyList<RoleProfileCard> Roles,
-    IReadOnlyList<AdminUserCard> Users);
+    IReadOnlyList<AdminUserCard> Users,
+    IReadOnlyList<AdminSessionCard> Sessions);

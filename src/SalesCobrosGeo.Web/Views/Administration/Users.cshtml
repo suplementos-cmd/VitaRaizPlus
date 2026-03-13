@@ -1,4 +1,4 @@
-ï»¿@model SalesCobrosGeo.Web.Models.Administration.AdministrationPageViewModel
+@model SalesCobrosGeo.Web.Models.Administration.AdministrationPageViewModel
 @using SalesCobrosGeo.Web.Models.Shared
 @{
     ViewData["Title"] = "Administracion de usuarios";
@@ -7,9 +7,14 @@
 <div class="app-page-shell admin-users-page">
     @await Html.PartialAsync("_PageHeader", new PageHeaderViewModel(
         "Administracion",
-        "Usuarios, perfiles y permisos",
-        "Define que vistas puede abrir cada perfil, que tema visual usa y que campos puede consultar o editar.",
-        $"{Model.Users.Count} usuarios demo â€¢ {Model.Roles.Count} perfiles configurados"))
+        "Usuarios, perfiles y seguridad",
+        "Controla acceso por perfil, sesiones activas, bloqueo de cuentas y ultima ubicacion conocida de equipos operativos.",
+        $"{Model.Users.Count} usuarios configurados • {Model.Sessions.Count(x => x.IsConnected)} sesiones activas"))
+
+    @if (TempData["AdminSecurityMessage"] is string message)
+    {
+        <div class="alert alert-success admin-security-alert" role="alert">@message</div>
+    }
 
     <section class="app-page-actions admin-users-actions">
         <button type="button" class="btn btn-primary">Nuevo usuario</button>
@@ -62,11 +67,11 @@
         <div class="admin-users-table-head">
             <div>
                 <h2 class="admin-users-table-title">Usuarios</h2>
-                <div class="admin-users-table-subtitle">Vista base para gestionar altas, perfiles y estado operativo.</div>
+                <div class="admin-users-table-subtitle">Alta base del sistema con estado activo o inactivo.</div>
             </div>
             <div class="admin-users-legend">
                 <span class="admin-role-chip">Activo</span>
-                <span class="admin-role-chip">En ruta</span>
+                <span class="admin-role-chip">Inactivo</span>
             </div>
         </div>
 
@@ -77,16 +82,69 @@
                     <div class="admin-user-top">
                         <div>
                             <div class="admin-user-name">@user.Name</div>
-                            <div class="admin-user-email">@user.Email</div>
+                            <div class="admin-user-email">@user.Username</div>
                         </div>
                         <span class="admin-role-chip">@user.RoleCode</span>
                     </div>
                     <div class="admin-user-meta">Zona: @user.Zone</div>
                     <div class="admin-user-meta">Estado: @user.Status</div>
-                    <div class="admin-user-meta">Ultimo acceso: @user.LastAccess</div>
+                    <div class="admin-user-meta">Perfil: @user.AccessLabel</div>
                     <div class="admin-user-actions">
-                        <button type="button" class="btn btn-sm btn-outline-primary">Permisos</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary">Editar</button>
+                        <form asp-action="SetUserStatus" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="username" value="@user.Username" />
+                            <input type="hidden" name="isActive" value="@(user.Status == "Activo" ? "false" : "true")" />
+                            <button type="submit" class="btn btn-sm @(user.Status == "Activo" ? "btn-outline-danger" : "btn-outline-success")">@(user.Status == "Activo" ? "Inactivar" : "Activar")</button>
+                        </form>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+
+    <section class="admin-users-table-shell">
+        <div class="admin-users-table-head">
+            <div>
+                <h2 class="admin-users-table-title">Sesiones y rastreo</h2>
+                <div class="admin-users-table-subtitle">Supervision en tiempo real para saber quien esta conectado, desde donde entro y cual fue su ultima coordenada operativa.</div>
+            </div>
+        </div>
+
+        <div class="admin-session-grid">
+            @foreach (var session in Model.Sessions)
+            {
+                <article class="admin-session-card @(session.IsConnected ? "connected" : string.Empty)">
+                    <div class="admin-session-head">
+                        <div>
+                            <div class="admin-user-name">@session.DisplayName</div>
+                            <div class="admin-user-email">@session.Username • @session.RoleLabel</div>
+                        </div>
+                        <span class="admin-session-badge @(session.IsConnected ? "connected" : session.IsActive ? "idle" : "inactive")">
+                            @(session.IsConnected ? "Conectado" : session.IsActive ? "Sin sesion" : "Inactivo")
+                        </span>
+                    </div>
+                    <div class="admin-session-meta">Zona: @session.Zone</div>
+                    <div class="admin-session-meta">Ultima actividad: @session.LastSeen</div>
+                    <div class="admin-session-meta">Ruta/pagina: @session.LastPath</div>
+                    <div class="admin-session-meta">IP: @session.LastIp</div>
+                    <div class="admin-session-meta">Coordenadas: @session.LastCoordinates</div>
+                    <div class="admin-session-meta">Origen rastreo: @session.LastLocationSource</div>
+                    <details class="admin-session-device">
+                        <summary>Ver equipo</summary>
+                        <div>@session.LastUserAgent</div>
+                    </details>
+                    <div class="admin-user-actions">
+                        <form asp-action="ForceLogout" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="username" value="@session.Username" />
+                            <button type="submit" class="btn btn-sm btn-outline-warning">Desconectar</button>
+                        </form>
+                        <form asp-action="SetUserStatus" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="username" value="@session.Username" />
+                            <input type="hidden" name="isActive" value="@(session.IsActive ? "false" : "true")" />
+                            <button type="submit" class="btn btn-sm @(session.IsActive ? "btn-outline-danger" : "btn-outline-success")">@(session.IsActive ? "Inactivar" : "Activar")</button>
+                        </form>
                     </div>
                 </article>
             }
