@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SalesCobrosGeo.Web.Data;
+using SalesCobrosGeo.Web.Models.Administration;
 
 namespace SalesCobrosGeo.Web.Security;
 
@@ -85,6 +86,115 @@ public sealed class SqliteApplicationUserService : IApplicationUserService
         return true;
     }
 
+    public ApplicationUserSummary? GetUser(string username)
+    {
+        var user = _dbContext.Users.Include(x => x.Permissions).FirstOrDefault(x => x.Username == username);
+        return user is null ? null : MapSummary(user);
+    }
+
+    public ApplicationUserSummary SaveUser(UserAdminInput input)
+    {
+        var username = input.Username.Trim();
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            throw new InvalidOperationException("Usuario obligatorio.");
+        }
+
+        var originalUsername = input.OriginalUsername?.Trim();
+        AppUserEntity entity;
+        if (string.IsNullOrWhiteSpace(originalUsername))
+        {
+            if (_dbContext.Users.Any(x => x.Username == username))
+            {
+                throw new InvalidOperationException("El usuario ya existe.");
+            }
+
+            entity = new AppUserEntity
+            {
+                Username = username,
+                CreatedUtc = DateTime.UtcNow
+            };
+            _dbContext.Users.Add(entity);
+        }
+        else
+        {
+            entity = _dbContext.Users.Include(x => x.Permissions).FirstOrDefault(x => x.Username == originalUsername)
+                ?? throw new InvalidOperationException("Usuario no encontrado.");
+
+            if (!originalUsername.Equals(username, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Por seguridad, el usuario de acceso no se renombra. Crea uno nuevo y desactiva el anterior si lo necesitas.");
+            }
+        }
+
+        entity.DisplayName = input.DisplayName.Trim();
+        entity.Zone = input.Zone.Trim();
+        entity.Theme = input.Theme.Trim();
+        entity.Role = input.Role.Trim();
+        entity.RoleLabel = input.RoleLabel.Trim();
+        entity.IsActive = input.IsActive;
+        entity.TwoFactorEnabled = input.TwoFactorEnabled;
+        entity.UpdatedUtc = DateTime.UtcNow;
+
+        if (!string.IsNullOrWhiteSpace(input.Password))
+        {
+            entity.PasswordHash = _passwordHasher.HashPassword(entity, input.Password);
+        }
+        else if (string.IsNullOrWhiteSpace(entity.PasswordHash))
+        {
+            throw new InvalidOperationException("Contrasena obligatoria para usuarios nuevos.");
+        }
+
+        var selected = input.Permissions
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        entity.Permissions.RemoveAll(x => !selected.Contains(x.Permission));
+        foreach (var permission in selected.Where(permission => entity.Permissions.All(x => !x.Permission.Equals(permission, StringComparison.OrdinalIgnoreCase))))
+        {
+            entity.Permissions.Add(new AppUserPermissionEntity
+            {
+                Username = entity.Username,
+                Permission = permission
+            });
+        }
+
+        _dbContext.AuditLogs.Add(new AuditLogEntity
+        {
+            CreatedUtc = DateTime.UtcNow,
+            EventType = string.IsNullOrWhiteSpace(originalUsername) ? "USER_CREATED" : "USER_UPDATED",
+            Username = username,
+            Description = string.IsNullOrWhiteSpace(originalUsername) ? "Alta de usuario." : "Edicion de usuario.",
+            Metadata = string.Join(",", selected)
+        });
+
+        _dbContext.SaveChanges();
+        return MapSummary(_dbContext.Users.Include(x => x.Permissions).First(x => x.Username == username));
+    }
+
+    public bool ResetPassword(string username, string newPassword)
+    {
+        var user = _dbContext.Users.FirstOrDefault(x => x.Username == username);
+        if (user is null)
+        {
+            return false;
+        }
+
+        user.PasswordHash = _passwordHasher.HashPassword(user, newPassword);
+        user.UpdatedUtc = DateTime.UtcNow;
+        _dbContext.AuditLogs.Add(new AuditLogEntity
+        {
+            CreatedUtc = DateTime.UtcNow,
+            EventType = "PASSWORD_RESET",
+            Username = username,
+            Description = "Contrasena reiniciada por administrador.",
+            Metadata = "reset"
+        });
+        _dbContext.SaveChanges();
+        return true;
+    }
+
     private void RegisterAudit(string eventType, string username, string description)
     {
         _dbContext.AuditLogs.Add(new AuditLogEntity
@@ -108,6 +218,7 @@ public sealed class SqliteApplicationUserService : IApplicationUserService
             user.Zone,
             user.Theme,
             user.IsActive,
+            user.TwoFactorEnabled,
             user.Permissions.Select(x => x.Permission).ToArray());
     }
 }

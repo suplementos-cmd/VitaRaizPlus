@@ -146,6 +146,7 @@ public sealed class CollectorPortfolioItem
     public string IdV { get; set; } = string.Empty;
     public int NumVenta { get; set; }
     public string NombreCliente { get; set; } = string.Empty;
+    public string Celular { get; set; } = string.Empty;
     public string Zona { get; set; } = string.Empty;
     public string DiaCobroPrevisto { get; set; } = string.Empty;
     public string Cobrador { get; set; } = string.Empty;

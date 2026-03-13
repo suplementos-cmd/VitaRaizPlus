@@ -8,4 +8,5 @@ public sealed record ApplicationUserSummary(
     string Zone,
     string Theme,
     bool IsActive,
+    bool TwoFactorEnabled,
     IReadOnlyList<string> Permissions);

@@ -102,3 +102,57 @@
     padding: 12px;
   }
 }
+.maintenance-admin-layout {
+  align-items: start;
+}
+
+.maintenance-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  gap: 14px;
+}
+
+.maintenance-grid-shell {
+  min-width: 0;
+}
+
+.maintenance-grid-compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.maintenance-editor-panel {
+  position: sticky;
+  top: 88px;
+  align-self: start;
+}
+
+.maintenance-editor-panel.is-disabled {
+  opacity: 0.96;
+}
+
+.maintenance-editor-head h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #223149;
+}
+
+.maintenance-card-actions form {
+  display: inline-flex;
+}
+
+@media (max-width: 1199px) {
+  .maintenance-workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .maintenance-editor-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .maintenance-grid-compact {
+    grid-template-columns: 1fr;
+  }
+}

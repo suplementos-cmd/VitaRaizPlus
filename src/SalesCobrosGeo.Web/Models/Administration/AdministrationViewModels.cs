@@ -18,7 +18,10 @@ public sealed record AdminUserCard(
     string RoleCode,
     string Zone,
     string Status,
-    string AccessLabel);
+    string AccessLabel,
+    string Theme,
+    bool TwoFactorEnabled,
+    int PermissionCount);
 
 public sealed record AdminSessionCard(
     string Username,
@@ -35,6 +38,7 @@ public sealed record AdminSessionCard(
     string LastLocationSource);
 
 public sealed record AdminAuditCard(
+    long Id,
     string Timestamp,
     string EventType,
     string Username,
@@ -46,4 +50,8 @@ public sealed record AdministrationPageViewModel(
     IReadOnlyList<RoleProfileCard> Roles,
     IReadOnlyList<AdminUserCard> Users,
     IReadOnlyList<AdminSessionCard> Sessions,
-    IReadOnlyList<AdminAuditCard> AuditTrail);
+    IReadOnlyList<AdminAuditCard> AuditTrail,
+    UserEditViewModel Editor,
+    int AuditPage,
+    int TotalAuditPages,
+    string? Message = null);

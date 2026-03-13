@@ -1,19 +1,24 @@
 @using SalesCobrosGeo.Web.Security
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
-    var currentController = (ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty);
-    var currentAction = (ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty);
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
     var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
     var theme = isAuthenticated ? User.GetTheme() : "public";
     var displayName = isAuthenticated ? User.GetDisplayName() : "Invitado";
     var displayRole = isAuthenticated ? User.GetDisplayRole() : "Acceso publico";
-
     var canDashboard = isAuthenticated && User.HasPermission(AppPermissions.DashboardView);
     var canSales = isAuthenticated && User.HasPermission(AppPermissions.SalesView);
     var canCollections = isAuthenticated && User.HasPermission(AppPermissions.CollectionsView);
     var canMaintenance = isAuthenticated && User.HasPermission(AppPermissions.MaintenanceView);
     var canAdministration = isAuthenticated && User.HasPermission(AppPermissions.AdministrationView);
     var antiForgeryToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
+    var toastMessage = TempData["AppToastMessage"] as string
+        ?? TempData["SalesMessage"] as string
+        ?? TempData["CobroMessage"] as string
+        ?? TempData["AdminSecurityMessage"] as string
+        ?? TempData["MaintenanceMessage"] as string;
+    var toastTone = TempData["AppToastTone"] as string ?? "success";
 }
 <!DOCTYPE html>
 <html lang="es">
@@ -21,9 +26,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="request-verification-token" content="@antiForgeryToken" />
+    <meta name="theme-color" content="#173252" />
     <title>@ViewData["Title"] - VitaRaizPlus</title>
     <script type="importmap"></script>
+    <link rel="manifest" href="~/manifest.webmanifest" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/modules/design-tokens.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/modules/layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/modules/dashboard.css" asp-append-version="true" />
@@ -135,6 +143,13 @@
                         <a class="mobile-more-link" asp-controller="Home" asp-action="Privacy"><span class="nav-icon" aria-hidden="true">PR</span><span class="nav-label">Privacidad</span></a>
                     </div>
                 </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(toastMessage))
+        {
+            <div class="app-toast-host" aria-live="polite" aria-atomic="true">
+                <div class="app-toast app-toast-@toastTone" data-auto-toast="true">@toastMessage</div>
             </div>
         }
 

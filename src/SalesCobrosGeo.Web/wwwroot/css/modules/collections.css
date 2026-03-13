@@ -36,3 +36,49 @@
     position: static;
   }
 }
+.collector-sale-card-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.collector-sale-card-mainlink {
+  display: grid;
+  grid-template-columns: 68px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+
+.collector-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.collector-quick-actions-wide {
+  justify-content: flex-start;
+}
+
+@media (max-width: 640px) {
+  .collector-sale-card-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .collector-sale-card-mainlink {
+    grid-template-columns: 60px 1fr auto;
+  }
+
+  .collector-quick-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .collector-quick-actions .btn {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}

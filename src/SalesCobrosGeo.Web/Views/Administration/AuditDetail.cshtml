@@ -1,0 +1,43 @@
+@model SalesCobrosGeo.Web.Models.Administration.AuditDetailViewModel
+@using SalesCobrosGeo.Web.Models.Shared
+@{
+    ViewData["Title"] = "Detalle auditoria";
+}
+
+<div class="app-page-shell admin-audit-detail-page">
+    @await Html.PartialAsync("_PageHeader", new PageHeaderViewModel(
+        "Auditoria",
+        Model.EventType,
+        "Detalle completo del evento seleccionado, con metadata y traza operacional.",
+        $"Evento #{Model.Id} • {Model.Timestamp}"))
+
+    <section class="admin-audit-detail-grid">
+        <article class="admin-audit-detail-card">
+            <div class="admin-audit-detail-label">Usuario</div>
+            <strong>@Model.Username</strong>
+        </article>
+        <article class="admin-audit-detail-card">
+            <div class="admin-audit-detail-label">Ruta</div>
+            <strong>@Model.Path</strong>
+        </article>
+        <article class="admin-audit-detail-card">
+            <div class="admin-audit-detail-label">Coordenadas</div>
+            <strong>@Model.Coordinates</strong>
+        </article>
+        <article class="admin-audit-detail-card">
+            <div class="admin-audit-detail-label">Metadata</div>
+            <strong>@Model.Metadata</strong>
+        </article>
+    </section>
+
+    <section class="admin-users-table-shell">
+        <div class="admin-users-table-head">
+            <div>
+                <h2 class="admin-users-table-title">Descripcion del evento</h2>
+                <div class="admin-users-table-subtitle">Texto persistido en la bitacora.</div>
+            </div>
+            <a class="btn btn-outline-secondary" asp-action="Users">Volver a auditoria</a>
+        </div>
+        <div class="admin-audit-detail-body">@Model.Description</div>
+    </section>
+</div>

@@ -1,4 +1,4 @@
-﻿@model SalesCobrosGeo.Web.Models.Sales.CollectionRegisterViewModel
+@model SalesCobrosGeo.Web.Models.Sales.CollectionRegisterViewModel
 @using Microsoft.AspNetCore.Mvc.Rendering
 @{
     ViewData["Title"] = "Registrar Cobro";
@@ -12,6 +12,8 @@
         ? ResolveImage(sale?.FotoCliente, "https://placehold.co/900x420?text=Venta")
         : ResolveImage(sale.FotoFachada, "https://placehold.co/900x420?text=Venta");
     var clientPhoto = ResolveImage(sale?.FotoCliente, "https://placehold.co/240x180?text=Cliente");
+    var cleanPhone = string.IsNullOrWhiteSpace(Model.PortfolioItem?.Celular) ? string.Empty : new string(Model.PortfolioItem.Celular.Where(char.IsDigit).ToArray());
+    var mapLink = string.IsNullOrWhiteSpace(sale?.Coordenadas) ? "#" : $"https://maps.google.com/?q={Uri.EscapeDataString(sale.Coordenadas)}";
 
     string StatusClass(string status) => status.ToUpperInvariant() switch
     {
@@ -34,7 +36,7 @@
 
     @if (!ViewData.ModelState.IsValid)
     {
-        <div class="alert alert-danger">No se pudo registrar el cobro. Revisa los datos.</div>
+        <div class="app-toast-inline danger">No se pudo registrar el cobro. Revisa los datos.</div>
     }
 
     @if (Model.PortfolioItem is not null)
@@ -46,6 +48,16 @@
             </div>
         </div>
 
+        <div class="collector-quick-actions collector-quick-actions-wide mb-3">
+            @if (!string.IsNullOrWhiteSpace(cleanPhone))
+            {
+                <a class="btn btn-outline-secondary" href="tel:@cleanPhone">Llamar</a>
+                <a class="btn btn-outline-success" href="https://wa.me/@cleanPhone" target="_blank" rel="noopener">WhatsApp</a>
+            }
+            <a class="btn btn-outline-primary @(mapLink == "#" ? "disabled" : string.Empty)" href="@mapLink" target="_blank" rel="noopener">Abrir mapa</a>
+            <button type="button" class="btn btn-outline-primary" id="btnCollectorGps">Tomar GPS</button>
+        </div>
+
         <div class="collector-register-grid mb-3">
             <div class="card card-body collector-register-client-card">
                 <div class="collector-register-client-head">
@@ -53,7 +65,7 @@
                     <div>
                         <div class="collector-register-client">@Model.PortfolioItem.NombreCliente</div>
                         <div class="collector-register-meta">Venta #@Model.PortfolioItem.NumVenta</div>
-                        <div class="collector-register-meta">@Model.PortfolioItem.Zona • @Model.PortfolioItem.DiaCobroPrevisto</div>
+                        <div class="collector-register-meta">@Model.PortfolioItem.Zona � @Model.PortfolioItem.DiaCobroPrevisto</div>
                     </div>
                 </div>
             </div>
@@ -99,7 +111,7 @@
                 <label asp-for="Input.CoordenadasCobro" class="form-label">Coordenadas cobro</label>
                 <div class="input-group">
                     <input asp-for="Input.CoordenadasCobro" class="form-control" id="collectorGpsCoordinates" placeholder="19.260839, -98.831437" />
-                    <button type="button" class="btn btn-outline-primary" id="btnCollectorGps">GPS</button>
+                    <button type="button" class="btn btn-outline-primary" id="btnCollectorGpsInline">GPS</button>
                 </div>
                 <small id="collectorGpsStatus" class="text-muted">Puedes detectar GPS automatico.</small>
             </div>
@@ -132,7 +144,10 @@
         <div class="card-body">
             @if (Model.Historial.Count == 0)
             {
-                <div class="text-muted text-center">Sin cobros previos</div>
+                <div class="app-empty-state compact">
+                    <strong>Sin cobros previos</strong>
+                    <span>Cuando registres un abono empezara a verse el historial aqui.</span>
+                </div>
             }
             else
             {
@@ -166,9 +181,9 @@
 (function() {
     const coords = document.getElementById('collectorGpsCoordinates');
     const status = document.getElementById('collectorGpsStatus');
-    const btn = document.getElementById('btnCollectorGps');
+    const buttons = [document.getElementById('btnCollectorGps'), document.getElementById('btnCollectorGpsInline')].filter(Boolean);
 
-    if (!coords || !status || !btn) {
+    if (!coords || !status || buttons.length === 0) {
         return;
     }
 
@@ -188,18 +203,12 @@
         status.textContent = 'Detectando ubicacion...';
         navigator.geolocation.getCurrentPosition(
             applyLocation,
-            function(err) {
-                status.textContent = `No se pudo detectar GPS (${err.message}).`;
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-            }
+            function(err) { status.textContent = `No se pudo detectar GPS (${err.message}).`; },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
     }
 
-    btn.addEventListener('click', detect);
+    buttons.forEach((btn) => btn.addEventListener('click', detect));
 })();
 </script>
 }

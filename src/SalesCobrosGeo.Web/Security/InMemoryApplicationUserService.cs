@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
+using SalesCobrosGeo.Web.Models.Administration;
 
 namespace SalesCobrosGeo.Web.Security;
 
@@ -91,15 +92,7 @@ public sealed class InMemoryApplicationUserService : IApplicationUserService
     public IReadOnlyList<ApplicationUserSummary> GetUsers()
     {
         return _users
-            .Select(x => new ApplicationUserSummary(
-                x.Username,
-                x.DisplayName,
-                x.Role,
-                x.RoleLabel,
-                x.Zone,
-                x.Theme,
-                x.IsActive,
-                x.Permissions))
+            .Select(MapSummary)
             .ToArray();
     }
 
@@ -114,6 +107,84 @@ public sealed class InMemoryApplicationUserService : IApplicationUserService
         }
 
         user.IsActive = isActive;
+        return true;
+    }
+
+    public ApplicationUserSummary? GetUser(string username)
+    {
+        var user = _users.FirstOrDefault(x => x.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
+        return user is null ? null : MapSummary(user);
+    }
+
+    public ApplicationUserSummary SaveUser(UserAdminInput input)
+    {
+        var username = input.Username.Trim();
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            throw new InvalidOperationException("Usuario obligatorio.");
+        }
+
+        var existing = _users.FirstOrDefault(x => x.Username.Equals(input.OriginalUsername ?? username, StringComparison.OrdinalIgnoreCase));
+        var permissions = input.Permissions.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+
+        if (existing is null)
+        {
+            if (string.IsNullOrWhiteSpace(input.Password))
+            {
+                throw new InvalidOperationException("Contrasena obligatoria para usuarios nuevos.");
+            }
+
+            var account = CreateUser(
+                username,
+                input.DisplayName,
+                input.Password,
+                input.Theme,
+                input.Role,
+                input.RoleLabel,
+                input.Zone,
+                permissions);
+            account.IsActive = input.IsActive;
+            _users.Add(account);
+            return MapSummary(account);
+        }
+
+        if (!existing.Username.Equals(username, StringComparison.OrdinalIgnoreCase) && _users.Any(x => x.Username.Equals(username, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidOperationException("El usuario ya existe.");
+        }
+
+        var updated = new AppUserAccount
+        {
+            Username = username,
+            DisplayName = input.DisplayName,
+            PasswordHash = existing.PasswordHash,
+            Theme = input.Theme,
+            Role = input.Role,
+            RoleLabel = input.RoleLabel,
+            Zone = input.Zone,
+            IsActive = input.IsActive,
+            Permissions = permissions
+        };
+
+        if (!string.IsNullOrWhiteSpace(input.Password))
+        {
+            updated.PasswordHash = _passwordHasher.HashPassword(updated, input.Password);
+        }
+
+        var index = _users.IndexOf(existing);
+        _users[index] = updated;
+        return MapSummary(updated);
+    }
+
+    public bool ResetPassword(string username, string newPassword)
+    {
+        var user = _users.FirstOrDefault(x => x.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
+        if (user is null)
+        {
+            return false;
+        }
+
+        user.PasswordHash = _passwordHasher.HashPassword(user, newPassword);
         return true;
     }
 
@@ -142,6 +213,20 @@ public sealed class InMemoryApplicationUserService : IApplicationUserService
 
         user.PasswordHash = _passwordHasher.HashPassword(user, password);
         return user;
+    }
+
+    private static ApplicationUserSummary MapSummary(AppUserAccount user)
+    {
+        return new ApplicationUserSummary(
+            user.Username,
+            user.DisplayName,
+            user.Role,
+            user.RoleLabel,
+            user.Zone,
+            user.Theme,
+            user.IsActive,
+            false,
+            user.Permissions);
     }
 
     private static ClaimsPrincipal BuildPrincipal(AppUserAccount user)

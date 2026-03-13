@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using SalesCobrosGeo.Web.Models.Maintenance;
 using SalesCobrosGeo.Web.Models.Sales;
 
 namespace SalesCobrosGeo.Web.Services.Sales;
@@ -7,6 +8,9 @@ namespace SalesCobrosGeo.Web.Services.Sales;
 public interface ISalesRepository
 {
     SalesCatalogs GetCatalogs();
+    IReadOnlyList<MaintenanceCatalogRecord> GetMaintenanceCatalog(string section);
+    MaintenanceCatalogRecord SaveMaintenanceCatalogItem(MaintenanceCatalogSaveInput input);
+    bool DeleteMaintenanceCatalogItem(string section, long id);
     IReadOnlyList<SaleRecord> GetAll();
     SaleRecord? GetById(string idV);
     SaleRecord Create(SaleFormInput input);
@@ -86,6 +90,30 @@ public sealed class JsonSalesRepository : ISalesRepository
                 new CatalogOption("jakelinepink88@gmail.com", "jakelinepink88@gmail.com"),
                 new CatalogOption("ggab75218@gmail.com", "ggab75218@gmail.com")
             ]);
+    }
+
+    public IReadOnlyList<MaintenanceCatalogRecord> GetMaintenanceCatalog(string section)
+    {
+        return section switch
+        {
+            "zonas" => GetCatalogs().Zones.Select((x, i) => new MaintenanceCatalogRecord(i + 1, section, x.Code, x.Name, null, true)).ToArray(),
+            "dias-cobro" => GetCatalogs().CollectionDays.Select((x, i) => new MaintenanceCatalogRecord(i + 1, section, x.Code, x.Name, null, true)).ToArray(),
+            "formas-pago" => GetCatalogs().PaymentMethods.Select((x, i) => new MaintenanceCatalogRecord(i + 1, section, x.Code, x.Name, null, true)).ToArray(),
+            "productos" => GetCatalogs().Products.Select((x, i) => new MaintenanceCatalogRecord(i + 1, section, x.Code, x.Name, x.Price, true)).ToArray(),
+            "vendedores" => GetCatalogs().Sellers.Select((x, i) => new MaintenanceCatalogRecord(i + 1, section, x.Code, x.Name, null, true)).ToArray(),
+            "cobradores" => GetCatalogs().Collectors.Select((x, i) => new MaintenanceCatalogRecord(i + 1, section, x.Code, x.Name, null, true)).ToArray(),
+            _ => []
+        };
+    }
+
+    public MaintenanceCatalogRecord SaveMaintenanceCatalogItem(MaintenanceCatalogSaveInput input)
+    {
+        throw new NotSupportedException("Use SQLite repository for maintenance CRUD.");
+    }
+
+    public bool DeleteMaintenanceCatalogItem(string section, long id)
+    {
+        throw new NotSupportedException("Use SQLite repository for maintenance CRUD.");
     }
 
     public IReadOnlyList<SaleRecord> GetAll()
@@ -525,6 +553,7 @@ public sealed class JsonSalesRepository : ISalesRepository
         return date.ToString("dddd", new CultureInfo("es-ES")).ToUpperInvariant();
     }
 }
+
 
 
 
