@@ -11,23 +11,26 @@
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/modules/layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/modules/dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/modules/sales.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/modules/collections.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/modules/maintenance.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/SalesCobrosGeo.Web.styles.css" asp-append-version="true" />
 </head>
 <body>
     <div class="app-shell">
-        <header>
-            <nav class="navbar navbar-expand-sm navbar-dark bg-dark border-bottom mb-3 app-topbar">
-                <div class="container-fluid">
+        <header class="app-header-shell">
+            <nav class="navbar navbar-expand-lg navbar-dark app-topbar">
+                <div class="container-fluid app-topbar-inner">
                     <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">VitaRaizPlus</a>
-                    <button class="navbar-toggler d-sm-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMoreMenu" aria-controls="mobileMoreMenu" aria-label="Abrir menu">
+
+                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMoreMenu" aria-controls="mobileMoreMenu" aria-label="Abrir menu">
                         <span class="navbar-toggler-icon"></span>
                     </button>
-                    <button class="navbar-toggler d-none d-sm-inline-flex" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                            aria-expanded="false" aria-label="Toggle navigation">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                        <ul class="navbar-nav flex-grow-1">
+
+                    <div class="navbar-collapse collapse d-lg-flex justify-content-between">
+                        <ul class="navbar-nav app-main-nav">
                             <li class="nav-item">
                                 <a class="nav-link text-light @(currentController == "Home" && currentAction == "Index" ? "active" : string.Empty)" asp-area="" asp-controller="Home" asp-action="Index"><span class="nav-icon" aria-hidden="true">IN</span><span class="nav-label">Inicio</span></a>
                             </li>
@@ -39,6 +42,9 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link text-light @(currentController == "Cobros" ? "active" : string.Empty)" asp-area="" asp-controller="Cobros" asp-action="Index"><span class="nav-icon" aria-hidden="true">CO</span><span class="nav-label">Cobros</span></a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-light @(currentController == "Maintenance" ? "active" : string.Empty)" asp-area="" asp-controller="Maintenance" asp-action="Index"><span class="nav-icon" aria-hidden="true">MT</span><span class="nav-label">Mantenimiento</span></a>
                             </li>
                         </ul>
                     </div>
@@ -53,9 +59,10 @@
             </div>
             <div class="offcanvas-body">
                 <div class="mobile-more-links">
+                    <a class="mobile-more-link" asp-controller="Maintenance" asp-action="Index"><span class="nav-icon" aria-hidden="true">MT</span><span class="nav-label">Mantenimiento</span></a>
                     <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Sales"><span class="nav-icon" aria-hidden="true">RV</span><span class="nav-label">Resumen ventas</span></a>
                     <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Collections"><span class="nav-icon" aria-hidden="true">RC</span><span class="nav-label">Resumen cobros</span></a>
-                    <a class="mobile-more-link" asp-controller="Maintenance" asp-action="Index"><span class="nav-icon" aria-hidden="true">MT</span><span class="nav-label">Mantenimiento</span></a>`r`n                    <a class="mobile-more-link" asp-controller="Home" asp-action="Privacy"><span class="nav-icon" aria-hidden="true">PR</span><span class="nav-label">Privacidad</span></a>
+                    <a class="mobile-more-link" asp-controller="Home" asp-action="Privacy"><span class="nav-icon" aria-hidden="true">PR</span><span class="nav-label">Privacidad</span></a>
                 </div>
             </div>
         </div>
@@ -98,4 +105,3 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-

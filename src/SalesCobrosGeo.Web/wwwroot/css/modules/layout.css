@@ -1,0 +1,53 @@
+﻿.app-header-shell {
+  position: sticky;
+  top: 0;
+  z-index: 1040;
+  backdrop-filter: blur(12px);
+}
+
+.app-topbar {
+  margin-bottom: 0.75rem;
+  background: linear-gradient(90deg, rgba(31,41,64,0.96) 0%, rgba(49,36,80,0.96) 100%);
+  box-shadow: 0 8px 20px rgba(19, 31, 50, 0.12);
+}
+
+.app-topbar-inner {
+  min-height: 64px;
+}
+
+.app-main-nav {
+  gap: 6px;
+}
+
+.app-main-nav .nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-inline: 12px;
+  min-height: 42px;
+}
+
+.app-frame {
+  padding-top: 6px;
+}
+
+.mobile-more-menu {
+  border-top-left-radius: 20px;
+  border-bottom-left-radius: 20px;
+}
+
+.mobile-more-link {
+  border: 1px solid #e0e8f3;
+  border-radius: 14px;
+  background: #fff;
+}
+
+@media (max-width: 991px) {
+  .app-header-shell {
+    position: sticky;
+  }
+
+  .app-topbar-inner {
+    min-height: 58px;
+  }
+}
