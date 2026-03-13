@@ -159,12 +159,26 @@
 }
 
 .admin-user-card,
-.admin-session-card {
+.admin-session-card,
+.admin-audit-item {
   padding: 14px;
   border-radius: 16px;
   border: 1px solid #dfe7f2;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   box-shadow: var(--shadow-soft);
+}
+
+.admin-audit-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-audit-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
 }
 
 .admin-session-card.connected {
@@ -188,7 +202,8 @@
 
 .admin-user-email,
 .admin-user-meta,
-.admin-session-meta {
+.admin-session-meta,
+.admin-audit-top span {
   font-size: 0.84rem;
   color: #667489;
 }
@@ -276,7 +291,8 @@
   .admin-role-card,
   .admin-users-table-shell,
   .admin-user-card,
-  .admin-session-card {
+  .admin-session-card,
+  .admin-audit-item {
     padding: 12px;
     border-radius: 14px;
   }

@@ -20,4 +20,6 @@ public interface IUserSessionTracker
     void UpdateCoordinates(string username, string? coordinates, string source);
 
     IReadOnlyList<UserSessionSnapshot> GetSnapshots(IReadOnlyList<ApplicationUserSummary> users);
+
+    IReadOnlyList<AuditTrailEntry> GetAuditTrail(int take = 30);
 }

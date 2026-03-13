@@ -186,6 +186,11 @@ public sealed class InMemoryUserSessionTracker : IUserSessionTracker
         }
     }
 
+    public IReadOnlyList<AuditTrailEntry> GetAuditTrail(int take = 30)
+    {
+        return [];
+    }
+
     private static string ResolveIp(HttpContext httpContext)
     {
         return httpContext.Connection.RemoteIpAddress?.ToString() ?? "-";

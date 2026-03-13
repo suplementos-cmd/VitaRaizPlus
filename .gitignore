@@ -11,11 +11,16 @@ obj/
 ## Tooling caches
 .vs/
 .dotnet/
+.dotnet-home/
 .appdata/
 .nuget/
+.nuget-packages/
 
 ## Logs
 *.log
+
+## Local app data
+src/SalesCobrosGeo.Web/App_Data/
 
 ## OS files
 Thumbs.db
