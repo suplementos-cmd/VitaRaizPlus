@@ -1,4 +1,5 @@
 ﻿@model SalesCobrosGeo.Web.Models.Maintenance.MaintenancePageViewModel
+@using SalesCobrosGeo.Web.Models.Shared
 @{
     ViewData["Title"] = "Mantenimiento";
     var current = Model.Sections.First(x => x.Key == Model.SelectedSection);
@@ -20,17 +21,17 @@
     };
 }
 
-<div class="maintenance-page">
-    <section class="maintenance-hero">
-        <div>
-            <div class="maintenance-eyebrow">Mantenimiento</div>
-            <h1 class="maintenance-title">Catalogos y personal</h1>
-            <div class="maintenance-subtitle">Panel base para revisar configuracion comercial, zonas, productos y equipo operativo.</div>
-        </div>
-        <div class="maintenance-hero-actions">
-            <a class="btn btn-primary" asp-controller="Sales" asp-action="Create">Nueva venta</a>
-            <a class="btn btn-outline-primary" asp-controller="Dashboard" asp-action="Index">Ir al dashboard</a>
-        </div>
+<div class="app-page-shell maintenance-page-shell">
+    @await Html.PartialAsync("_PageHeader", new PageHeaderViewModel(
+        "Mantenimiento",
+        "Catalogos y personal",
+        "Panel base para revisar configuracion comercial, zonas, productos y equipo operativo.",
+        current.Summary))
+
+    <section class="app-page-actions maintenance-actions-bar">
+        <a class="btn btn-primary" asp-controller="Sales" asp-action="Create">Nueva venta</a>
+        <a class="btn btn-outline-primary" asp-controller="Dashboard" asp-action="Index">Ir al dashboard</a>
+        <a class="btn btn-outline-secondary" asp-controller="Administration" asp-action="Users">Usuarios</a>
     </section>
 
     <section class="maintenance-stats">
@@ -43,8 +44,20 @@
         }
     </section>
 
-    <section class="maintenance-layout">
-        <aside class="maintenance-sidebar">
+    <div class="maintenance-nav-strip">
+        @foreach (var navItem in Model.Sections)
+        {
+            <a class="maintenance-nav-chip @(navItem.Key == Model.SelectedSection ? "active" : string.Empty)"
+               asp-action="Index"
+               asp-route-section="@navItem.Key">
+                <span>@navItem.Title</span>
+                <small>@navItem.Items.Count</small>
+            </a>
+        }
+    </div>
+
+    <section class="maintenance-layout maintenance-layout-master">
+        <aside class="maintenance-sidebar maintenance-sidebar-master">
             <div class="maintenance-sidebar-title">Secciones</div>
             <div class="maintenance-nav">
                 @foreach (var navItem in Model.Sections)
@@ -59,13 +72,12 @@
             </div>
         </aside>
 
-        <div class="maintenance-content">
-            <section class="maintenance-section-head">
+        <div class="maintenance-content maintenance-content-master">
+            <section class="maintenance-section-head maintenance-section-head-master">
                 <div>
                     <h2 class="maintenance-section-title">@current.Title</h2>
                     <div class="maintenance-section-subtitle">@current.Subtitle</div>
                 </div>
-                <div class="maintenance-section-summary">@current.Summary</div>
             </section>
 
             <section class="maintenance-grid">

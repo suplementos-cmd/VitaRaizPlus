@@ -1,0 +1,95 @@
+﻿@model SalesCobrosGeo.Web.Models.Administration.AdministrationPageViewModel
+@using SalesCobrosGeo.Web.Models.Shared
+@{
+    ViewData["Title"] = "Administracion de usuarios";
+}
+
+<div class="app-page-shell admin-users-page">
+    @await Html.PartialAsync("_PageHeader", new PageHeaderViewModel(
+        "Administracion",
+        "Usuarios, perfiles y permisos",
+        "Define que vistas puede abrir cada perfil, que tema visual usa y que campos puede consultar o editar.",
+        $"{Model.Users.Count} usuarios demo • {Model.Roles.Count} perfiles configurados"))
+
+    <section class="app-page-actions admin-users-actions">
+        <button type="button" class="btn btn-primary">Nuevo usuario</button>
+        <button type="button" class="btn btn-outline-primary">Nuevo perfil</button>
+    </section>
+
+    <section class="admin-users-role-grid">
+        @foreach (var role in Model.Roles)
+        {
+            <article class="admin-role-card" style="--role-primary:@role.Theme.PrimaryColor; --role-accent:@role.Theme.AccentColor; --role-surface:@role.Theme.SurfaceColor;">
+                <div class="admin-role-head">
+                    <div>
+                        <div class="admin-role-code">@role.Code</div>
+                        <h2 class="admin-role-title">@role.Name</h2>
+                    </div>
+                    <div class="admin-role-theme">
+                        <span style="background:@role.Theme.PrimaryColor"></span>
+                        <span style="background:@role.Theme.AccentColor"></span>
+                        <span style="background:@role.Theme.SurfaceColor"></span>
+                    </div>
+                </div>
+                <div class="admin-role-summary">@role.Summary</div>
+                <div class="admin-role-block">
+                    <div class="admin-role-block-title">Vistas permitidas</div>
+                    <div class="admin-role-chip-list">
+                        @foreach (var viewName in role.Views)
+                        {
+                            <span class="admin-role-chip">@viewName</span>
+                        }
+                    </div>
+                </div>
+                <div class="admin-role-block">
+                    <div class="admin-role-block-title">Campos por perfil</div>
+                    <div class="admin-permission-list">
+                        @foreach (var perm in role.Permissions)
+                        {
+                            <div class="admin-permission-row">
+                                <strong>@perm.Area</strong>
+                                <span>@perm.Access</span>
+                                <small>@perm.Fields</small>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </article>
+        }
+    </section>
+
+    <section class="admin-users-table-shell">
+        <div class="admin-users-table-head">
+            <div>
+                <h2 class="admin-users-table-title">Usuarios</h2>
+                <div class="admin-users-table-subtitle">Vista base para gestionar altas, perfiles y estado operativo.</div>
+            </div>
+            <div class="admin-users-legend">
+                <span class="admin-role-chip">Activo</span>
+                <span class="admin-role-chip">En ruta</span>
+            </div>
+        </div>
+
+        <div class="admin-users-grid">
+            @foreach (var user in Model.Users)
+            {
+                <article class="admin-user-card">
+                    <div class="admin-user-top">
+                        <div>
+                            <div class="admin-user-name">@user.Name</div>
+                            <div class="admin-user-email">@user.Email</div>
+                        </div>
+                        <span class="admin-role-chip">@user.RoleCode</span>
+                    </div>
+                    <div class="admin-user-meta">Zona: @user.Zone</div>
+                    <div class="admin-user-meta">Estado: @user.Status</div>
+                    <div class="admin-user-meta">Ultimo acceso: @user.LastAccess</div>
+                    <div class="admin-user-actions">
+                        <button type="button" class="btn btn-sm btn-outline-primary">Permisos</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary">Editar</button>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+</div>
