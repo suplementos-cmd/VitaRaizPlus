@@ -93,6 +93,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCookiePolicy();
+app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 
@@ -103,6 +104,20 @@ app.Use(async (context, next) =>
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
     context.Response.Headers["Permissions-Policy"] = "geolocation=(self), camera=(self)";
     context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self';";
+
+    var shouldApplyNoCache = context.User.Identity?.IsAuthenticated == true ||
+        context.Request.Path.StartsWithSegments("/Account", StringComparison.OrdinalIgnoreCase);
+
+    if (shouldApplyNoCache)
+    {
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
+            context.Response.Headers["Pragma"] = "no-cache";
+            context.Response.Headers["Expires"] = "0";
+            return Task.CompletedTask;
+        });
+    }
 
     if (context.User.Identity?.IsAuthenticated == true)
     {
@@ -119,23 +134,12 @@ app.Use(async (context, next) =>
     }
 
     await next();
-
-    if (context.User.Identity?.IsAuthenticated == true ||
-        context.Request.Path.StartsWithSegments("/Account", StringComparison.OrdinalIgnoreCase))
-    {
-        context.Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
-        context.Response.Headers["Pragma"] = "no-cache";
-        context.Response.Headers["Expires"] = "0";
-    }
 });
 
 app.UseAuthorization();
 
-app.MapStaticAssets();
-
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
