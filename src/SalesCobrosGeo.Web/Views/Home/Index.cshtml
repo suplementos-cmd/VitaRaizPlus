@@ -1,36 +1,57 @@
-ï»¿@{
+@using SalesCobrosGeo.Web.Security
+@{
     ViewData["Title"] = "Inicio";
+    var canSales = User.HasPermission(AppPermissions.SalesView);
+    var canCollections = User.HasPermission(AppPermissions.CollectionsView);
+    var canAdministration = User.HasPermission(AppPermissions.AdministrationView);
 }
 
 <div class="hero p-4 mb-4 rounded-3">
     <h1 class="display-6">VitaRaizPlus</h1>
-    <p class="lead mb-1">Sistema de ventas y cobros con geolocalizacion</p>
-    <p class="text-muted mb-0">Bloques 0 a 8 implementados en fase inicial</p>
+    <p class="lead mb-1">Bienvenido, @User.GetDisplayName()</p>
+    <p class="text-muted mb-0">Perfil activo: @User.GetDisplayRole() • Navegacion y acceso filtrados por permisos.</p>
 </div>
 
 <div class="row g-3">
     <div class="col-md-4">
         <div class="card dashboard-card h-100">
             <div class="card-body">
-                <h5>Bloque 5</h5>
-                <p class="mb-0">Cobranza completa con saldo, abonos y estados.</p>
+                <h5>Seguridad activa</h5>
+                <p class="mb-0">Cookies seguras, antiforgery global, cache protegido y politicas por modulo.</p>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card dashboard-card h-100">
-            <div class="card-body">
-                <h5>Bloque 6</h5>
-                <p class="mb-0">Supervision de cartera y reasignacion de cobradores.</p>
+    @if (canSales)
+    {
+        <div class="col-md-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-body">
+                    <h5>Modulo ventas</h5>
+                    <p class="mb-0">Registro y edicion de ventas habilitados para este perfil.</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card dashboard-card h-100">
-            <div class="card-body">
-                <h5>Bloques 7 y 8</h5>
-                <p class="mb-0">Sincronizacion movil y dashboards web operativos.</p>
+    }
+    @if (canCollections)
+    {
+        <div class="col-md-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-body">
+                    <h5>Modulo cobros</h5>
+                    <p class="mb-0">Ruta diaria, cartera y registro de abonos disponibles segun permiso.</p>
+                </div>
             </div>
         </div>
-    </div>
+    }
+    @if (canAdministration)
+    {
+        <div class="col-md-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-body">
+                    <h5>Administracion</h5>
+                    <p class="mb-0">Gestion de usuarios, perfiles, vistas por rol y seguridad central.</p>
+                </div>
+            </div>
+        </div>
+    }
 </div>

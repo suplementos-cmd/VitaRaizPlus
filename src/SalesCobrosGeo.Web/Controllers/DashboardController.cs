@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SalesCobrosGeo.Web.Models.Dashboard;
+using SalesCobrosGeo.Web.Security;
 using SalesCobrosGeo.Web.Services.Sales;
 using System.Globalization;
 
 namespace SalesCobrosGeo.Web.Controllers;
 
+[Authorize(Policy = AppPolicies.DashboardAccess)]
 public sealed class DashboardController : Controller
 {
     private readonly ISalesRepository _repository;

@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SalesCobrosGeo.Web.Models.Maintenance;
 using SalesCobrosGeo.Web.Models.Sales;
+using SalesCobrosGeo.Web.Security;
 using SalesCobrosGeo.Web.Services.Sales;
 
 namespace SalesCobrosGeo.Web.Controllers;
 
+[Authorize(Policy = AppPolicies.MaintenanceAccess)]
 public sealed class MaintenanceController : Controller
 {
     private readonly ISalesRepository _repository;

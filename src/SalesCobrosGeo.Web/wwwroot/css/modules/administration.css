@@ -1,5 +1,10 @@
-﻿.admin-users-page {
+.admin-users-page {
   gap: 14px;
+}
+
+.admin-security-alert {
+  margin: 0;
+  border-radius: 16px;
 }
 
 .admin-users-actions {
@@ -146,13 +151,15 @@
   color: #677489;
 }
 
-.admin-users-grid {
+.admin-users-grid,
+.admin-session-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
-.admin-user-card {
+.admin-user-card,
+.admin-session-card {
   padding: 14px;
   border-radius: 16px;
   border: 1px solid #dfe7f2;
@@ -160,7 +167,13 @@
   box-shadow: var(--shadow-soft);
 }
 
-.admin-user-top {
+.admin-session-card.connected {
+  border-color: #9fd3ba;
+  background: linear-gradient(180deg, #ffffff 0%, #f1fff8 100%);
+}
+
+.admin-user-top,
+.admin-session-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -174,24 +187,71 @@
 }
 
 .admin-user-email,
-.admin-user-meta {
+.admin-user-meta,
+.admin-session-meta {
   font-size: 0.84rem;
   color: #667489;
 }
 
-.admin-user-meta {
+.admin-user-meta,
+.admin-session-meta {
   margin-top: 6px;
+}
+
+.admin-session-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.admin-session-badge.connected {
+  background: #e5f8ec;
+  color: #1d7c47;
+}
+
+.admin-session-badge.idle {
+  background: #eef4ff;
+  color: #2f5da5;
+}
+
+.admin-session-badge.inactive {
+  background: #fdeaea;
+  color: #a13535;
+}
+
+.admin-session-device {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #d9e3ef;
+  color: #59677d;
+  font-size: 0.82rem;
+}
+
+.admin-session-device summary {
+  cursor: pointer;
+  font-weight: 700;
 }
 
 .admin-user-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
 }
 
+.admin-user-actions form {
+  margin: 0;
+}
+
 @media (max-width: 1199px) {
   .admin-users-role-grid,
-  .admin-users-grid {
+  .admin-users-grid,
+  .admin-session-grid {
     grid-template-columns: 1fr 1fr;
   }
 }
@@ -208,13 +268,15 @@
   }
 
   .admin-users-role-grid,
-  .admin-users-grid {
+  .admin-users-grid,
+  .admin-session-grid {
     grid-template-columns: 1fr;
   }
 
   .admin-role-card,
   .admin-users-table-shell,
-  .admin-user-card {
+  .admin-user-card,
+  .admin-session-card {
     padding: 12px;
     border-radius: 14px;
   }

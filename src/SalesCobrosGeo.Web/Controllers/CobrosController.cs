@@ -1,11 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SalesCobrosGeo.Web.Models.Sales;
+using SalesCobrosGeo.Web.Security;
 using SalesCobrosGeo.Web.Services.Sales;
 using System.Globalization;
 using System.Text;
 
 namespace SalesCobrosGeo.Web.Controllers;
 
+[Authorize(Policy = AppPolicies.CollectionsAccess)]
 public sealed class CobrosController : Controller
 {
     private static readonly Dictionary<string, int> DayOrder = new(StringComparer.OrdinalIgnoreCase)
@@ -28,10 +31,12 @@ public sealed class CobrosController : Controller
     };
 
     private readonly ISalesRepository _repository;
+    private readonly IUserSessionTracker _sessionTracker;
 
-    public CobrosController(ISalesRepository repository)
+    public CobrosController(ISalesRepository repository, IUserSessionTracker sessionTracker)
     {
         _repository = repository;
+        _sessionTracker = sessionTracker;
     }
 
     public IActionResult Index(string? profile = null, string? day = null, string? status = null, string? zone = null, bool all = false)
@@ -141,6 +146,7 @@ public sealed class CobrosController : Controller
         try
         {
             _repository.RegisterCollection(input);
+            _sessionTracker.UpdateCoordinates(User.Identity?.Name ?? string.Empty, input.CoordenadasCobro, "Cobro registrado");
             TempData["CobroMessage"] = "Cobro registrado correctamente.";
             return RedirectToAction(nameof(Index), new { profile, day, status, zone });
         }

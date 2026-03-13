@@ -1,81 +1,119 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SalesCobrosGeo.Web.Models.Administration;
+using SalesCobrosGeo.Web.Security;
 
 namespace SalesCobrosGeo.Web.Controllers;
 
+[Authorize(Policy = AppPolicies.AdministrationAccess)]
 public sealed class AdministrationController : Controller
 {
+    private readonly IApplicationUserService _userService;
+    private readonly IUserSessionTracker _sessionTracker;
+
+    public AdministrationController(IApplicationUserService userService, IUserSessionTracker sessionTracker)
+    {
+        _userService = userService;
+        _sessionTracker = sessionTracker;
+    }
+
+    [HttpGet]
     public IActionResult Users()
     {
         var roles = new[]
         {
             new RoleProfileCard(
-                "VENDEDOR",
-                "Vendedor",
-                "Registra ventas propias y consulta solo su cartera comercial.",
-                new RoleTheme("Comercial", "#2c74d8", "#7bb3ff", "#edf5ff"),
-                ["Inicio", "Ventas propias", "Detalle de venta", "Catalogos basicos"],
+                AppRoles.Full,
+                "Acceso total",
+                "Control completo del sistema, seguridad, mantenimiento, ventas, cobros y dashboards.",
+                new RoleTheme("Root", "#24334f", "#6da7ff", "#eef4ff"),
+                ["Inicio", "Dashboard", "Ventas", "Cobros", "Mantenimiento", "Usuarios"],
                 [
-                    new RolePermissionRow("Ventas", "Ver/crear/editar propias", "Cliente, producto, zona, fotos, coordenadas, forma de pago"),
-                    new RolePermissionRow("Cobros", "Sin acceso", "No aplica"),
-                    new RolePermissionRow("Dashboard", "Resumen personal", "Totales de ventas propias")
+                    new RolePermissionRow("Seguridad", "Full", "Usuarios, perfiles, cookies, sesiones y auditoria base"),
+                    new RolePermissionRow("Ventas", "Full", "Todos los campos de venta y catalogos"),
+                    new RolePermissionRow("Cobros", "Full", "Toda la cartera, estados, abonos y detalle")
                 ]),
             new RoleProfileCard(
-                "SUPERVISOR",
-                "Supervisor de ventas",
-                "Controla ventas del equipo y corrige informacion comercial.",
-                new RoleTheme("Supervision", "#1f7a63", "#74d7b6", "#ecfbf5"),
-                ["Inicio", "Ventas equipo", "Dashboard comercial", "Mantenimiento catalogos"],
+                AppRoles.Sales,
+                "Modulo ventas",
+                "Usuario comercial con acceso al registro, consulta y edicion operativa de ventas.",
+                new RoleTheme("Ventas", "#2c74d8", "#7bb3ff", "#edf5ff"),
+                ["Inicio", "Dashboard", "Ventas"],
                 [
-                    new RolePermissionRow("Ventas", "Ver/editar equipo", "Todos los campos de venta, comision, cobrador asignado"),
-                    new RolePermissionRow("Cobros", "Solo consulta", "Estado de cobranza y restante"),
-                    new RolePermissionRow("Dashboard", "Equipo comercial", "Totales por vendedora y zona")
+                    new RolePermissionRow("Ventas", "Ver/crear/editar", "Cliente, producto, fotos, zona, coordenadas, forma de pago"),
+                    new RolePermissionRow("Cobros", "Sin acceso", "No registra cobros ni entra a cartera"),
+                    new RolePermissionRow("Dashboard", "Comercial", "Solo indicadores de ventas")
                 ]),
             new RoleProfileCard(
-                "COBRADOR",
-                "Cobrador",
-                "Opera ruta diaria, registra cobros y consulta cartera asignada.",
-                new RoleTheme("Cobranza", "#a44b24", "#f2a86c", "#fff4ea"),
-                ["Inicio", "Cobros", "Detalle de cobro", "Mapa de ruta"],
+                AppRoles.Collections,
+                "Modulo cobros",
+                "Usuario de ruta con acceso a cartera, detalle de venta y registro de cobros.",
+                new RoleTheme("Cobros", "#a44b24", "#f2a86c", "#fff4ea"),
+                ["Inicio", "Dashboard", "Cobros"],
                 [
-                    new RolePermissionRow("Cobros", "Ver/registrar propios", "Importe cobrado, observacion, coordenadas, historial"),
-                    new RolePermissionRow("Ventas", "Consulta limitada", "Cliente, zona, dia de cobro, fotos base"),
-                    new RolePermissionRow("Dashboard", "Ruta personal", "Pendiente, abonado, atrasado")
-                ]),
-            new RoleProfileCard(
-                "COBRADOR_SUP",
-                "Supervisor de cobranza",
-                "Monitorea cobradores, cartera vencida y zonas con atraso.",
-                new RoleTheme("Control", "#7a2fd0", "#b98dff", "#f4efff"),
-                ["Cobros globales", "Dashboard de cobranza", "Usuarios de cobranza"],
-                [
-                    new RolePermissionRow("Cobros", "Ver todo / reasignar", "Estados, cobrador, zona, historial completo"),
-                    new RolePermissionRow("Ventas", "Consulta", "Campos comerciales y saldo"),
-                    new RolePermissionRow("Dashboard", "Cobros por zona y cobrador", "Totales, atrasos, cuentas por dia")
-                ]),
-            new RoleProfileCard(
-                "ADMIN",
-                "Administrador",
-                "Gestion total del sistema, usuarios, permisos, catalogos y KPIs.",
-                new RoleTheme("Administracion", "#24334f", "#6da7ff", "#eef4ff"),
-                ["Todas las vistas", "Mantenimiento", "Usuarios", "Dashboard general", "Permisos"],
-                [
-                    new RolePermissionRow("Usuarios", "Alta/edicion", "Nombre, correo, perfil, tema, estatus, zona"),
-                    new RolePermissionRow("Permisos", "Total", "Vistas permitidas, campos visibles, acciones por rol"),
-                    new RolePermissionRow("Dashboard", "Total", "Ventas, cobros, entradas, salidas, equipo, documentos")
+                    new RolePermissionRow("Cobros", "Ver/registrar", "Importe, observacion, coordenadas, historial y estatus"),
+                    new RolePermissionRow("Ventas", "Consulta limitada", "Cliente, zona, dia de cobro, importe, fotos base"),
+                    new RolePermissionRow("Dashboard", "Cobranza", "Indicadores de cobro, ruta y atrasos")
                 ])
         };
 
-        var users = new[]
-        {
-            new AdminUserCard("Jake", "jake@vitaraiz.local", "VENDEDOR", "Heroes Chalco", "Activo", "Hoy 08:30"),
-            new AdminUserCard("Lucia", "lucia@vitaraiz.local", "VENDEDOR", "Jardines", "Activo", "Hoy 09:10"),
-            new AdminUserCard("Silvia", "silvia@vitaraiz.local", "COBRADOR", "Xico", "En ruta", "Hoy 07:45"),
-            new AdminUserCard("Mario", "mario@vitaraiz.local", "COBRADOR_SUP", "Centro", "Activo", "Hoy 08:02"),
-            new AdminUserCard("Supervisor general", "supervisor@vitaraiz.local", "SUPERVISOR", "Norte", "Activo", "Hoy 08:55"),
-            new AdminUserCard("Administrador", "admin@vitaraiz.local", "ADMIN", "Global", "Activo", "Hoy 06:50")
-        };
+        var userSummaries = _userService.GetUsers();
 
-        return View(new AdministrationPageViewModel(roles, users));
+        var users = userSummaries
+            .Select(user => new AdminUserCard(
+                user.DisplayName,
+                user.Username,
+                user.Role,
+                user.Zone,
+                user.IsActive ? "Activo" : "Inactivo",
+                user.RoleLabel))
+            .ToArray();
+
+        var sessions = _sessionTracker.GetSnapshots(userSummaries)
+            .Select(session => new AdminSessionCard(
+                session.Username,
+                session.DisplayName,
+                session.RoleLabel,
+                session.Zone,
+                session.IsActive,
+                session.IsConnected,
+                session.LastSeenLabel,
+                session.LastPath,
+                session.LastIp,
+                session.LastUserAgent,
+                session.LastCoordinates,
+                session.LastLocationSource))
+            .ToArray();
+
+        return View(new AdministrationPageViewModel(roles, users, sessions));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult SetUserStatus(string username, bool isActive)
+    {
+        if (_userService.SetActive(username, isActive))
+        {
+            _sessionTracker.SetUserActive(username, isActive);
+            if (!isActive)
+            {
+                TempData["AdminSecurityMessage"] = $"{username} fue desactivado y cualquier sesion abierta quedo invalidada.";
+            }
+            else
+            {
+                TempData["AdminSecurityMessage"] = $"{username} vuelve a estar activo para ingresar.";
+            }
+        }
+
+        return RedirectToAction(nameof(Users));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ForceLogout(string username)
+    {
+        _sessionTracker.ForceLogout(username);
+        TempData["AdminSecurityMessage"] = $"Se forzo el cierre de sesion de {username}.";
+        return RedirectToAction(nameof(Users));
     }
 }

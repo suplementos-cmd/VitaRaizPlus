@@ -1,0 +1,15 @@
+@{
+    ViewData["Title"] = "Acceso denegado";
+}
+
+<div class="security-message-shell">
+    <section class="security-message-card">
+        <div class="security-auth-eyebrow">Seguridad</div>
+        <h1 class="security-auth-title">No tienes permiso para entrar aqui</h1>
+        <p class="security-auth-subtitle">Tu usuario esta autenticado, pero ese modulo no forma parte de tu perfil actual. Si lo necesitas, el administrador puede ampliar tus permisos.</p>
+        <div class="security-message-actions">
+            <a class="btn btn-primary" asp-controller="Home" asp-action="Index">Ir al inicio</a>
+            <a class="btn btn-outline-primary" asp-controller="Dashboard" asp-action="Index">Ir al dashboard</a>
+        </div>
+    </section>
+</div>
