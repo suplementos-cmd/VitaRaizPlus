@@ -27,215 +27,122 @@
     };
 }
 
-<div class="collector-hub">
-    <div class="collector-hub-top">
-        <div>
-            <h1 class="collector-hub-title">Cobros</h1>
-            <div class="collector-hub-subtitle">Ruta por dia, estado, zona y ventas pendientes</div>
-        </div>
-        <div class="collector-hub-actions">
-            @if (Model.ShowAll)
-            {
-                <a class="btn btn-outline-secondary collector-icon-btn" asp-action="Index" asp-route-profile="@Model.Profile">
-                    <span class="btn-icon-mobile">GR</span>
-                    <span class="btn-text-mobile">Agrupado</span>
-                </a>
-            }
-            else
-            {
-                <a class="btn btn-outline-primary collector-icon-btn" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-all="true">
-                    <span class="btn-icon-mobile">TO</span>
-                    <span class="btn-text-mobile">Ver todos</span>
-                </a>
-            }
-        </div>
-    </div>
-
-    @if (TempData["CobroMessage"] is string msg)
-    {
-        <div class="alert alert-success">@msg</div>
-    }
-
-    <form method="get" class="collector-filter mb-3">
-        <input type="hidden" name="day" value="@Model.SelectedDay" />
-        <input type="hidden" name="status" value="@Model.SelectedStatus" />
-        <input type="hidden" name="zone" value="@Model.SelectedZone" />
-        <input type="hidden" name="all" value="@(Model.ShowAll ? "true" : "false")" />
-        <div class="collector-filter-grid">
+<div class="collector-shell">
+    <aside class="collector-sidebar-shell">
+        <div class="collector-hub-top desktop-panel-head">
             <div>
-                <label class="form-label mb-1">Cobrador</label>
-                <select class="form-select" name="profile">
-                    <option value="">Todos</option>
-                    @foreach (var p in Model.Profiles)
-                    {
-                        if (string.Equals(Model.Profile, p.Code, StringComparison.OrdinalIgnoreCase))
-                        {
-                            <option value="@p.Code" selected>@p.Name</option>
-                        }
-                        else
-                        {
-                            <option value="@p.Code">@p.Name</option>
-                        }
-                    }
-                </select>
+                <h1 class="collector-hub-title">Cobros</h1>
+                <div class="collector-hub-subtitle">Ruta por dia, estado, zona y ventas pendientes</div>
             </div>
-            <button class="btn btn-primary collector-btn" type="submit">Aplicar</button>
+            <div class="collector-hub-actions">
+                @if (Model.ShowAll)
+                {
+                    <a class="btn btn-outline-secondary collector-icon-btn" asp-action="Index" asp-route-profile="@Model.Profile">
+                        <span class="btn-icon-mobile">GR</span>
+                        <span class="btn-text-mobile">Agrupado</span>
+                    </a>
+                }
+                else
+                {
+                    <a class="btn btn-outline-primary collector-icon-btn" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-all="true">
+                        <span class="btn-icon-mobile">TO</span>
+                        <span class="btn-text-mobile">Ver todos</span>
+                    </a>
+                }
+            </div>
         </div>
-    </form>
 
-    <div class="collector-breadcrumbs mb-3">
-        <a asp-action="Index" asp-route-profile="@Model.Profile">Dias</a>
-        @if (!string.IsNullOrWhiteSpace(Model.SelectedDay))
+        @if (TempData["CobroMessage"] is string msg)
         {
-            <span>/</span>
-            <a asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay">@Model.SelectedDay</a>
+            <div class="alert alert-success">@msg</div>
         }
-        @if (!string.IsNullOrWhiteSpace(Model.SelectedStatus))
-        {
-            <span>/</span>
-            <a asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus">@Model.SelectedStatus</a>
-        }
-        @if (!string.IsNullOrWhiteSpace(Model.SelectedZone))
-        {
-            <span>/</span>
-            <span>@Model.SelectedZone</span>
-        }
-    </div>
 
-    @if (!string.IsNullOrWhiteSpace(Model.SelectedDay) || Model.ShowAll)
-    {
-        <div class="collector-level-banner mb-3">
+        <form method="get" class="collector-filter mb-3">
+            <input type="hidden" name="day" value="@Model.SelectedDay" />
+            <input type="hidden" name="status" value="@Model.SelectedStatus" />
+            <input type="hidden" name="zone" value="@Model.SelectedZone" />
+            <input type="hidden" name="all" value="@(Model.ShowAll ? "true" : "false")" />
+            <div class="collector-filter-grid collector-filter-grid-stack">
+                <div>
+                    <label class="form-label mb-1">Cobrador</label>
+                    <select class="form-select" name="profile">
+                        <option value="">Todos</option>
+                        @foreach (var p in Model.Profiles)
+                        {
+                            if (string.Equals(Model.Profile, p.Code, StringComparison.OrdinalIgnoreCase))
+                            {
+                                <option value="@p.Code" selected>@p.Name</option>
+                            }
+                            else
+                            {
+                                <option value="@p.Code">@p.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <button class="btn btn-primary collector-btn" type="submit">Aplicar</button>
+            </div>
+        </form>
+
+        <div class="collector-breadcrumbs mb-3">
+            <a asp-action="Index" asp-route-profile="@Model.Profile">Dias</a>
             @if (!string.IsNullOrWhiteSpace(Model.SelectedDay))
             {
-                <div class="collector-level-chip">@Model.SelectedDay</div>
+                <span>/</span>
+                <a asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay">@Model.SelectedDay</a>
             }
             @if (!string.IsNullOrWhiteSpace(Model.SelectedStatus))
             {
-                <div class="collector-level-chip">@Model.SelectedStatus</div>
+                <span>/</span>
+                <a asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus">@Model.SelectedStatus</a>
             }
             @if (!string.IsNullOrWhiteSpace(Model.SelectedZone))
             {
-                <div class="collector-level-chip">@Model.SelectedZone</div>
-            }
-            @if (Model.ShowAll)
-            {
-                <div class="collector-level-chip">TODAS</div>
-            }
-            @if (Model.Sales.Count > 0)
-            {
-                <div class="collector-level-stat">
-                    <strong>@Model.Sales.Count</strong>
-                    <span>ventas</span>
-                </div>
-                <div class="collector-level-stat collector-level-money">
-                    <strong>@totalRestante.ToString("0.00")</strong>
-                    <span>restante</span>
-                </div>
+                <span>/</span>
+                <span>@Model.SelectedZone</span>
             }
         </div>
-    }
 
-    @if (Model.ShowAll)
-    {
-        <section>
-            <div class="collector-section-title">Todas las cuentas pendientes</div>
-            <div class="collector-sales-list all-view">
-                @foreach (var item in Model.Sales)
+        @if (!string.IsNullOrWhiteSpace(Model.SelectedDay) || Model.ShowAll)
+        {
+            <div class="collector-level-banner mb-3">
+                @if (!string.IsNullOrWhiteSpace(Model.SelectedDay))
                 {
-                    var photo = string.IsNullOrWhiteSpace(item.FotoCliente)
-                        ? ResolveImage(item.FotoFachada, "https://placehold.co/160x120?text=Venta")
-                        : ResolveImage(item.FotoCliente, "https://placehold.co/160x120?text=Venta");
+                    <div class="collector-level-chip">@Model.SelectedDay</div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.SelectedStatus))
+                {
+                    <div class="collector-level-chip">@Model.SelectedStatus</div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.SelectedZone))
+                {
+                    <div class="collector-level-chip">@Model.SelectedZone</div>
+                }
+                @if (Model.ShowAll)
+                {
+                    <div class="collector-level-chip">TODAS</div>
+                }
+                @if (Model.Sales.Count > 0)
+                {
+                    <div class="collector-level-stat">
+                        <strong>@Model.Sales.Count</strong>
+                        <span>ventas</span>
+                    </div>
+                    <div class="collector-level-stat collector-level-money">
+                        <strong>@totalRestante.ToString("0.00")</strong>
+                        <span>restante</span>
+                    </div>
+                }
+            </div>
+        }
+    </aside>
 
-                    <a class="collector-sale-card compact" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@Model.SelectedZone">
-                        <img class="collector-sale-photo" src="@photo" alt="@item.NombreCliente" loading="lazy" decoding="async" />
-                        <div class="collector-sale-main">
-                            <div class="collector-sale-main-top">
-                                <div class="collector-sale-client">@item.NombreCliente</div>
-                                <div class="collector-sale-rest">@item.ImporteRestante.ToString("0.00")</div>
-                            </div>
-                            <div class="collector-sale-meta">Venta #@item.NumVenta • @item.Zona</div>
-                            <div class="collector-sale-meta">@item.DiaCobroPrevisto • @item.Cobrador</div>
-                        </div>
-                        <div class="collector-sale-side compact">
-                            <div class="@StatusClass(item.Estatus)">
-                                <span class="status-icon-mobile">@StatusIcon(item.Estatus)</span>
-                                <span class="status-text-mobile">@item.Estatus</span>
-                            </div>
-                        </div>
-                    </a>
-                }
-            </div>
-        </section>
-    }
-    else if (string.IsNullOrWhiteSpace(Model.SelectedDay))
-    {
-        <section>
-            <div class="collector-section-title">Dias con ventas pendientes</div>
-            <div class="collector-choice-grid">
-                @if (Model.Days.Count == 0)
-                {
-                    <div class="card card-body text-center text-muted">No hay ventas pendientes por cobrar.</div>
-                }
-                else
-                {
-                    @foreach (var item in Model.Days)
-                    {
-                        <a class="collector-choice-card" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@item.Day">
-                            <div class="collector-choice-label">@item.Day</div>
-                            <div class="collector-choice-value">@item.Count</div>
-                            <div class="collector-choice-meta">cuentas</div>
-                        </a>
-                    }
-                }
-            </div>
-        </section>
-    }
-    else if (string.IsNullOrWhiteSpace(Model.SelectedStatus))
-    {
-        <section>
-            <div class="collector-section-title">Estados para @Model.SelectedDay</div>
-            <div class="collector-choice-grid">
-                @foreach (var item in Model.Statuses)
-                {
-                    <a class="collector-choice-card compact-status" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@item.Status">
-                        <div class="@StatusClass(item.Status)">
-                            <span class="status-icon-mobile">@StatusIcon(item.Status)</span>
-                            <span class="status-text-mobile">@item.Status</span>
-                        </div>
-                        <div class="collector-choice-value">@item.Count</div>
-                        <div class="collector-choice-meta">ventas</div>
-                    </a>
-                }
-            </div>
-        </section>
-    }
-    else if (string.IsNullOrWhiteSpace(Model.SelectedZone))
-    {
-        <section>
-            <div class="collector-section-title">Zonas en @Model.SelectedStatus</div>
-            <div class="collector-choice-grid">
-                @foreach (var item in Model.Zones)
-                {
-                    <a class="collector-choice-card" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@item.Zone">
-                        <div class="collector-choice-label">@item.Zone</div>
-                        <div class="collector-choice-value">@item.Count</div>
-                        <div class="collector-choice-meta">ventas</div>
-                    </a>
-                }
-            </div>
-        </section>
-    }
-    else
-    {
-        <section>
-            <div class="collector-section-title">Ventas en @Model.SelectedZone</div>
-            <div class="collector-sales-list">
-                @if (Model.Sales.Count == 0)
-                {
-                    <div class="card card-body text-center text-muted">No hay ventas para esta seleccion.</div>
-                }
-                else
-                {
+    <div class="collector-main-shell">
+        @if (Model.ShowAll)
+        {
+            <section>
+                <div class="collector-section-title">Todas las cuentas pendientes</div>
+                <div class="collector-sales-list all-view">
                     @foreach (var item in Model.Sales)
                     {
                         var photo = string.IsNullOrWhiteSpace(item.FotoCliente)
@@ -260,8 +167,105 @@
                             </div>
                         </a>
                     }
-                }
-            </div>
-        </section>
-    }
+                </div>
+            </section>
+        }
+        else if (string.IsNullOrWhiteSpace(Model.SelectedDay))
+        {
+            <section>
+                <div class="collector-section-title">Dias con ventas pendientes</div>
+                <div class="collector-choice-grid">
+                    @if (Model.Days.Count == 0)
+                    {
+                        <div class="card card-body text-center text-muted">No hay ventas pendientes por cobrar.</div>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.Days)
+                        {
+                            <a class="collector-choice-card" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@item.Day">
+                                <div class="collector-choice-label">@item.Day</div>
+                                <div class="collector-choice-value">@item.Count</div>
+                                <div class="collector-choice-meta">cuentas</div>
+                            </a>
+                        }
+                    }
+                </div>
+            </section>
+        }
+        else if (string.IsNullOrWhiteSpace(Model.SelectedStatus))
+        {
+            <section>
+                <div class="collector-section-title">Estados para @Model.SelectedDay</div>
+                <div class="collector-choice-grid">
+                    @foreach (var item in Model.Statuses)
+                    {
+                        <a class="collector-choice-card compact-status" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@item.Status">
+                            <div class="@StatusClass(item.Status)">
+                                <span class="status-icon-mobile">@StatusIcon(item.Status)</span>
+                                <span class="status-text-mobile">@item.Status</span>
+                            </div>
+                            <div class="collector-choice-value">@item.Count</div>
+                            <div class="collector-choice-meta">ventas</div>
+                        </a>
+                    }
+                </div>
+            </section>
+        }
+        else if (string.IsNullOrWhiteSpace(Model.SelectedZone))
+        {
+            <section>
+                <div class="collector-section-title">Zonas en @Model.SelectedStatus</div>
+                <div class="collector-choice-grid">
+                    @foreach (var item in Model.Zones)
+                    {
+                        <a class="collector-choice-card" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@item.Zone">
+                            <div class="collector-choice-label">@item.Zone</div>
+                            <div class="collector-choice-value">@item.Count</div>
+                            <div class="collector-choice-meta">ventas</div>
+                        </a>
+                    }
+                </div>
+            </section>
+        }
+        else
+        {
+            <section>
+                <div class="collector-section-title">Ventas en @Model.SelectedZone</div>
+                <div class="collector-sales-list">
+                    @if (Model.Sales.Count == 0)
+                    {
+                        <div class="card card-body text-center text-muted">No hay ventas para esta seleccion.</div>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.Sales)
+                        {
+                            var photo = string.IsNullOrWhiteSpace(item.FotoCliente)
+                                ? ResolveImage(item.FotoFachada, "https://placehold.co/160x120?text=Venta")
+                                : ResolveImage(item.FotoCliente, "https://placehold.co/160x120?text=Venta");
+
+                            <a class="collector-sale-card compact" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@Model.SelectedZone">
+                                <img class="collector-sale-photo" src="@photo" alt="@item.NombreCliente" loading="lazy" decoding="async" />
+                                <div class="collector-sale-main">
+                                    <div class="collector-sale-main-top">
+                                        <div class="collector-sale-client">@item.NombreCliente</div>
+                                        <div class="collector-sale-rest">@item.ImporteRestante.ToString("0.00")</div>
+                                    </div>
+                                    <div class="collector-sale-meta">Venta #@item.NumVenta • @item.Zona</div>
+                                    <div class="collector-sale-meta">@item.DiaCobroPrevisto • @item.Cobrador</div>
+                                </div>
+                                <div class="collector-sale-side compact">
+                                    <div class="@StatusClass(item.Estatus)">
+                                        <span class="status-icon-mobile">@StatusIcon(item.Estatus)</span>
+                                        <span class="status-text-mobile">@item.Estatus</span>
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                    }
+                </div>
+            </section>
+        }
+    </div>
 </div>

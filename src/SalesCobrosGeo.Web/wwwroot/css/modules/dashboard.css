@@ -1,0 +1,48 @@
+﻿.dashboard-shell {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.dashboard-sidebar-shell {
+  position: sticky;
+  top: 86px;
+}
+
+.dashboard-filter-panel {
+  padding: 14px;
+}
+
+.dashboard-filter-title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #68788e;
+}
+
+.dashboard-filter-copy {
+  margin-top: 6px;
+  margin-bottom: 12px;
+  color: #667487;
+  font-size: 0.88rem;
+}
+
+.dashboard-main-shell {
+  min-width: 0;
+}
+
+.compact-range-stack {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 991px) {
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-sidebar-shell {
+    position: static;
+  }
+}

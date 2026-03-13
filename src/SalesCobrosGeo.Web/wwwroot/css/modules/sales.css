@@ -1,0 +1,9 @@
+﻿.sales-week-accordion {
+  overflow: clip;
+}
+
+@media (min-width: 1200px) {
+  .ventas-mobile {
+    max-width: 100%;
+  }
+}

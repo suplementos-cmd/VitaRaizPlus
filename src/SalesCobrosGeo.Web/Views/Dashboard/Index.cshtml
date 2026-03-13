@@ -9,148 +9,153 @@
     var collectionsCollectorPeak = Math.Max(1m, Model.CollectionsByCollector.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.CollectionGroupingSummary("", "", 0, 0m)).Max(x => x.Amount));
 }
 
-<div class="admin-dashboard">
-    <section class="dashboard-filter-bar mb-4">
-        <form method="get" class="dashboard-period-form compact-range-form">
-            <div class="compact-range-line">
-                <div class="compact-range-field">
-                    <label for="from">Inicio</label>
-                    <input id="from" name="from" type="date" class="form-control form-control-sm" value="@Model.Period.Start.ToString("yyyy-MM-dd")" />
+<div class="admin-dashboard dashboard-shell">
+    <aside class="dashboard-sidebar-shell">
+        <section class="dashboard-filter-bar dashboard-filter-panel">
+            <div class="dashboard-filter-title">Filtros</div>
+            <div class="dashboard-filter-copy">Selecciona el rango y navega el resumen administrativo.</div>
+            <form method="get" class="dashboard-period-form compact-range-form">
+                <div class="compact-range-line compact-range-stack">
+                    <div class="compact-range-field">
+                        <label for="from">Inicio</label>
+                        <input id="from" name="from" type="date" class="form-control form-control-sm" value="@Model.Period.Start.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="compact-range-field">
+                        <label for="to">Fin</label>
+                        <input id="to" name="to" type="date" class="form-control form-control-sm" value="@Model.Period.End.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary compact-range-btn">Aplicar</button>
                 </div>
-                <div class="compact-range-field">
-                    <label for="to">Fin</label>
-                    <input id="to" name="to" type="date" class="form-control form-control-sm" value="@Model.Period.End.ToString("yyyy-MM-dd")" />
-                </div>
-                <button type="submit" class="btn btn-sm btn-primary compact-range-btn">Aplicar</button>
-            </div>
-        </form>
-    </section>
+            </form>
+        </section>
+    </aside>
 
-    <section class="dashboard-chart-grid">
-        <article class="card admin-panel dashboard-chart-panel">
-            <div class="card-header admin-panel-head dashboard-chart-head">
-                <div>
-                    <div class="dashboard-panel-total-label">Total ventas</div>
-                    <strong class="dashboard-panel-total-value">Bs @Model.WeeklySales.Sum(x => x.Amount).ToString("0,0.##")</strong>
+    <div class="dashboard-main-shell">
+        <section class="dashboard-chart-grid">
+            <article class="card admin-panel dashboard-chart-panel">
+                <div class="card-header admin-panel-head dashboard-chart-head">
+                    <div>
+                        <div class="dashboard-panel-total-label">Total ventas</div>
+                        <strong class="dashboard-panel-total-value">Bs @Model.WeeklySales.Sum(x => x.Amount).ToString("0,0.##")</strong>
+                    </div>
+                    <a class="btn btn-sm btn-outline-primary" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")"><span class="btn-icon-mobile">IR</span><span class="btn-text-mobile">Ver detalle</span></a>
                 </div>
-                <a class="btn btn-sm btn-outline-primary" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")"><span class="btn-icon-mobile">IR</span><span class="btn-text-mobile">Ver detalle</span></a>
-            </div>
-            <div class="card-body">
-                <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.WeeklySales.Count)">
-                    @foreach (var item in Model.WeeklySales)
-                    {
-                        var pct = item.Count <= 0 ? 8m : Math.Max(10m, ((decimal)item.Count / salesDayPeak) * 100m);
-                        <a class="dashboard-bar-item dashboard-bar-card" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-day="@item.Key">
-                            <div class="dashboard-bar-track">
-                                <span class="dashboard-bar-tag">@item.Count</span>
-                                <div class="dashboard-bar-fill sales" style="height:@pct%"></div>
-                            </div>
-                            <div class="dashboard-bar-label">@item.Label</div>
-                        </a>
-                    }
+                <div class="card-body">
+                    <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.WeeklySales.Count)">
+                        @foreach (var item in Model.WeeklySales)
+                        {
+                            var pct = item.Count <= 0 ? 8m : Math.Max(10m, ((decimal)item.Count / salesDayPeak) * 100m);
+                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-day="@item.Key">
+                                <div class="dashboard-bar-track">
+                                    <span class="dashboard-bar-tag">@item.Count</span>
+                                    <div class="dashboard-bar-fill sales" style="height:@pct%"></div>
+                                </div>
+                                <div class="dashboard-bar-label">@item.Label</div>
+                            </a>
+                        }
+                    </div>
                 </div>
-            </div>
-        </article>
+            </article>
 
-        <article class="card admin-panel dashboard-chart-panel">
-            <div class="card-header admin-panel-head dashboard-chart-head">
-                <div>
-                    <div class="dashboard-panel-total-label">Total cobros</div>
-                    <strong class="dashboard-panel-total-value">Bs @Model.WeeklyCollections.Sum(x => x.Amount).ToString("0,0.##")</strong>
+            <article class="card admin-panel dashboard-chart-panel">
+                <div class="card-header admin-panel-head dashboard-chart-head">
+                    <div>
+                        <div class="dashboard-panel-total-label">Total cobros</div>
+                        <strong class="dashboard-panel-total-value">Bs @Model.WeeklyCollections.Sum(x => x.Amount).ToString("0,0.##")</strong>
+                    </div>
+                    <a class="btn btn-sm btn-outline-primary" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="day"><span class="btn-icon-mobile">IR</span><span class="btn-text-mobile">Ver detalle</span></a>
                 </div>
-                <a class="btn btn-sm btn-outline-primary" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="day"><span class="btn-icon-mobile">IR</span><span class="btn-text-mobile">Ver detalle</span></a>
-            </div>
-            <div class="card-body">
-                <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.WeeklyCollections.Count)">
-                    @foreach (var item in Model.WeeklyCollections)
-                    {
-                        var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / collectionDayPeak) * 100m);
-                        <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="day" asp-route-day="@item.Key">
-                            <div class="dashboard-bar-track">
-                                <span class="dashboard-bar-tag money">@item.Amount.ToString("0")</span>
-                                <div class="dashboard-bar-fill collections" style="height:@pct%"></div>
-                            </div>
-                            <div class="dashboard-bar-label">@item.Label</div>
-                        </a>
-                    }
+                <div class="card-body">
+                    <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.WeeklyCollections.Count)">
+                        @foreach (var item in Model.WeeklyCollections)
+                        {
+                            var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / collectionDayPeak) * 100m);
+                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="day" asp-route-day="@item.Key">
+                                <div class="dashboard-bar-track">
+                                    <span class="dashboard-bar-tag money">@item.Amount.ToString("0")</span>
+                                    <div class="dashboard-bar-fill collections" style="height:@pct%"></div>
+                                </div>
+                                <div class="dashboard-bar-label">@item.Label</div>
+                            </a>
+                        }
+                    </div>
                 </div>
-            </div>
-        </article>
+            </article>
 
-        <article class="card admin-panel dashboard-chart-panel">
-            <div class="card-header admin-panel-head dashboard-chart-head">
-                <div>
-                    <div class="dashboard-panel-total-label">Total ventas por zona</div>
-                    <strong class="dashboard-panel-total-value">@Model.SalesByZone.Sum(x => x.Count) ventas</strong>
+            <article class="card admin-panel dashboard-chart-panel">
+                <div class="card-header admin-panel-head dashboard-chart-head">
+                    <div>
+                        <div class="dashboard-panel-total-label">Total ventas por zona</div>
+                        <strong class="dashboard-panel-total-value">@Model.SalesByZone.Sum(x => x.Count) ventas</strong>
+                    </div>
+                    <a class="btn btn-sm btn-outline-primary" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")"><span class="btn-icon-mobile">IR</span><span class="btn-text-mobile">Ver detalle</span></a>
                 </div>
-                <a class="btn btn-sm btn-outline-primary" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")"><span class="btn-icon-mobile">IR</span><span class="btn-text-mobile">Ver detalle</span></a>
-            </div>
-            <div class="card-body">
-                <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.SalesByZone.Count)">
-                    @foreach (var item in Model.SalesByZone)
-                    {
-                        var pct = item.Count <= 0 ? 8m : Math.Max(10m, ((decimal)item.Count / salesZonePeak) * 100m);
-                        <a class="dashboard-bar-item dashboard-bar-card" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-zone="@item.Key">
-                            <div class="dashboard-bar-track">
-                                <span class="dashboard-bar-tag">@item.Count</span>
-                                <div class="dashboard-bar-fill sales" style="height:@pct%"></div>
-                            </div>
-                            <div class="dashboard-bar-label zone">@item.Label</div>
-                        </a>
-                    }
+                <div class="card-body">
+                    <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.SalesByZone.Count)">
+                        @foreach (var item in Model.SalesByZone)
+                        {
+                            var pct = item.Count <= 0 ? 8m : Math.Max(10m, ((decimal)item.Count / salesZonePeak) * 100m);
+                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-zone="@item.Key">
+                                <div class="dashboard-bar-track">
+                                    <span class="dashboard-bar-tag">@item.Count</span>
+                                    <div class="dashboard-bar-fill sales" style="height:@pct%"></div>
+                                </div>
+                                <div class="dashboard-bar-label zone">@item.Label</div>
+                            </a>
+                        }
+                    </div>
                 </div>
-            </div>
-        </article>
+            </article>
 
-        <article class="card admin-panel dashboard-chart-panel">
-            <div class="card-header admin-panel-head dashboard-chart-head">
-                <div>
-                    <div class="dashboard-panel-total-label">Total cobros por zona</div>
-                    <strong class="dashboard-panel-total-value">Bs @Model.CollectionsByZone.Sum(x => x.Amount).ToString("0,0.##")</strong>
+            <article class="card admin-panel dashboard-chart-panel">
+                <div class="card-header admin-panel-head dashboard-chart-head">
+                    <div>
+                        <div class="dashboard-panel-total-label">Total cobros por zona</div>
+                        <strong class="dashboard-panel-total-value">Bs @Model.CollectionsByZone.Sum(x => x.Amount).ToString("0,0.##")</strong>
+                    </div>
+                    <a class="btn btn-sm btn-outline-primary" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="zone"><span class="btn-icon-mobile">IR</span><span class="btn-text-mobile">Ver detalle</span></a>
                 </div>
-                <a class="btn btn-sm btn-outline-primary" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="zone"><span class="btn-icon-mobile">IR</span><span class="btn-text-mobile">Ver detalle</span></a>
-            </div>
-            <div class="card-body">
-                <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.CollectionsByZone.Count)">
-                    @foreach (var item in Model.CollectionsByZone)
-                    {
-                        var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / collectionsZonePeak) * 100m);
-                        <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="zone" asp-route-value="@item.Key">
-                            <div class="dashboard-bar-track">
-                                <span class="dashboard-bar-tag money">@item.Amount.ToString("0")</span>
-                                <div class="dashboard-bar-fill collections" style="height:@pct%"></div>
-                            </div>
-                            <div class="dashboard-bar-label zone">@item.Label</div>
-                        </a>
-                    }
+                <div class="card-body">
+                    <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.CollectionsByZone.Count)">
+                        @foreach (var item in Model.CollectionsByZone)
+                        {
+                            var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / collectionsZonePeak) * 100m);
+                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="zone" asp-route-value="@item.Key">
+                                <div class="dashboard-bar-track">
+                                    <span class="dashboard-bar-tag money">@item.Amount.ToString("0")</span>
+                                    <div class="dashboard-bar-fill collections" style="height:@pct%"></div>
+                                </div>
+                                <div class="dashboard-bar-label zone">@item.Label</div>
+                            </a>
+                        }
+                    </div>
                 </div>
-            </div>
-        </article>
+            </article>
 
-        <article class="card admin-panel dashboard-chart-panel dashboard-chart-panel-full">
-            <div class="card-header admin-panel-head dashboard-chart-head">
-                <div>
-                    <div class="dashboard-panel-total-label">Total cobros por cobrador</div>
-                    <strong class="dashboard-panel-total-value">Bs @Model.CollectionsByCollector.Sum(x => x.Amount).ToString("0,0.##")</strong>
+            <article class="card admin-panel dashboard-chart-panel dashboard-chart-panel-full">
+                <div class="card-header admin-panel-head dashboard-chart-head">
+                    <div>
+                        <div class="dashboard-panel-total-label">Total cobros por cobrador</div>
+                        <strong class="dashboard-panel-total-value">Bs @Model.CollectionsByCollector.Sum(x => x.Amount).ToString("0,0.##")</strong>
+                    </div>
+                    <a class="btn btn-sm btn-outline-primary" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="collector"><span class="btn-icon-mobile">IR</span><span class="btn-text-mobile">Ver detalle</span></a>
                 </div>
-                <a class="btn btn-sm btn-outline-primary" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="collector"><span class="btn-icon-mobile">IR</span><span class="btn-text-mobile">Ver detalle</span></a>
-            </div>
-            <div class="card-body">
-                <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.CollectionsByCollector.Count)">
-                    @foreach (var item in Model.CollectionsByCollector)
-                    {
-                        var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / collectionsCollectorPeak) * 100m);
-                        <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="collector" asp-route-value="@item.Key">
-                            <div class="dashboard-bar-track">
-                                <span class="dashboard-bar-tag money">@item.Amount.ToString("0")</span>
-                                <div class="dashboard-bar-fill collector" style="height:@pct%"></div>
-                            </div>
-                            <div class="dashboard-bar-label zone">@item.Label</div>
-                        </a>
-                    }
+                <div class="card-body">
+                    <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.CollectionsByCollector.Count)">
+                        @foreach (var item in Model.CollectionsByCollector)
+                        {
+                            var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / collectionsCollectorPeak) * 100m);
+                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="collector" asp-route-value="@item.Key">
+                                <div class="dashboard-bar-track">
+                                    <span class="dashboard-bar-tag money">@item.Amount.ToString("0")</span>
+                                    <div class="dashboard-bar-fill collector" style="height:@pct%"></div>
+                                </div>
+                                <div class="dashboard-bar-label zone">@item.Label</div>
+                            </a>
+                        }
+                    </div>
                 </div>
-            </div>
-        </article>
-    </section>
+            </article>
+        </section>
+    </div>
 </div>
-
