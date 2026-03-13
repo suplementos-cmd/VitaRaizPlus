@@ -1,4 +1,4 @@
-ï»¿@model SalesCobrosGeo.Web.Models.Sales.CollectorPortfolioViewModel
+@model SalesCobrosGeo.Web.Models.Sales.CollectorPortfolioViewModel
 @{
     ViewData["Title"] = "Perfil Cobrador";
     var totalRestante = Model.Sales.Sum(x => x.ImporteRestante);
@@ -25,6 +25,8 @@
         "LIQUIDADO" => "OK",
         _ => "ES"
     };
+
+    string CleanPhone(string? phone) => string.IsNullOrWhiteSpace(phone) ? string.Empty : new string(phone.Where(char.IsDigit).ToArray());
 }
 
 <div class="collector-shell">
@@ -51,11 +53,6 @@
                 }
             </div>
         </div>
-
-        @if (TempData["CobroMessage"] is string msg)
-        {
-            <div class="alert alert-success">@msg</div>
-        }
 
         <form method="get" class="collector-filter mb-3">
             <input type="hidden" name="day" value="@Model.SelectedDay" />
@@ -122,17 +119,14 @@
                 {
                     <div class="collector-level-chip">TODAS</div>
                 }
-                @if (Model.Sales.Count > 0)
-                {
-                    <div class="collector-level-stat">
-                        <strong>@Model.Sales.Count</strong>
-                        <span>ventas</span>
-                    </div>
-                    <div class="collector-level-stat collector-level-money">
-                        <strong>@totalRestante.ToString("0.00")</strong>
-                        <span>restante</span>
-                    </div>
-                }
+                <div class="collector-level-stat">
+                    <strong>@Model.Sales.Count</strong>
+                    <span>ventas</span>
+                </div>
+                <div class="collector-level-stat collector-level-money">
+                    <strong>@totalRestante.ToString("0.00")</strong>
+                    <span>restante</span>
+                </div>
             </div>
         }
     </aside>
@@ -148,24 +142,37 @@
                         var photo = string.IsNullOrWhiteSpace(item.FotoCliente)
                             ? ResolveImage(item.FotoFachada, "https://placehold.co/160x120?text=Venta")
                             : ResolveImage(item.FotoCliente, "https://placehold.co/160x120?text=Venta");
+                        var cleanPhone = CleanPhone(item.Celular);
+                        var mapLink = string.IsNullOrWhiteSpace(item.Coordenadas) ? "#" : $"https://maps.google.com/?q={Uri.EscapeDataString(item.Coordenadas)}";
 
-                        <a class="collector-sale-card compact" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@Model.SelectedZone">
-                            <img class="collector-sale-photo" src="@photo" alt="@item.NombreCliente" loading="lazy" decoding="async" />
-                            <div class="collector-sale-main">
-                                <div class="collector-sale-main-top">
-                                    <div class="collector-sale-client">@item.NombreCliente</div>
-                                    <div class="collector-sale-rest">@item.ImporteRestante.ToString("0.00")</div>
+                        <article class="collector-sale-card compact collector-sale-card-actions">
+                            <a class="collector-sale-card-mainlink" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@Model.SelectedZone">
+                                <img class="collector-sale-photo" src="@photo" alt="@item.NombreCliente" loading="lazy" decoding="async" />
+                                <div class="collector-sale-main">
+                                    <div class="collector-sale-main-top">
+                                        <div class="collector-sale-client">@item.NombreCliente</div>
+                                        <div class="collector-sale-rest">@item.ImporteRestante.ToString("0.00")</div>
+                                    </div>
+                                    <div class="collector-sale-meta">Venta #@item.NumVenta • @item.Zona</div>
+                                    <div class="collector-sale-meta">@item.DiaCobroPrevisto • @item.Cobrador</div>
                                 </div>
-                                <div class="collector-sale-meta">Venta #@item.NumVenta â€¢ @item.Zona</div>
-                                <div class="collector-sale-meta">@item.DiaCobroPrevisto â€¢ @item.Cobrador</div>
-                            </div>
-                            <div class="collector-sale-side compact">
-                                <div class="@StatusClass(item.Estatus)">
-                                    <span class="status-icon-mobile">@StatusIcon(item.Estatus)</span>
-                                    <span class="status-text-mobile">@item.Estatus</span>
+                                <div class="collector-sale-side compact">
+                                    <div class="@StatusClass(item.Estatus)">
+                                        <span class="status-icon-mobile">@StatusIcon(item.Estatus)</span>
+                                        <span class="status-text-mobile">@item.Estatus</span>
+                                    </div>
                                 </div>
+                            </a>
+                            <div class="collector-quick-actions">
+                                @if (!string.IsNullOrWhiteSpace(cleanPhone))
+                                {
+                                    <a class="btn btn-sm btn-outline-secondary" href="tel:@cleanPhone">LL</a>
+                                    <a class="btn btn-sm btn-outline-success" href="https://wa.me/@cleanPhone" target="_blank" rel="noopener">WA</a>
+                                }
+                                <a class="btn btn-sm btn-outline-primary @(mapLink == "#" ? "disabled" : string.Empty)" href="@mapLink" target="_blank" rel="noopener">MP</a>
+                                <a class="btn btn-sm btn-success" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@Model.SelectedZone">CB</a>
                             </div>
-                        </a>
+                        </article>
                     }
                 </div>
             </section>
@@ -177,7 +184,10 @@
                 <div class="collector-choice-grid">
                     @if (Model.Days.Count == 0)
                     {
-                        <div class="card card-body text-center text-muted">No hay ventas pendientes por cobrar.</div>
+                        <div class="app-empty-state compact">
+                            <strong>No hay ventas pendientes por cobrar.</strong>
+                            <span>Cuando entren nuevas cuentas apareceran aqui agrupadas por dia.</span>
+                        </div>
                     }
                     else
                     {
@@ -235,7 +245,10 @@
                 <div class="collector-sales-list">
                     @if (Model.Sales.Count == 0)
                     {
-                        <div class="card card-body text-center text-muted">No hay ventas para esta seleccion.</div>
+                        <div class="app-empty-state compact">
+                            <strong>No hay ventas para esta seleccion.</strong>
+                            <span>Prueba con otro estado o usa el modo ver todos.</span>
+                        </div>
                     }
                     else
                     {
@@ -244,24 +257,37 @@
                             var photo = string.IsNullOrWhiteSpace(item.FotoCliente)
                                 ? ResolveImage(item.FotoFachada, "https://placehold.co/160x120?text=Venta")
                                 : ResolveImage(item.FotoCliente, "https://placehold.co/160x120?text=Venta");
+                            var cleanPhone = CleanPhone(item.Celular);
+                            var mapLink = string.IsNullOrWhiteSpace(item.Coordenadas) ? "#" : $"https://maps.google.com/?q={Uri.EscapeDataString(item.Coordenadas)}";
 
-                            <a class="collector-sale-card compact" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@Model.SelectedZone">
-                                <img class="collector-sale-photo" src="@photo" alt="@item.NombreCliente" loading="lazy" decoding="async" />
-                                <div class="collector-sale-main">
-                                    <div class="collector-sale-main-top">
-                                        <div class="collector-sale-client">@item.NombreCliente</div>
-                                        <div class="collector-sale-rest">@item.ImporteRestante.ToString("0.00")</div>
+                            <article class="collector-sale-card compact collector-sale-card-actions">
+                                <a class="collector-sale-card-mainlink" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@Model.SelectedZone">
+                                    <img class="collector-sale-photo" src="@photo" alt="@item.NombreCliente" loading="lazy" decoding="async" />
+                                    <div class="collector-sale-main">
+                                        <div class="collector-sale-main-top">
+                                            <div class="collector-sale-client">@item.NombreCliente</div>
+                                            <div class="collector-sale-rest">@item.ImporteRestante.ToString("0.00")</div>
+                                        </div>
+                                        <div class="collector-sale-meta">Venta #@item.NumVenta • @item.Zona</div>
+                                        <div class="collector-sale-meta">@item.DiaCobroPrevisto • @item.Cobrador</div>
                                     </div>
-                                    <div class="collector-sale-meta">Venta #@item.NumVenta â€¢ @item.Zona</div>
-                                    <div class="collector-sale-meta">@item.DiaCobroPrevisto â€¢ @item.Cobrador</div>
-                                </div>
-                                <div class="collector-sale-side compact">
-                                    <div class="@StatusClass(item.Estatus)">
-                                        <span class="status-icon-mobile">@StatusIcon(item.Estatus)</span>
-                                        <span class="status-text-mobile">@item.Estatus</span>
+                                    <div class="collector-sale-side compact">
+                                        <div class="@StatusClass(item.Estatus)">
+                                            <span class="status-icon-mobile">@StatusIcon(item.Estatus)</span>
+                                            <span class="status-text-mobile">@item.Estatus</span>
+                                        </div>
                                     </div>
+                                </a>
+                                <div class="collector-quick-actions">
+                                    @if (!string.IsNullOrWhiteSpace(cleanPhone))
+                                    {
+                                        <a class="btn btn-sm btn-outline-secondary" href="tel:@cleanPhone">LL</a>
+                                        <a class="btn btn-sm btn-outline-success" href="https://wa.me/@cleanPhone" target="_blank" rel="noopener">WA</a>
+                                    }
+                                    <a class="btn btn-sm btn-outline-primary @(mapLink == "#" ? "disabled" : string.Empty)" href="@mapLink" target="_blank" rel="noopener">MP</a>
+                                    <a class="btn btn-sm btn-success" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@Model.SelectedZone">CB</a>
                                 </div>
-                            </a>
+                            </article>
                         }
                     }
                 </div>

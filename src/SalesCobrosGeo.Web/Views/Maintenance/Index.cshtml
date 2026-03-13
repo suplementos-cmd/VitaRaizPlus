@@ -1,8 +1,10 @@
-﻿@model SalesCobrosGeo.Web.Models.Maintenance.MaintenancePageViewModel
+@model SalesCobrosGeo.Web.Models.Maintenance.MaintenancePageViewModel
 @using SalesCobrosGeo.Web.Models.Shared
 @{
     ViewData["Title"] = "Mantenimiento";
     var current = Model.Sections.First(x => x.Key == Model.SelectedSection);
+    var editableSection = new[] { "zonas", "dias-cobro", "formas-pago", "productos", "vendedores", "cobradores" }
+        .Contains(Model.SelectedSection, StringComparer.OrdinalIgnoreCase);
 
     string ToneClass(string tone) => tone switch
     {
@@ -24,15 +26,14 @@
 <div class="app-page-shell maintenance-page-shell">
     @await Html.PartialAsync("_PageHeader", new PageHeaderViewModel(
         "Mantenimiento",
-        "Catalogos y personal",
-        "Panel base para revisar configuracion comercial, zonas, productos y equipo operativo.",
+        "Catalogos, personal y base comercial",
+        "Gestiona zonas, productos, dias, cobradores y vendedores desde un panel unico pensado para escritorio y movil.",
         current.Summary))
 
-    <section class="app-page-actions maintenance-actions-bar">
-        <a class="btn btn-primary" asp-controller="Sales" asp-action="Create">Nueva venta</a>
-        <a class="btn btn-outline-primary" asp-controller="Dashboard" asp-action="Index">Ir al dashboard</a>
-        <a class="btn btn-outline-secondary" asp-controller="Administration" asp-action="Users">Usuarios</a>
-    </section>
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="app-toast-inline success">@Model.Message</div>
+    }
 
     <section class="maintenance-stats">
         @foreach (var item in Model.Stats)
@@ -56,7 +57,7 @@
         }
     </div>
 
-    <section class="maintenance-layout maintenance-layout-master">
+    <section class="maintenance-layout maintenance-admin-layout">
         <aside class="maintenance-sidebar maintenance-sidebar-master">
             <div class="maintenance-sidebar-title">Secciones</div>
             <div class="maintenance-nav">
@@ -78,28 +79,118 @@
                     <h2 class="maintenance-section-title">@current.Title</h2>
                     <div class="maintenance-section-subtitle">@current.Subtitle</div>
                 </div>
+                <div class="maintenance-section-summary">@current.Summary</div>
             </section>
 
-            <section class="maintenance-grid">
-                @foreach (var item in current.Items)
-                {
-                    <article class="maintenance-card">
-                        <div class="maintenance-card-top">
-                            <div>
-                                <div class="maintenance-card-title">@item.Name</div>
-                                <div class="maintenance-card-code">@item.Code</div>
+            <div class="maintenance-workbench">
+                <div class="maintenance-grid-shell">
+                    @if (current.Items.Count == 0)
+                    {
+                        <div class="app-empty-state">
+                            <strong>Sin registros todavia</strong>
+                            <span>Cuando agregues elementos nuevos aqui mismo iran apareciendo en forma compacta.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <section class="maintenance-grid maintenance-grid-compact">
+                            @foreach (var item in current.Items)
+                            {
+                                <article class="maintenance-card">
+                                    <div class="maintenance-card-top">
+                                        <div>
+                                            <div class="maintenance-card-title">@item.Name</div>
+                                            <div class="maintenance-card-code">@item.Code</div>
+                                        </div>
+                                        <span class="@ToneClass(item.Tone)">@item.Badge</span>
+                                    </div>
+                                    <div class="maintenance-card-detail">@item.Detail</div>
+                                    <div class="maintenance-card-actions">
+                                        @if (editableSection)
+                                        {
+                                            <a class="btn btn-sm btn-outline-primary" asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-editId="@item.Id">Editar</a>
+                                            <form asp-action="Delete" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="section" value="@Model.SelectedSection" />
+                                                <input type="hidden" name="id" value="@item.Id" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                            </form>
+                                        }
+                                        else if (Model.SelectedSection == "empleados")
+                                        {
+                                            <a class="btn btn-sm btn-outline-secondary" asp-controller="Administration" asp-action="Users" asp-route-editUsername="@item.Code">Ir a usuario</a>
+                                        }
+                                        else
+                                        {
+                                            <a class="btn btn-sm btn-outline-secondary" asp-action="Index" asp-route-section="productos">Configurar</a>
+                                        }
+                                    </div>
+                                </article>
+                            }
+                        </section>
+                    }
+                </div>
+
+                <aside class="maintenance-editor-panel @(editableSection ? string.Empty : "is-disabled")">
+                    <div class="maintenance-editor-head">
+                        <div>
+                            <div class="maintenance-sidebar-title">Editor rapido</div>
+                            <h3>@(editableSection ? "Alta y edicion" : "Modulo no editable aqui")</h3>
+                        </div>
+                    </div>
+
+                    @if (editableSection)
+                    {
+                        <form asp-action="Save" method="post" class="maintenance-editor-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="Editor.Id" />
+                            <input type="hidden" asp-for="Editor.Section" />
+                            <input type="hidden" name="Section" value="@Model.SelectedSection" />
+                            <input type="hidden" name="Id" value="@Model.Editor.Id" />
+
+                            <div class="mb-3">
+                                <label class="form-label" for="maintenanceCode">Codigo</label>
+                                <input class="form-control" id="maintenanceCode" name="Code" value="@Model.Editor.Code" />
                             </div>
-                            <span class="@ToneClass(item.Tone)">@item.Badge</span>
+                            <div class="mb-3">
+                                <label class="form-label" for="maintenanceName">Nombre</label>
+                                <input class="form-control" id="maintenanceName" name="Name" value="@Model.Editor.Name" />
+                            </div>
+                            @if (Model.SelectedSection == "productos")
+                            {
+                                <div class="mb-3">
+                                    <label class="form-label" for="maintenancePrice">Precio base</label>
+                                    <input class="form-control" id="maintenancePrice" name="Price" type="number" step="0.01" min="0" value="@Model.Editor.Price" />
+                                </div>
+                            }
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="maintenanceActive" name="IsActive" value="true" @(Model.Editor.IsActive ? "checked" : null) />
+                                <input type="hidden" name="IsActive" value="false" />
+                                <label class="form-check-label" for="maintenanceActive">Activo para operacion</label>
+                            </div>
+                            <div class="maintenance-editor-actions">
+                                <button type="submit" class="btn btn-primary">Guardar</button>
+                                <a class="btn btn-outline-secondary" asp-action="Index" asp-route-section="@Model.SelectedSection">Nuevo</a>
+                            </div>
+                        </form>
+                    }
+                    else if (Model.SelectedSection == "empleados")
+                    {
+                        <div class="app-empty-state compact">
+                            <strong>La gestion de empleados vive en Usuarios</strong>
+                            <span>Desde administracion puedes crear, activar, inactivar, resetear contrasenas y controlar permisos por vista.</span>
+                            <a class="btn btn-outline-primary" asp-controller="Administration" asp-action="Users">Abrir usuarios</a>
                         </div>
-                        <div class="maintenance-card-detail">@item.Detail</div>
-                        <div class="maintenance-card-actions">
-                            <button type="button" class="btn btn-sm btn-outline-primary">Editar</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary">Ver</button>
+                    }
+                    else
+                    {
+                        <div class="app-empty-state compact">
+                            <strong>Selecciona un catalogo editable</strong>
+                            <span>Zonas, productos, dias, vendedores, cobradores y formas de pago se editan con el panel lateral.</span>
                         </div>
-                    </article>
-                }
-            </section>
+                    }
+                </aside>
+            </div>
         </div>
     </section>
 </div>
-

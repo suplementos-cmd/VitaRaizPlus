@@ -1,25 +1,22 @@
 @model SalesCobrosGeo.Web.Models.Administration.AdministrationPageViewModel
 @using SalesCobrosGeo.Web.Models.Shared
+@using SalesCobrosGeo.Web.Security
 @{
     ViewData["Title"] = "Administracion de usuarios";
+    var editor = Model.Editor.Input;
 }
 
 <div class="app-page-shell admin-users-page">
     @await Html.PartialAsync("_PageHeader", new PageHeaderViewModel(
         "Administracion",
-        "Usuarios, perfiles y seguridad",
-        "Controla acceso por perfil, sesiones activas, bloqueo de cuentas y ultima ubicacion conocida de equipos operativos.",
+        "Usuarios, permisos y seguridad activa",
+        "Crea usuarios, asigna permisos por vista, resetea contrasenas, controla sesiones y revisa la bitacora operativa.",
         $"{Model.Users.Count} usuarios configurados • {Model.Sessions.Count(x => x.IsConnected)} sesiones activas"))
 
-    @if (TempData["AdminSecurityMessage"] is string message)
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
     {
-        <div class="alert alert-success admin-security-alert" role="alert">@message</div>
+        <div class="app-toast-inline success">@Model.Message</div>
     }
-
-    <section class="app-page-actions admin-users-actions">
-        <button type="button" class="btn btn-primary">Nuevo usuario</button>
-        <button type="button" class="btn btn-outline-primary">Nuevo perfil</button>
-    </section>
 
     <section class="admin-users-role-grid">
         @foreach (var role in Model.Roles)
@@ -63,116 +60,226 @@
         }
     </section>
 
-    <section class="admin-users-table-shell">
-        <div class="admin-users-table-head">
-            <div>
-                <h2 class="admin-users-table-title">Usuarios</h2>
-                <div class="admin-users-table-subtitle">Alta base del sistema con estado activo o inactivo.</div>
+    <section class="admin-workbench">
+        <div class="admin-user-editor-panel">
+            <div class="admin-users-table-head">
+                <div>
+                    <h2 class="admin-users-table-title">@Model.Editor.Title</h2>
+                    <div class="admin-users-table-subtitle">Alta, edicion, cambio de estado, tema y permisos por vista.</div>
+                </div>
             </div>
-            <div class="admin-users-legend">
-                <span class="admin-role-chip">Activo</span>
-                <span class="admin-role-chip">Inactivo</span>
-            </div>
-        </div>
 
-        <div class="admin-users-grid">
-            @foreach (var user in Model.Users)
+            <form asp-action="SaveUser" method="post" class="admin-user-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="OriginalUsername" value="@editor.OriginalUsername" />
+
+                <div class="admin-form-grid">
+                    <div>
+                        <label class="form-label" for="username">Usuario</label>
+                        <input class="form-control" id="username" name="Username" value="@editor.Username" />
+                    </div>
+                    <div>
+                        <label class="form-label" for="displayName">Nombre</label>
+                        <input class="form-control" id="displayName" name="DisplayName" value="@editor.DisplayName" />
+                    </div>
+                    <div>
+                        <label class="form-label" for="zone">Zona</label>
+                        <input class="form-control" id="zone" name="Zone" value="@editor.Zone" />
+                    </div>
+                    <div>
+                        <label class="form-label" for="theme">Tema</label>
+                        <select class="form-select" id="theme" name="Theme">
+                            @foreach (var theme in Model.Editor.AvailableThemes)
+                            {
+                                if (theme == editor.Theme)
+                                {
+                                    <option value="@theme" selected>@theme</option>
+                                }
+                                else
+                                {
+                                    <option value="@theme">@theme</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label" for="role">Perfil base</label>
+                        <select class="form-select" id="role" name="Role">
+                            @if (editor.Role == AppRoles.Full) { <option value="@AppRoles.Full" selected>@AppRoles.Full</option> } else { <option value="@AppRoles.Full">@AppRoles.Full</option> }
+                            @if (editor.Role == AppRoles.Sales) { <option value="@AppRoles.Sales" selected>@AppRoles.Sales</option> } else { <option value="@AppRoles.Sales">@AppRoles.Sales</option> }
+                            @if (editor.Role == AppRoles.Collections) { <option value="@AppRoles.Collections" selected>@AppRoles.Collections</option> } else { <option value="@AppRoles.Collections">@AppRoles.Collections</option> }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label" for="password">Contrasena @(string.IsNullOrWhiteSpace(editor.OriginalUsername) ? "inicial" : "nueva")</label>
+                        <input class="form-control" id="password" name="Password" type="password" autocomplete="new-password" />
+                    </div>
+                </div>
+
+                <div class="admin-form-switches">
+                    <label class="admin-check-chip">
+                        <input type="hidden" name="IsActive" value="false" />
+                        <input type="checkbox" name="IsActive" value="true" @(editor.IsActive ? "checked" : null) />
+                        <span>Activo</span>
+                    </label>
+                    <label class="admin-check-chip">
+                        <input type="hidden" name="TwoFactorEnabled" value="false" />
+                        <input type="checkbox" name="TwoFactorEnabled" value="true" @(editor.TwoFactorEnabled ? "checked" : null) />
+                        <span>2FA requerido</span>
+                    </label>
+                </div>
+
+                <div>
+                    <div class="admin-role-block-title mb-2">Permisos por vista / accion</div>
+                    <div class="admin-permissions-grid">
+                        @foreach (var permission in Model.Editor.AvailablePermissions)
+                        {
+                            var isChecked = editor.Permissions.Contains(permission);
+                            <label class="admin-permission-chip">
+                                <input type="checkbox" name="Permissions" value="@permission" @(isChecked ? "checked" : null) />
+                                <span>@permission</span>
+                            </label>
+                        }
+                    </div>
+                </div>
+
+                <div class="admin-editor-actions">
+                    <button type="submit" class="btn btn-primary">Guardar usuario</button>
+                    <a class="btn btn-outline-secondary" asp-action="Users">Nuevo limpio</a>
+                </div>
+            </form>
+
+            @if (!string.IsNullOrWhiteSpace(editor.Username))
             {
-                <article class="admin-user-card">
-                    <div class="admin-user-top">
-                        <div>
-                            <div class="admin-user-name">@user.Name</div>
-                            <div class="admin-user-email">@user.Username</div>
-                        </div>
-                        <span class="admin-role-chip">@user.RoleCode</span>
+                <form asp-action="ResetPassword" method="post" class="admin-reset-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="username" value="@editor.Username" />
+                    <div class="admin-role-block-title mb-2">Reset rapido de contrasena</div>
+                    <div class="input-group">
+                        <input class="form-control" type="password" name="newPassword" placeholder="Nueva contrasena segura" autocomplete="new-password" />
+                        <button type="submit" class="btn btn-outline-warning">Reset</button>
                     </div>
-                    <div class="admin-user-meta">Zona: @user.Zone</div>
-                    <div class="admin-user-meta">Estado: @user.Status</div>
-                    <div class="admin-user-meta">Perfil: @user.AccessLabel</div>
-                    <div class="admin-user-actions">
-                        <form asp-action="SetUserStatus" method="post">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="username" value="@user.Username" />
-                            <input type="hidden" name="isActive" value="@(user.Status == "Activo" ? "false" : "true")" />
-                            <button type="submit" class="btn btn-sm @(user.Status == "Activo" ? "btn-outline-danger" : "btn-outline-success")">@(user.Status == "Activo" ? "Inactivar" : "Activar")</button>
-                        </form>
-                    </div>
-                </article>
+                </form>
             }
         </div>
-    </section>
 
-    <section class="admin-users-table-shell">
-        <div class="admin-users-table-head">
-            <div>
-                <h2 class="admin-users-table-title">Sesiones y rastreo</h2>
-                <div class="admin-users-table-subtitle">Supervision en tiempo real para saber quien esta conectado, desde donde entro y cual fue su ultima coordenada operativa.</div>
-            </div>
-        </div>
-
-        <div class="admin-session-grid">
-            @foreach (var session in Model.Sessions)
-            {
-                <article class="admin-session-card @(session.IsConnected ? "connected" : string.Empty)">
-                    <div class="admin-session-head">
-                        <div>
-                            <div class="admin-user-name">@session.DisplayName</div>
-                            <div class="admin-user-email">@session.Username • @session.RoleLabel</div>
-                        </div>
-                        <span class="admin-session-badge @(session.IsConnected ? "connected" : session.IsActive ? "idle" : "inactive")">
-                            @(session.IsConnected ? "Conectado" : session.IsActive ? "Sin sesion" : "Inactivo")
-                        </span>
+        <div class="admin-lists-panel">
+            <section class="admin-users-table-shell">
+                <div class="admin-users-table-head">
+                    <div>
+                        <h2 class="admin-users-table-title">Usuarios</h2>
+                        <div class="admin-users-table-subtitle">Listado compacto con acceso directo a editar, activar o inactivar.</div>
                     </div>
-                    <div class="admin-session-meta">Zona: @session.Zone</div>
-                    <div class="admin-session-meta">Ultima actividad: @session.LastSeen</div>
-                    <div class="admin-session-meta">Ruta/pagina: @session.LastPath</div>
-                    <div class="admin-session-meta">IP: @session.LastIp</div>
-                    <div class="admin-session-meta">Coordenadas: @session.LastCoordinates</div>
-                    <div class="admin-session-meta">Origen rastreo: @session.LastLocationSource</div>
-                    <details class="admin-session-device">
-                        <summary>Ver equipo</summary>
-                        <div>@session.LastUserAgent</div>
-                    </details>
-                    <div class="admin-user-actions">
-                        <form asp-action="ForceLogout" method="post">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="username" value="@session.Username" />
-                            <button type="submit" class="btn btn-sm btn-outline-warning">Desconectar</button>
-                        </form>
-                        <form asp-action="SetUserStatus" method="post">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="username" value="@session.Username" />
-                            <input type="hidden" name="isActive" value="@(session.IsActive ? "false" : "true")" />
-                            <button type="submit" class="btn btn-sm @(session.IsActive ? "btn-outline-danger" : "btn-outline-success")">@(session.IsActive ? "Inactivar" : "Activar")</button>
-                        </form>
-                    </div>
-                </article>
-            }
-        </div>
-    </section>
+                </div>
 
-    <section class="admin-users-table-shell">
-        <div class="admin-users-table-head">
-            <div>
-                <h2 class="admin-users-table-title">Bitacora de auditoria</h2>
-                <div class="admin-users-table-subtitle">Eventos recientes de acceso, bloqueo, logout forzado, actividad y actualizaciones de ubicacion.</div>
-            </div>
-        </div>
+                <div class="admin-users-grid">
+                    @foreach (var user in Model.Users)
+                    {
+                        <article class="admin-user-card">
+                            <div class="admin-user-top">
+                                <div>
+                                    <div class="admin-user-name">@user.Name</div>
+                                    <div class="admin-user-email">@user.Username</div>
+                                </div>
+                                <span class="admin-role-chip">@user.RoleCode</span>
+                            </div>
+                            <div class="admin-user-meta">Zona: @user.Zone</div>
+                            <div class="admin-user-meta">Estado: @user.Status</div>
+                            <div class="admin-user-meta">Tema: @user.Theme • Permisos: @user.PermissionCount</div>
+                            <div class="admin-user-meta">2FA: @(user.TwoFactorEnabled ? "Si" : "No")</div>
+                            <div class="admin-user-actions">
+                                <a class="btn btn-sm btn-outline-primary" asp-action="Users" asp-route-editUsername="@user.Username">Editar</a>
+                                <form asp-action="SetUserStatus" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="username" value="@user.Username" />
+                                    <input type="hidden" name="isActive" value="@(user.Status == "Activo" ? "false" : "true")" />
+                                    <button type="submit" class="btn btn-sm @(user.Status == "Activo" ? "btn-outline-danger" : "btn-outline-success")">@(user.Status == "Activo" ? "Inactivar" : "Activar")</button>
+                                </form>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </section>
 
-        <div class="admin-audit-list">
-            @foreach (var entry in Model.AuditTrail)
-            {
-                <article class="admin-audit-item">
-                    <div class="admin-audit-top">
-                        <strong>@entry.EventType</strong>
-                        <span>@entry.Timestamp</span>
+            <section class="admin-users-table-shell">
+                <div class="admin-users-table-head">
+                    <div>
+                        <h2 class="admin-users-table-title">Sesiones y rastreo</h2>
+                        <div class="admin-users-table-subtitle">Supervision en tiempo real para saber quien esta conectado, desde donde entro y cual fue su ultima coordenada operativa.</div>
                     </div>
-                    <div class="admin-session-meta">Usuario: @entry.Username</div>
-                    <div class="admin-session-meta">@entry.Description</div>
-                    <div class="admin-session-meta">Ruta: @entry.Path</div>
-                    <div class="admin-session-meta">Coordenadas: @entry.Coordinates</div>
-                </article>
-            }
+                </div>
+
+                <div class="admin-session-grid">
+                    @foreach (var session in Model.Sessions)
+                    {
+                        <article class="admin-session-card @(session.IsConnected ? "connected" : string.Empty)">
+                            <div class="admin-session-head">
+                                <div>
+                                    <div class="admin-user-name">@session.DisplayName</div>
+                                    <div class="admin-user-email">@session.Username • @session.RoleLabel</div>
+                                </div>
+                                <span class="admin-session-badge @(session.IsConnected ? "connected" : session.IsActive ? "idle" : "inactive")">
+                                    @(session.IsConnected ? "Conectado" : session.IsActive ? "Sin sesion" : "Inactivo")
+                                </span>
+                            </div>
+                            <div class="admin-session-meta">Zona: @session.Zone</div>
+                            <div class="admin-session-meta">Ultima actividad: @session.LastSeen</div>
+                            <div class="admin-session-meta">Ruta/pagina: @session.LastPath</div>
+                            <div class="admin-session-meta">IP: @session.LastIp</div>
+                            <div class="admin-session-meta">Coordenadas: @session.LastCoordinates</div>
+                            <div class="admin-session-meta">Origen rastreo: @session.LastLocationSource</div>
+                            <details class="admin-session-device">
+                                <summary>Ver equipo</summary>
+                                <div>@session.LastUserAgent</div>
+                            </details>
+                            <div class="admin-user-actions">
+                                <form asp-action="ForceLogout" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="username" value="@session.Username" />
+                                    <button type="submit" class="btn btn-sm btn-outline-warning">Desconectar</button>
+                                </form>
+                                <a class="btn btn-sm btn-outline-primary" asp-action="Users" asp-route-editUsername="@session.Username">Usuario</a>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </section>
+
+            <section class="admin-users-table-shell">
+                <div class="admin-users-table-head">
+                    <div>
+                        <h2 class="admin-users-table-title">Bitacora de auditoria</h2>
+                        <div class="admin-users-table-subtitle">Grid compacto con paginacion. Toca un evento para ir al detalle completo.</div>
+                    </div>
+                    <div class="admin-audit-pager">
+                        <a class="btn btn-sm btn-outline-secondary @(Model.AuditPage <= 1 ? "disabled" : string.Empty)" asp-action="Users" asp-route-page="@(Model.AuditPage - 1)">Anterior</a>
+                        <span>Pag. @Model.AuditPage / @Model.TotalAuditPages</span>
+                        <a class="btn btn-sm btn-outline-secondary @(Model.AuditPage >= Model.TotalAuditPages ? "disabled" : string.Empty)" asp-action="Users" asp-route-page="@(Model.AuditPage + 1)">Siguiente</a>
+                    </div>
+                </div>
+
+                @if (Model.AuditTrail.Count == 0)
+                {
+                    <div class="app-empty-state compact">
+                        <strong>Sin eventos registrados</strong>
+                        <span>La bitacora aparecera aqui cuando haya accesos, cambios o actividad operativa.</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="admin-audit-table">
+                        @foreach (var entry in Model.AuditTrail)
+                        {
+                            <a class="admin-audit-row" asp-action="AuditDetail" asp-route-id="@entry.Id">
+                                <span class="admin-audit-cell event">@entry.EventType</span>
+                                <span class="admin-audit-cell user">@entry.Username</span>
+                                <span class="admin-audit-cell desc">@entry.Description</span>
+                                <span class="admin-audit-cell date">@entry.Timestamp</span>
+                            </a>
+                        }
+                    </div>
+                }
+            </section>
         </div>
     </section>
 </div>

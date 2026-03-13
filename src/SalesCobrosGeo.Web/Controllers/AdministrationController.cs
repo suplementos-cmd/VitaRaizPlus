@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SalesCobrosGeo.Web.Data;
 using SalesCobrosGeo.Web.Models.Administration;
 using SalesCobrosGeo.Web.Security;
 
@@ -8,20 +10,226 @@ namespace SalesCobrosGeo.Web.Controllers;
 [Authorize(Policy = AppPolicies.AdministrationAccess)]
 public sealed class AdministrationController : Controller
 {
+    private const int AuditPageSize = 12;
+
+    private static readonly string[] AvailablePermissions =
+    [
+        AppPermissions.DashboardView,
+        AppPermissions.SalesView,
+        AppPermissions.CollectionsView,
+        AppPermissions.MaintenanceView,
+        AppPermissions.AdministrationView
+    ];
+
+    private static readonly string[] AvailableThemes = ["root", "sales", "collections", "forest", "sunset"];
+
     private readonly IApplicationUserService _userService;
     private readonly IUserSessionTracker _sessionTracker;
+    private readonly AppSecurityDbContext _dbContext;
 
-    public AdministrationController(IApplicationUserService userService, IUserSessionTracker sessionTracker)
+    public AdministrationController(IApplicationUserService userService, IUserSessionTracker sessionTracker, AppSecurityDbContext dbContext)
     {
         _userService = userService;
         _sessionTracker = sessionTracker;
+        _dbContext = dbContext;
     }
 
     [HttpGet]
-    public IActionResult Users()
+    public IActionResult Users(int page = 1, string? editUsername = null)
     {
-        var roles = new[]
+        var userSummaries = _userService.GetUsers();
+        var message = TempData["AdminSecurityMessage"] as string;
+        var auditTotal = _dbContext.AuditLogs.Count();
+        var totalPages = Math.Max(1, (int)Math.Ceiling(auditTotal / (double)AuditPageSize));
+        page = Math.Clamp(page, 1, totalPages);
+
+        var editorUser = string.IsNullOrWhiteSpace(editUsername) ? null : _userService.GetUser(editUsername);
+        var editor = BuildEditor(editorUser);
+        var model = new AdministrationPageViewModel(
+            BuildRoles(),
+            userSummaries.Select(user => new AdminUserCard(
+                user.DisplayName,
+                user.Username,
+                user.Role,
+                user.Zone,
+                user.IsActive ? "Activo" : "Inactivo",
+                user.RoleLabel,
+                user.Theme,
+                user.TwoFactorEnabled,
+                user.Permissions.Count)).ToArray(),
+            _sessionTracker.GetSnapshots(userSummaries)
+                .Select(session => new AdminSessionCard(
+                    session.Username,
+                    session.DisplayName,
+                    session.RoleLabel,
+                    session.Zone,
+                    session.IsActive,
+                    session.IsConnected,
+                    session.LastSeenLabel,
+                    session.LastPath,
+                    session.LastIp,
+                    session.LastUserAgent,
+                    session.LastCoordinates,
+                    session.LastLocationSource)).ToArray(),
+            _dbContext.AuditLogs
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedUtc)
+                .Skip((page - 1) * AuditPageSize)
+                .Take(AuditPageSize)
+                .Select(x => new AdminAuditCard(
+                    x.Id,
+                    x.CreatedUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm"),
+                    x.EventType,
+                    x.Username,
+                    x.Description,
+                    x.Path,
+                    x.Coordinates))
+                .ToArray(),
+            editor,
+            page,
+            totalPages,
+            message);
+
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult SaveUser(UserAdminInput input)
+    {
+        try
         {
+            ApplyRoleDefaults(input);
+            var saved = _userService.SaveUser(input);
+            TempData["AdminSecurityMessage"] = $"Usuario {saved.Username} guardado correctamente.";
+            return RedirectToAction(nameof(Users), new { editUsername = saved.Username });
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["AdminSecurityMessage"] = ex.Message;
+            return RedirectToAction(nameof(Users), new { editUsername = input.OriginalUsername ?? input.Username });
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ResetPassword(string username, string newPassword)
+    {
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
+        {
+            TempData["AdminSecurityMessage"] = "La nueva contrasena debe tener al menos 8 caracteres.";
+            return RedirectToAction(nameof(Users), new { editUsername = username });
+        }
+
+        TempData["AdminSecurityMessage"] = _userService.ResetPassword(username, newPassword)
+            ? $"Contrasena reiniciada para {username}."
+            : "No se pudo reiniciar la contrasena.";
+
+        return RedirectToAction(nameof(Users), new { editUsername = username });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult SetUserStatus(string username, bool isActive)
+    {
+        if (_userService.SetActive(username, isActive))
+        {
+            _sessionTracker.SetUserActive(username, isActive);
+            TempData["AdminSecurityMessage"] = isActive
+                ? $"{username} vuelve a estar activo para ingresar."
+                : $"{username} fue desactivado y cualquier sesion abierta quedo invalidada.";
+        }
+
+        return RedirectToAction(nameof(Users), new { editUsername = username });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ForceLogout(string username)
+    {
+        _sessionTracker.ForceLogout(username);
+        TempData["AdminSecurityMessage"] = $"Se forzo el cierre de sesion de {username}.";
+        return RedirectToAction(nameof(Users), new { editUsername = username });
+    }
+
+    [HttpGet]
+    public IActionResult AuditDetail(long id)
+    {
+        var entry = _dbContext.AuditLogs.AsNoTracking().FirstOrDefault(x => x.Id == id);
+        if (entry is null)
+        {
+            return NotFound();
+        }
+
+        return View(new AuditDetailViewModel(
+            entry.Id,
+            entry.CreatedUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss"),
+            entry.EventType,
+            entry.Username,
+            entry.Description,
+            entry.Path,
+            entry.Coordinates,
+            string.IsNullOrWhiteSpace(entry.Metadata) ? "-" : entry.Metadata));
+    }
+
+    private static void ApplyRoleDefaults(UserAdminInput input)
+    {
+        input.Role = string.IsNullOrWhiteSpace(input.Role) ? AppRoles.Sales : input.Role.ToUpperInvariant();
+        input.RoleLabel = input.Role switch
+        {
+            AppRoles.Full => "Acceso total",
+            AppRoles.Collections => "Modulo cobros",
+            _ => "Modulo ventas"
+        };
+
+        if (input.Permissions.Count > 0)
+        {
+            return;
+        }
+
+        input.Permissions = input.Role switch
+        {
+            AppRoles.Full => [.. AvailablePermissions],
+            AppRoles.Collections => [AppPermissions.DashboardView, AppPermissions.CollectionsView],
+            _ => [AppPermissions.DashboardView, AppPermissions.SalesView]
+        };
+    }
+
+    private static UserEditViewModel BuildEditor(ApplicationUserSummary? user)
+    {
+        return new UserEditViewModel(
+            user is null ? "Alta de usuario" : $"Editar {user.DisplayName}",
+            user is null
+                ? new UserAdminInput
+                {
+                    Theme = "sales",
+                    Role = AppRoles.Sales,
+                    RoleLabel = "Modulo ventas",
+                    IsActive = true,
+                    Permissions = [AppPermissions.DashboardView, AppPermissions.SalesView]
+                }
+                : new UserAdminInput
+                {
+                    OriginalUsername = user.Username,
+                    Username = user.Username,
+                    DisplayName = user.DisplayName,
+                    Zone = user.Zone,
+                    Theme = user.Theme,
+                    Role = user.Role,
+                    RoleLabel = user.RoleLabel,
+                    IsActive = user.IsActive,
+                    TwoFactorEnabled = user.TwoFactorEnabled,
+                    Permissions = [.. user.Permissions]
+                },
+            AvailablePermissions,
+            [AppRoles.Full, AppRoles.Sales, AppRoles.Collections],
+            AvailableThemes);
+    }
+
+    private static IReadOnlyList<RoleProfileCard> BuildRoles()
+    {
+        return
+        [
             new RoleProfileCard(
                 AppRoles.Full,
                 "Acceso total",
@@ -29,9 +237,9 @@ public sealed class AdministrationController : Controller
                 new RoleTheme("Root", "#24334f", "#6da7ff", "#eef4ff"),
                 ["Inicio", "Dashboard", "Ventas", "Cobros", "Mantenimiento", "Usuarios"],
                 [
-                    new RolePermissionRow("Seguridad", "Full", "Usuarios, perfiles, cookies, sesiones y auditoria base"),
-                    new RolePermissionRow("Ventas", "Full", "Todos los campos de venta y catalogos"),
-                    new RolePermissionRow("Cobros", "Full", "Toda la cartera, estados, abonos y detalle")
+                    new RolePermissionRow("Seguridad", "Full", "Usuarios, sesiones, bitacora, 2FA y configuracion sensible"),
+                    new RolePermissionRow("Ventas", "Full", "Todos los campos de venta y sus catalogos"),
+                    new RolePermissionRow("Cobros", "Full", "Cartera, ruta, abonos y geolocalizacion")
                 ]),
             new RoleProfileCard(
                 AppRoles.Sales,
@@ -40,7 +248,7 @@ public sealed class AdministrationController : Controller
                 new RoleTheme("Ventas", "#2c74d8", "#7bb3ff", "#edf5ff"),
                 ["Inicio", "Dashboard", "Ventas"],
                 [
-                    new RolePermissionRow("Ventas", "Ver/crear/editar", "Cliente, producto, fotos, zona, coordenadas, forma de pago"),
+                    new RolePermissionRow("Ventas", "Ver/crear/editar", "Cliente, producto, fotos, zona, coordenadas y forma de pago"),
                     new RolePermissionRow("Cobros", "Sin acceso", "No registra cobros ni entra a cartera"),
                     new RolePermissionRow("Dashboard", "Comercial", "Solo indicadores de ventas")
                 ]),
@@ -52,78 +260,9 @@ public sealed class AdministrationController : Controller
                 ["Inicio", "Dashboard", "Cobros"],
                 [
                     new RolePermissionRow("Cobros", "Ver/registrar", "Importe, observacion, coordenadas, historial y estatus"),
-                    new RolePermissionRow("Ventas", "Consulta limitada", "Cliente, zona, dia de cobro, importe, fotos base"),
+                    new RolePermissionRow("Ventas", "Consulta limitada", "Cliente, zona, dia de cobro, importe y fotos base"),
                     new RolePermissionRow("Dashboard", "Cobranza", "Indicadores de cobro, ruta y atrasos")
                 ])
-        };
-
-        var userSummaries = _userService.GetUsers();
-
-        var users = userSummaries
-            .Select(user => new AdminUserCard(
-                user.DisplayName,
-                user.Username,
-                user.Role,
-                user.Zone,
-                user.IsActive ? "Activo" : "Inactivo",
-                user.RoleLabel))
-            .ToArray();
-
-        var sessions = _sessionTracker.GetSnapshots(userSummaries)
-            .Select(session => new AdminSessionCard(
-                session.Username,
-                session.DisplayName,
-                session.RoleLabel,
-                session.Zone,
-                session.IsActive,
-                session.IsConnected,
-                session.LastSeenLabel,
-                session.LastPath,
-                session.LastIp,
-                session.LastUserAgent,
-                session.LastCoordinates,
-                session.LastLocationSource))
-            .ToArray();
-
-        var auditTrail = _sessionTracker.GetAuditTrail()
-            .Select(entry => new AdminAuditCard(
-                entry.Timestamp,
-                entry.EventType,
-                entry.Username,
-                entry.Description,
-                entry.Path,
-                entry.Coordinates))
-            .ToArray();
-
-        return View(new AdministrationPageViewModel(roles, users, sessions, auditTrail));
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult SetUserStatus(string username, bool isActive)
-    {
-        if (_userService.SetActive(username, isActive))
-        {
-            _sessionTracker.SetUserActive(username, isActive);
-            if (!isActive)
-            {
-                TempData["AdminSecurityMessage"] = $"{username} fue desactivado y cualquier sesion abierta quedo invalidada.";
-            }
-            else
-            {
-                TempData["AdminSecurityMessage"] = $"{username} vuelve a estar activo para ingresar.";
-            }
-        }
-
-        return RedirectToAction(nameof(Users));
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult ForceLogout(string username)
-    {
-        _sessionTracker.ForceLogout(username);
-        TempData["AdminSecurityMessage"] = $"Se forzo el cierre de sesion de {username}.";
-        return RedirectToAction(nameof(Users));
+        ];
     }
 }

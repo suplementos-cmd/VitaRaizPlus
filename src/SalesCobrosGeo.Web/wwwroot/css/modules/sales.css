@@ -7,3 +7,149 @@
     max-width: 100%;
   }
 }
+.sale-form-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sale-form-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sale-wizard-steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sale-step-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  border: 1px solid #d9e3ef;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.94);
+  color: #55657d;
+  font-weight: 800;
+}
+
+.sale-step-chip span {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #edf3fb;
+}
+
+.sale-step-chip.active {
+  border-color: #b9d1f4;
+  background: linear-gradient(135deg, #eef5ff 0%, #edfdf8 100%);
+  color: #173252;
+}
+
+.sale-step-panel {
+  display: none;
+}
+
+.sale-step-panel.active {
+  display: block;
+  animation: page-enter 220ms ease-out;
+}
+
+.sale-wizard-footer {
+  position: sticky;
+  bottom: 72px;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #dbe5f0;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.96);
+  box-shadow: var(--vr-shadow-soft);
+}
+
+.sale-wizard-progress {
+  text-align: center;
+  font-weight: 800;
+  color: #42536a;
+}
+
+.sale-confirm-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.sale-confirm-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #f8fbff;
+  border: 1px solid #e0e8f2;
+}
+
+.sale-confirm-grid > div span {
+  font-size: 0.78rem;
+  color: #6a7a8e;
+}
+
+.sale-confirm-grid > div strong {
+  color: #203149;
+}
+
+.sale-confirm-grid > div.highlight {
+  background: linear-gradient(135deg, #eef5ff 0%, #eefbf7 100%);
+  border-color: #cfe1f4;
+}
+
+@media (max-width: 991px) {
+  .sale-confirm-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .sale-form-topbar {
+    flex-direction: column;
+  }
+
+  .sale-wizard-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .sale-step-chip {
+    justify-content: flex-start;
+    padding-inline: 12px;
+  }
+
+  .sale-wizard-footer {
+    bottom: 74px;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sale-wizard-progress {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+
+  .sale-wizard-footer .btn {
+    width: 100%;
+  }
+
+  .sale-confirm-grid {
+    grid-template-columns: 1fr;
+  }
+}

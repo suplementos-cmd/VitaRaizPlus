@@ -1,34 +1,46 @@
-﻿@model SalesCobrosGeo.Web.Models.Sales.SaleFormViewModel
+@model SalesCobrosGeo.Web.Models.Sales.SaleFormViewModel
 @using Microsoft.AspNetCore.Mvc.Rendering
 @{
     ViewData["Title"] = Model.PageTitle;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">@Model.PageTitle</h1>
-    <a class="btn btn-outline-secondary" asp-controller="Sales" asp-action="Index">Volver</a>
-</div>
+<div class="sale-form-shell">
+    <div class="sale-form-topbar">
+        <div>
+            <div class="app-page-eyebrow">Ventas</div>
+            <h1 class="app-page-title">@Model.PageTitle</h1>
+            <div class="app-page-subtitle">Wizard compacto para capturar cliente, producto, fotos, ubicacion y confirmacion sin saturar la pantalla.</div>
+        </div>
+        <a class="btn btn-outline-secondary" asp-controller="Sales" asp-action="Index">Volver</a>
+    </div>
 
-@if (!ViewData.ModelState.IsValid)
-{
-    <div class="alert alert-danger">Revisa los campos obligatorios.</div>
-}
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="app-toast-inline danger">Revisa los campos obligatorios antes de continuar.</div>
+    }
 
-<form method="post" class="sale-form" id="saleForm">
-    @Html.AntiForgeryToken()
-    <input asp-for="Input.IdV" type="hidden" />
-    <input asp-for="Input.NumVenta" type="hidden" />
+    <div class="sale-wizard-steps" id="saleWizardSteps">
+        <button type="button" class="sale-step-chip active" data-step-target="1"><span>1</span><small>Cliente</small></button>
+        <button type="button" class="sale-step-chip" data-step-target="2"><span>2</span><small>Producto</small></button>
+        <button type="button" class="sale-step-chip" data-step-target="3"><span>3</span><small>Fotos</small></button>
+        <button type="button" class="sale-step-chip" data-step-target="4"><span>4</span><small>Ubicacion</small></button>
+        <button type="button" class="sale-step-chip" data-step-target="5"><span>5</span><small>Confirmar</small></button>
+    </div>
 
-    <div class="row g-3">
-        <div class="col-lg-8">
+    <form method="post" class="sale-form" id="saleForm">
+        @Html.AntiForgeryToken()
+        <input asp-for="Input.IdV" type="hidden" />
+        <input asp-for="Input.NumVenta" type="hidden" />
+
+        <section class="sale-step-panel active" data-sale-step="1">
             <div class="card mb-3">
-                <div class="card-header">Cliente y Venta</div>
+                <div class="card-header">Cliente y venta</div>
                 <div class="card-body row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label asp-for="Input.FechaVenta" class="form-label">Fecha de venta</label>
                         <input asp-for="Input.FechaVenta" type="date" class="form-control" />
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-8">
                         <label asp-for="Input.NombreCliente" class="form-label">Nombre cliente</label>
                         <input asp-for="Input.NombreCliente" class="form-control" />
                     </div>
@@ -60,18 +72,20 @@
                     </div>
                     <div class="col-12">
                         <label asp-for="Input.ObservacionVenta" class="form-label">Observacion venta</label>
-                        <textarea asp-for="Input.ObservacionVenta" class="form-control" rows="2"></textarea>
+                        <textarea asp-for="Input.ObservacionVenta" class="form-control" rows="3"></textarea>
                     </div>
                 </div>
             </div>
+        </section>
 
+        <section class="sale-step-panel" data-sale-step="2">
             <div class="card mb-3 products-card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <span>Productos</span>
                     <button type="button" id="btnAddProduct" class="btn btn-sm btn-outline-primary">Agregar</button>
                 </div>
                 <div class="card-body">
-                    <div class="products-mobile-note">En movil se muestra solo producto e importe. Usa "Detalle" si necesitas editar mas.</div>
+                    <div class="products-mobile-note">En movil solo ves producto e importe. Usa Detalle si necesitas editar cantidad o precio.</div>
                     <div class="table-responsive products-table-wrap">
                         <table class="table" id="productsTable">
                             <thead>
@@ -128,7 +142,9 @@
                     <div class="text-end fw-bold products-total">Total: <span id="totalAmount">0.00</span></div>
                 </div>
             </div>
+        </section>
 
+        <section class="sale-step-panel" data-sale-step="3">
             <div class="card mb-3">
                 <div class="card-header">Fotos (tomar o cargar)</div>
                 <div class="card-body">
@@ -139,7 +155,6 @@
                         <div class="col-sm-6 col-lg-4">@await Html.PartialAsync("_PhotoPicker", ("Input_FotoAdd1", "Foto add 1", Model.Input.FotoAdd1))</div>
                         <div class="col-sm-6 col-lg-4">@await Html.PartialAsync("_PhotoPicker", ("Input_FotoAdd2", "Foto add 2", Model.Input.FotoAdd2))</div>
                     </div>
-
                     <input asp-for="Input.FotoCliente" type="hidden" id="Input_FotoCliente" />
                     <input asp-for="Input.FotoFachada" type="hidden" id="Input_FotoFachada" />
                     <input asp-for="Input.FotoContrato" type="hidden" id="Input_FotoContrato" />
@@ -147,80 +162,130 @@
                     <input asp-for="Input.FotoAdd2" type="hidden" id="Input_FotoAdd2" />
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div class="col-lg-4">
-            <div class="card mb-3">
-                <div class="card-header">Asignaciones</div>
-                <div class="card-body row g-3">
-                    <div class="col-12">
-                        <label asp-for="Input.Vendedor" class="form-label">Vendedor</label>
-                        <select asp-for="Input.Vendedor" class="form-select" asp-items="@(new SelectList(Model.Catalogs.Sellers, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
-                            <option value="">Seleccione</option>
-                        </select>
-                    </div>
-                    <div class="col-12">
-                        <label asp-for="Input.Cobrador" class="form-label">Cobrador</label>
-                        <select asp-for="Input.Cobrador" class="form-select" asp-items="@(new SelectList(Model.Catalogs.Collectors, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
-                            <option value="">Seleccione</option>
-                        </select>
-                    </div>
-                    <div class="col-12">
-                        <label asp-for="Input.Usuario" class="form-label">Usuario (email)</label>
-                        <input asp-for="Input.Usuario" class="form-control" />
-                    </div>
-                    <div class="col-12">
-                        <label asp-for="Input.ComisionVendedorPct" class="form-label">% Comision vendedor</label>
-                        <input asp-for="Input.ComisionVendedorPct" type="number" step="0.01" class="form-control" />
-                    </div>
-                </div>
-            </div>
-
-            <div class="card mb-3">
-                <div class="card-header">Ubicacion y Estado</div>
-                <div class="card-body row g-3">
-                    <div class="col-12">
-                        <label asp-for="Input.Coordenadas" class="form-label">Coordenadas (GPS automatico)</label>
-                        <div class="input-group">
-                            <input asp-for="Input.Coordenadas" class="form-control" id="gpsCoordinates" readonly />
-                            <button type="button" class="btn btn-outline-primary" id="btnGpsLocate">GPS</button>
+        <section class="sale-step-panel" data-sale-step="4">
+            <div class="row g-3">
+                <div class="col-lg-5">
+                    <div class="card mb-3">
+                        <div class="card-header">Asignaciones</div>
+                        <div class="card-body row g-3">
+                            <div class="col-12">
+                                <label asp-for="Input.Vendedor" class="form-label">Vendedor</label>
+                                <select asp-for="Input.Vendedor" class="form-select" asp-items="@(new SelectList(Model.Catalogs.Sellers, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                                    <option value="">Seleccione</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Input.Cobrador" class="form-label">Cobrador</label>
+                                <select asp-for="Input.Cobrador" class="form-select" asp-items="@(new SelectList(Model.Catalogs.Collectors, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                                    <option value="">Seleccione</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Input.Usuario" class="form-label">Usuario (email)</label>
+                                <input asp-for="Input.Usuario" class="form-control" />
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Input.ComisionVendedorPct" class="form-label">% Comision vendedor</label>
+                                <input asp-for="Input.ComisionVendedorPct" type="number" step="0.01" class="form-control" />
+                            </div>
                         </div>
-                        <small id="gpsStatus" class="text-muted">Detectando ubicacion...</small>
                     </div>
-                    <div class="col-12">
-                        <label asp-for="Input.Coordenadas2" class="form-label">Coordenadas 2</label>
-                        <input asp-for="Input.Coordenadas2" class="form-control" id="gpsCoordinates2" readonly />
-                    </div>
-                    <div class="col-12">
-                        <label asp-for="Input.UrlUbicacion" class="form-label">URL ubicacion</label>
-                        <input asp-for="Input.UrlUbicacion" class="form-control" id="gpsUrl" readonly />
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="Input.Estado" class="form-label">Estado</label>
-                        <input asp-for="Input.Estado" class="form-control" />
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="Input.Estado2" class="form-label">Estado2</label>
-                        <input asp-for="Input.Estado2" class="form-control" />
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="Input.Cobrar" class="form-label">Cobrar</label>
-                        <input asp-for="Input.Cobrar" class="form-control" />
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="Input.FechaPrimerCobro" class="form-label">Fecha primer cobro</label>
-                        <input asp-for="Input.FechaPrimerCobro" type="date" class="form-control" />
+                </div>
+
+                <div class="col-lg-7">
+                    <div class="card mb-3">
+                        <div class="card-header">Ubicacion y estado</div>
+                        <div class="card-body row g-3">
+                            <div class="col-12">
+                                <label asp-for="Input.Coordenadas" class="form-label">Coordenadas (GPS automatico)</label>
+                                <div class="input-group">
+                                    <input asp-for="Input.Coordenadas" class="form-control" id="gpsCoordinates" readonly />
+                                    <button type="button" class="btn btn-outline-primary" id="btnGpsLocate">GPS</button>
+                                </div>
+                                <small id="gpsStatus" class="text-muted">Detectando ubicacion...</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.Coordenadas2" class="form-label">Coordenadas 2</label>
+                                <input asp-for="Input.Coordenadas2" class="form-control" id="gpsCoordinates2" readonly />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.UrlUbicacion" class="form-label">URL ubicacion</label>
+                                <input asp-for="Input.UrlUbicacion" class="form-control" id="gpsUrl" readonly />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Input.Estado" class="form-label">Estado</label>
+                                <input asp-for="Input.Estado" class="form-control" />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Input.Estado2" class="form-label">Estado2</label>
+                                <input asp-for="Input.Estado2" class="form-control" />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Input.Cobrar" class="form-label">Cobrar</label>
+                                <input asp-for="Input.Cobrar" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.FechaPrimerCobro" class="form-label">Fecha primer cobro</label>
+                                <input asp-for="Input.FechaPrimerCobro" type="date" class="form-control" />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <div class="mt-3 d-flex justify-content-end gap-2 sale-form-actions">
-        <a class="btn btn-outline-secondary" asp-controller="Sales" asp-action="Index">Cancelar</a>
-        <button type="submit" class="btn btn-success">@(Model.IsEdit ? "Guardar cambios" : "Registrar venta")</button>
-    </div>
-</form>
+        <section class="sale-step-panel" data-sale-step="5">
+            <div class="card mb-3 sale-confirm-card">
+                <div class="card-header">Confirmacion</div>
+                <div class="card-body">
+                    <div class="sale-confirm-grid">
+                        <div>
+                            <span>Cliente</span>
+                            <strong id="confirmClient">@Model.Input.NombreCliente</strong>
+                        </div>
+                        <div>
+                            <span>Zona</span>
+                            <strong id="confirmZone">@Model.Input.Zona</strong>
+                        </div>
+                        <div>
+                            <span>Pago</span>
+                            <strong id="confirmPayment">@Model.Input.FormaPago</strong>
+                        </div>
+                        <div>
+                            <span>Dia de cobro</span>
+                            <strong id="confirmDay">@Model.Input.DiaCobro</strong>
+                        </div>
+                        <div>
+                            <span>Vendedor</span>
+                            <strong id="confirmSeller">@Model.Input.Vendedor</strong>
+                        </div>
+                        <div>
+                            <span>Cobrador</span>
+                            <strong id="confirmCollector">@Model.Input.Cobrador</strong>
+                        </div>
+                        <div class="highlight">
+                            <span>Total estimado</span>
+                            <strong id="confirmTotal">0.00</strong>
+                        </div>
+                        <div class="highlight">
+                            <span>Coordenadas</span>
+                            <strong id="confirmCoordinates">@Model.Input.Coordenadas</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="sale-wizard-footer">
+            <button type="button" class="btn btn-outline-secondary" id="btnPrevStep">Anterior</button>
+            <div class="sale-wizard-progress"><span id="saleWizardLabel">Paso 1 de 5</span></div>
+            <button type="button" class="btn btn-primary" id="btnNextStep">Siguiente</button>
+            <button type="submit" class="btn btn-success" id="btnSubmitSale">@(Model.IsEdit ? "Guardar cambios" : "Registrar venta")</button>
+        </div>
+    </form>
+</div>
 
 @section Scripts {
 <script>
@@ -229,17 +294,39 @@
     const addBtn = document.getElementById('btnAddProduct');
     const totalNode = document.getElementById('totalAmount');
     const products = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Catalogs.Products));
+    const steps = [...document.querySelectorAll('[data-sale-step]')];
+    const stepButtons = [...document.querySelectorAll('[data-step-target]')];
+    const prevBtn = document.getElementById('btnPrevStep');
+    const nextBtn = document.getElementById('btnNextStep');
+    const submitBtn = document.getElementById('btnSubmitSale');
+    const wizardLabel = document.getElementById('saleWizardLabel');
+    let currentStep = 1;
 
-    function getProductCode(product) {
-        return product.code ?? product.Code ?? '';
+    function getProductCode(product) { return product.code ?? product.Code ?? ''; }
+    function getProductName(product) { return product.name ?? product.Name ?? ''; }
+    function getProductPrice(product) { return product.price ?? product.Price ?? ''; }
+
+    function updateConfirm() {
+        document.getElementById('confirmClient').textContent = document.getElementById('Input_NombreCliente')?.value || '-';
+        document.getElementById('confirmZone').textContent = document.getElementById('Input_Zona')?.value || '-';
+        document.getElementById('confirmPayment').textContent = document.getElementById('Input_FormaPago')?.value || '-';
+        document.getElementById('confirmDay').textContent = document.getElementById('Input_DiaCobro')?.value || '-';
+        document.getElementById('confirmSeller').textContent = document.getElementById('Input_Vendedor')?.value || '-';
+        document.getElementById('confirmCollector').textContent = document.getElementById('Input_Cobrador')?.value || '-';
+        document.getElementById('confirmTotal').textContent = totalNode.textContent || '0.00';
+        document.getElementById('confirmCoordinates').textContent = document.getElementById('gpsCoordinates')?.value || '-';
     }
 
-    function getProductName(product) {
-        return product.name ?? product.Name ?? '';
-    }
-
-    function getProductPrice(product) {
-        return product.price ?? product.Price ?? '';
+    function setStep(step) {
+        currentStep = Math.max(1, Math.min(5, step));
+        steps.forEach((panel, index) => panel.classList.toggle('active', index + 1 === currentStep));
+        stepButtons.forEach((button, index) => button.classList.toggle('active', index + 1 === currentStep));
+        prevBtn.disabled = currentStep === 1;
+        nextBtn.style.display = currentStep === 5 ? 'none' : 'inline-flex';
+        submitBtn.style.display = currentStep === 5 ? 'inline-flex' : 'none';
+        wizardLabel.textContent = `Paso ${currentStep} de 5`;
+        updateConfirm();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function bindRow(row) {
@@ -305,6 +392,7 @@
             total += parseFloat(x.value || '0');
         });
         totalNode.textContent = total.toFixed(2);
+        updateConfirm();
     }
 
     addBtn.addEventListener('click', () => {
@@ -348,6 +436,17 @@
 
     [...tableBody.children].forEach(bindRow);
     reindexRows();
+
+    stepButtons.forEach((button) => {
+        button.addEventListener('click', () => setStep(parseInt(button.dataset.stepTarget || '1', 10)));
+    });
+    prevBtn.addEventListener('click', () => setStep(currentStep - 1));
+    nextBtn.addEventListener('click', () => setStep(currentStep + 1));
+    document.querySelectorAll('#Input_NombreCliente, #Input_Zona, #Input_FormaPago, #Input_DiaCobro, #Input_Vendedor, #Input_Cobrador, #gpsCoordinates').forEach((el) => {
+        el.addEventListener('input', updateConfirm);
+        el.addEventListener('change', updateConfirm);
+    });
+    setStep(1);
 })();
 
 (function() {
@@ -380,21 +479,16 @@
 
         const dataUrl = await readAsDataUrl(file);
         const image = await loadImage(dataUrl);
-
         let width = image.width;
         let height = image.height;
-
         const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height, 1);
         width = Math.round(width * ratio);
         height = Math.round(height * ratio);
-
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
-
         const context = canvas.getContext('2d');
         context.drawImage(image, 0, 0, width, height);
-
         return canvas.toDataURL('image/jpeg', JPEG_QUALITY);
     }
 
@@ -404,7 +498,6 @@
         const preview = document.getElementById(`${key}_preview`);
         const remove = document.getElementById(`${key}_remove`);
         const picker = document.querySelector(`[data-photo-key="${key}"]`);
-
         if (!input || !file || !preview || !remove || !picker) {
             return;
         }
@@ -424,7 +517,6 @@
             }
 
             picker.classList.add('is-loading');
-
             try {
                 const compressed = await compressImage(selected);
                 input.value = compressed;
@@ -462,6 +554,7 @@
         coords2.value = value;
         url.value = `https://maps.google.com/?q=${lat},${lng}`;
         status.textContent = 'Ubicacion detectada correctamente.';
+        document.getElementById('confirmCoordinates').textContent = value;
     }
 
     function detect() {
@@ -473,14 +566,8 @@
         status.textContent = 'Detectando ubicacion...';
         navigator.geolocation.getCurrentPosition(
             applyLocation,
-            function(err) {
-                status.textContent = `No se pudo detectar GPS (${err.message}).`;
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-            }
+            function(err) { status.textContent = `No se pudo detectar GPS (${err.message}).`; },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
     }
 
@@ -494,8 +581,3 @@
 })();
 </script>
 }
-
-
-
-
-

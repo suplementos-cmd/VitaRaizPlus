@@ -1,4 +1,3 @@
-// Mobile image preview overlay for sales and forms.
 (function () {
     function ensureViewer() {
         let overlay = document.getElementById('imagePreviewOverlay');
@@ -14,15 +13,10 @@
 
         const full = overlay.querySelector('.image-preview-full');
         if (full) {
-            full.addEventListener('click', (e) => {
-                e.stopPropagation();
-            });
+            full.addEventListener('click', (e) => e.stopPropagation());
         }
 
-        overlay.addEventListener('click', () => {
-            overlay.classList.remove('open');
-        });
-
+        overlay.addEventListener('click', () => overlay.classList.remove('open'));
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 overlay.classList.remove('open');
@@ -41,9 +35,10 @@
                 e.preventDefault();
                 e.stopPropagation();
                 const src = el.getAttribute('src');
-                if (!src) {
+                if (!src || !full) {
                     return;
                 }
+
                 full.setAttribute('src', src);
                 overlay.classList.add('open');
             });
@@ -99,13 +94,38 @@
         });
     }
 
+    function initToasts() {
+        document.querySelectorAll('[data-auto-toast="true"]').forEach((toast) => {
+            window.setTimeout(() => {
+                toast.setAttribute('data-hiding', 'true');
+                window.setTimeout(() => toast.remove(), 260);
+            }, 3200);
+        });
+    }
+
+    function registerServiceWorker() {
+        if (!('serviceWorker' in navigator)) {
+            return;
+        }
+
+        navigator.serviceWorker.register('/service-worker.js').catch(() => {
+            // Ignore registration issues in local development.
+        });
+    }
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
+            document.body.classList.add('app-ready');
             initImagePreview();
             initHeartbeat();
+            initToasts();
+            registerServiceWorker();
         });
     } else {
+        document.body.classList.add('app-ready');
         initImagePreview();
         initHeartbeat();
+        initToasts();
+        registerServiceWorker();
     }
 })();
