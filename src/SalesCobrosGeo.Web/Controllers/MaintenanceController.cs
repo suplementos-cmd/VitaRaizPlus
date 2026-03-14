@@ -21,9 +21,9 @@ public sealed class MaintenanceController : Controller
     }
 
     [HttpGet]
-    public IActionResult Index(string section = "catalogos", long? editId = null)
+    public IActionResult Index(string section = "catalogos", long? editId = null, bool create = false)
     {
-        var model = BuildViewModel(section, editId, TempData["MaintenanceMessage"] as string);
+        var model = BuildViewModel(section, editId, create, TempData["MaintenanceMessage"] as string);
         return View(model);
     }
 
@@ -34,13 +34,14 @@ public sealed class MaintenanceController : Controller
         try
         {
             _repository.SaveMaintenanceCatalogItem(input);
-            TempData["MaintenanceMessage"] = string.IsNullOrWhiteSpace(input.Id?.ToString())
-                ? "Registro creado correctamente."
-                : "Registro actualizado correctamente.";
+            TempData["MaintenanceMessage"] = input.Id is > 0
+                ? "Registro actualizado correctamente."
+                : "Registro creado correctamente.";
         }
         catch (InvalidOperationException ex)
         {
             TempData["MaintenanceMessage"] = ex.Message;
+            return RedirectToAction(nameof(Index), new { section = input.Section, editId = input.Id, create = input.Id is null or 0 });
         }
 
         return RedirectToAction(nameof(Index), new { section = input.Section });
@@ -48,26 +49,42 @@ public sealed class MaintenanceController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Delete(string section, long id)
+    public IActionResult ToggleStatus(string section, long id)
     {
-        TempData["MaintenanceMessage"] = _repository.DeleteMaintenanceCatalogItem(section, id)
-            ? "Registro eliminado correctamente."
-            : "No se encontro el registro para eliminar.";
+        var record = _repository.GetMaintenanceCatalog(section).FirstOrDefault(x => x.Id == id);
+        if (record is null)
+        {
+            TempData["MaintenanceMessage"] = "No se encontro el registro.";
+            return RedirectToAction(nameof(Index), new { section });
+        }
+
+        _repository.SaveMaintenanceCatalogItem(new MaintenanceCatalogSaveInput
+        {
+            Id = record.Id,
+            Section = record.Section,
+            Code = record.Code,
+            Name = record.Name,
+            Price = record.Price,
+            IsActive = !record.IsActive
+        });
+
+        TempData["MaintenanceMessage"] = !record.IsActive
+            ? "Registro habilitado correctamente."
+            : "Registro inhabilitado correctamente.";
 
         return RedirectToAction(nameof(Index), new { section });
     }
 
-    private MaintenancePageViewModel BuildViewModel(string section, long? editId, string? message)
+    private MaintenancePageViewModel BuildViewModel(string section, long? editId, bool create, string? message)
     {
         var selected = NormalizeSection(section);
         var sections = BuildSections();
-        var current = sections.First(x => x.Key == selected);
         var stats = BuildStats(sections);
         var currentCatalogItems = EditableSections.Contains(selected, StringComparer.OrdinalIgnoreCase)
             ? _repository.GetMaintenanceCatalog(selected)
             : [];
 
-        var editorRecord = currentCatalogItems.FirstOrDefault(x => x.Id == editId) ?? currentCatalogItems.FirstOrDefault();
+        var editorRecord = editId is > 0 ? currentCatalogItems.FirstOrDefault(x => x.Id == editId) : null;
         var editor = new MaintenanceEditorInput
         {
             Id = editorRecord?.Id,
@@ -78,30 +95,36 @@ public sealed class MaintenanceController : Controller
             IsActive = editorRecord?.IsActive ?? true
         };
 
-        return new MaintenancePageViewModel(selected, stats, sections, editor, message);
+        return new MaintenancePageViewModel(
+            selected,
+            stats,
+            sections,
+            editor,
+            EditableSections.Contains(selected, StringComparer.OrdinalIgnoreCase) && (create || editId is > 0),
+            message);
     }
 
     private IReadOnlyList<MaintenanceStat> BuildStats(IReadOnlyList<MaintenanceSection> sections)
     {
         var editableCount = sections.Where(x => EditableSections.Contains(x.Key, StringComparer.OrdinalIgnoreCase)).Sum(x => x.Items.Count);
         var activeUsers = _userService.GetUsers().Count(x => x.IsActive);
-        var productCount = _repository.GetMaintenanceCatalog("productos").Count;
-        var zoneCount = _repository.GetMaintenanceCatalog("zonas").Count;
+        var productCount = _repository.GetMaintenanceCatalog("productos").Count(x => x.IsActive);
+        var zoneCount = _repository.GetMaintenanceCatalog("zonas").Count(x => x.IsActive);
 
         return
         [
-            new MaintenanceStat("Catalogos editables", editableCount.ToString(), "brand"),
+            new MaintenanceStat("Registros", editableCount.ToString(), "brand"),
             new MaintenanceStat("Personal activo", activeUsers.ToString(), "success"),
-            new MaintenanceStat("Productos", productCount.ToString(), "warning"),
-            new MaintenanceStat("Zonas", zoneCount.ToString(), "danger")
+            new MaintenanceStat("Productos activos", productCount.ToString(), "warning"),
+            new MaintenanceStat("Zonas activas", zoneCount.ToString(), "danger")
         ];
     }
 
     private IReadOnlyList<MaintenanceSection> BuildSections()
     {
         var zones = BuildCatalogSection("zonas", "Zonas", "Cobertura geografica utilizada en ventas y cobros.", "Catalogo editable para asignar zonas comerciales y de ruta.", "Zona", "brand");
-        var days = BuildCatalogSection("dias-cobro", "Dias de cobro", "Dias configurados para planear la ruta semanal.", "Puedes activar dias de ruta y ordenarlos en la operacion.", "Cobro", "warning");
-        var paymentMethods = BuildCatalogSection("formas-pago", "Formas de pago", "Esquemas comerciales disponibles para registrar ventas.", "Define los planes de pago visibles en ventas.", "Pago", "success");
+        var days = BuildCatalogSection("dias-cobro", "Dias cobro", "Dias configurados para planear la ruta semanal.", "Puedes activar dias de ruta y ordenarlos en la operacion.", "Cobro", "warning");
+        var paymentMethods = BuildCatalogSection("formas-pago", "Formas pago", "Esquemas comerciales disponibles para registrar ventas.", "Define los planes de pago visibles en ventas.", "Pago", "success");
         var products = BuildCatalogSection("productos", "Productos", "Catalogo comercial con precio base editable.", "Base comercial para ventas y comisiones.", "Producto", "brand");
         var sellers = BuildCatalogSection("vendedores", "Vendedores", "Equipo comercial disponible para asignacion de ventas.", "Catalogo base del equipo de ventas.", "Vendedor", "brand");
         var collectors = BuildCatalogSection("cobradores", "Cobradores", "Equipo de cobranza asignable a cartera y ruta.", "Catalogo base del equipo de cobros.", "Cobrador", "success");
@@ -118,21 +141,22 @@ public sealed class MaintenanceController : Controller
                 user.DisplayName,
                 $"{user.RoleLabel} • Zona {user.Zone}",
                 user.IsActive ? "Activo" : "Inactivo",
-                user.IsActive ? "success" : "danger")).ToArray());
+                user.IsActive ? "success" : "danger",
+                user.IsActive)).ToArray());
 
         var summary = new MaintenanceSection(
             "catalogos",
             "Catalogos",
-            "Resumen central de configuraciones base y personal operativo.",
-            "Desde aqui puedes brincar a cualquier modulo de configuracion editable.",
+            "Resumen rapido de configuraciones base y personal operativo.",
+            "Selecciona una pestana para editar o habilitar registros.",
             [
-                new MaintenanceItem(1, "ZON", "Zonas", $"{zones.Items.Count} registros editables", "Base", "brand"),
-                new MaintenanceItem(2, "DIA", "Dias de cobro", $"{days.Items.Count} opciones activas", "Ruta", "warning"),
-                new MaintenanceItem(3, "PAG", "Formas de pago", $"{paymentMethods.Items.Count} esquemas configurados", "Comercial", "success"),
-                new MaintenanceItem(4, "PRO", "Productos", $"{products.Items.Count} productos base", "Catalogo", "brand"),
-                new MaintenanceItem(5, "VEN", "Vendedores", $"{sellers.Items.Count} perfiles comerciales", "Equipo", "brand"),
-                new MaintenanceItem(6, "COB", "Cobradores", $"{collectors.Items.Count} perfiles de cobranza", "Equipo", "success"),
-                new MaintenanceItem(7, "EMP", "Empleados", $"{employees.Items.Count} accesos operativos", "Usuarios", "danger")
+                new MaintenanceItem(1, "ZON", "Zonas", $"{zones.Items.Count} registros", "Base", "brand", true),
+                new MaintenanceItem(2, "DIA", "Dias de cobro", $"{days.Items.Count} opciones", "Ruta", "warning", true),
+                new MaintenanceItem(3, "PAG", "Formas de pago", $"{paymentMethods.Items.Count} esquemas", "Comercial", "success", true),
+                new MaintenanceItem(4, "PRO", "Productos", $"{products.Items.Count} productos", "Catalogo", "brand", true),
+                new MaintenanceItem(5, "VEN", "Vendedores", $"{sellers.Items.Count} perfiles", "Equipo", "brand", true),
+                new MaintenanceItem(6, "COB", "Cobradores", $"{collectors.Items.Count} perfiles", "Equipo", "success", true),
+                new MaintenanceItem(7, "EMP", "Empleados", $"{employees.Items.Count} accesos", "Usuarios", "danger", true)
             ]);
 
         return [summary, sellers, collectors, employees, zones, days, paymentMethods, products];
@@ -147,9 +171,10 @@ public sealed class MaintenanceController : Controller
                 item.Name,
                 key == "productos" && item.Price.HasValue
                     ? $"Precio base Bs {item.Price:0,0.##}"
-                    : item.IsActive ? "Registro activo para operacion." : "Registro inactivo.",
+                    : item.IsActive ? "Disponible para operacion" : "Registro inhabilitado",
                 item.IsActive ? badgeLabel : "Inactivo",
-                item.IsActive ? tone : "danger"))
+                item.IsActive ? tone : "danger",
+                item.IsActive))
             .ToArray();
 
         return new MaintenanceSection(key, title, subtitle, summary, items);
