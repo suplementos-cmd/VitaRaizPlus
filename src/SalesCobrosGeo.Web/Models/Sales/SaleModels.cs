@@ -1,4 +1,4 @@
-﻿namespace SalesCobrosGeo.Web.Models.Sales;
+namespace SalesCobrosGeo.Web.Models.Sales;
 
 public sealed record CatalogOption(string Code, string Name);
 public sealed record ProductOption(string Code, string Name, decimal Price);
@@ -166,6 +166,13 @@ public sealed class CollectorDaySummary
     public int Count { get; set; }
 }
 
+public sealed class CollectorDayTreeSummary
+{
+    public string Day { get; set; } = string.Empty;
+    public int Count { get; set; }
+    public IReadOnlyList<CollectorStatusSummary> Statuses { get; set; } = [];
+}
+
 public sealed class CollectorStatusSummary
 {
     public string Status { get; set; } = string.Empty;
@@ -187,6 +194,7 @@ public sealed class CollectorPortfolioViewModel
     public bool ShowAll { get; set; }
     public IReadOnlyList<CatalogOption> Profiles { get; set; } = [];
     public IReadOnlyList<CollectorDaySummary> Days { get; set; } = [];
+    public IReadOnlyList<CollectorDayTreeSummary> DayTree { get; set; } = [];
     public IReadOnlyList<CollectorStatusSummary> Statuses { get; set; } = [];
     public IReadOnlyList<CollectorZoneSummary> Zones { get; set; } = [];
     public IReadOnlyList<CollectorPortfolioItem> Sales { get; set; } = [];
