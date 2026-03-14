@@ -103,13 +103,45 @@
         });
     }
 
-    function registerServiceWorker() {
+    function isLocalhost() {
+        const host = window.location.hostname;
+        return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+    }
+
+    async function unregisterServiceWorkers() {
         if (!('serviceWorker' in navigator)) {
             return;
         }
 
+        try {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map((registration) => registration.unregister()));
+        } catch {
+            // Ignore unregister issues in browsers that restrict it.
+        }
+
+        if ('caches' in window) {
+            try {
+                const keys = await caches.keys();
+                await Promise.all(keys.map((key) => caches.delete(key)));
+            } catch {
+                // Ignore cache cleanup issues.
+            }
+        }
+    }
+
+    async function setupServiceWorker() {
+        if (!('serviceWorker' in navigator)) {
+            return;
+        }
+
+        if (isLocalhost()) {
+            await unregisterServiceWorkers();
+            return;
+        }
+
         navigator.serviceWorker.register('/service-worker.js').catch(() => {
-            // Ignore registration issues in local development.
+            // Ignore registration issues.
         });
     }
 
@@ -119,13 +151,13 @@
             initImagePreview();
             initHeartbeat();
             initToasts();
-            registerServiceWorker();
+            setupServiceWorker();
         });
     } else {
         document.body.classList.add('app-ready');
         initImagePreview();
         initHeartbeat();
         initToasts();
-        registerServiceWorker();
+        setupServiceWorker();
     }
 })();

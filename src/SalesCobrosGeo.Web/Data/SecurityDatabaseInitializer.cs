@@ -9,6 +9,8 @@ namespace SalesCobrosGeo.Web.Data;
 
 public sealed class SecurityDatabaseInitializer
 {
+    private const int CurrentSchemaVersion = 3;
+
     private readonly AppSecurityDbContext _dbContext;
 
     public SecurityDatabaseInitializer(AppSecurityDbContext dbContext)
@@ -30,21 +32,54 @@ public sealed class SecurityDatabaseInitializer
 
     private void EnsureSchemaUpToDate()
     {
-        EnsureUserColumns();
-        EnsureSessionColumns();
-        EnsureCatalogTables();
-        EnsureSalesTables();
+        var version = GetUserVersion();
+        if (version >= CurrentSchemaVersion)
+        {
+            return;
+        }
+
+        if (version < 1)
+        {
+            EnsureUserColumns();
+            EnsureSessionColumns();
+        }
+
+        if (version < 2)
+        {
+            EnsureCatalogTables();
+        }
+
+        if (version < 3)
+        {
+            EnsureSalesTables();
+        }
+
+        SetUserVersion(CurrentSchemaVersion);
+    }
+
+    private int GetUserVersion()
+    {
+        using var connection = _dbContext.Database.GetDbConnection();
+        EnsureOpen(connection);
+        using var command = connection.CreateCommand();
+        command.CommandText = "PRAGMA user_version;";
+        return Convert.ToInt32(command.ExecuteScalar() ?? 0);
+    }
+
+    private void SetUserVersion(int version)
+    {
+        _dbContext.Database.ExecuteSqlRaw($"PRAGMA user_version = {version};");
     }
 
     private void EnsureUserColumns()
     {
-        EnsureColumn("Users", "TwoFactorEnabled", "INTEGER NOT NULL DEFAULT 0");
-        EnsureColumn("Users", "TwoFactorSecret", "TEXT NULL");
+        EnsureColumn("Users", "TwoFactorEnabled");
+        EnsureColumn("Users", "TwoFactorSecret");
     }
 
     private void EnsureSessionColumns()
     {
-        EnsureColumn("Sessions", "LastHeartbeatUtc", "TEXT NULL");
+        EnsureColumn("Sessions", "LastHeartbeatUtc");
     }
 
     private void EnsureCatalogTables()
@@ -148,14 +183,25 @@ CREATE TABLE IF NOT EXISTS Collections (
         return command.ExecuteScalar() is not null;
     }
 
-    private void EnsureColumn(string tableName, string columnName, string definition)
+    private void EnsureColumn(string tableName, string columnName)
     {
         if (!TableExists(tableName) || ColumnExists(tableName, columnName))
         {
             return;
         }
 
-        _dbContext.Database.ExecuteSqlRaw($"ALTER TABLE {tableName} ADD COLUMN {columnName} {definition};");
+        var sql = (tableName, columnName) switch
+        {
+            ("Users", "TwoFactorEnabled") => "ALTER TABLE Users ADD COLUMN TwoFactorEnabled INTEGER NOT NULL DEFAULT 0;",
+            ("Users", "TwoFactorSecret") => "ALTER TABLE Users ADD COLUMN TwoFactorSecret TEXT NULL;",
+            ("Sessions", "LastHeartbeatUtc") => "ALTER TABLE Sessions ADD COLUMN LastHeartbeatUtc TEXT NULL;",
+            _ => string.Empty
+        };
+
+        if (!string.IsNullOrWhiteSpace(sql))
+        {
+            _dbContext.Database.ExecuteSqlRaw(sql);
+        }
     }
 
     private bool ColumnExists(string tableName, string columnName)
