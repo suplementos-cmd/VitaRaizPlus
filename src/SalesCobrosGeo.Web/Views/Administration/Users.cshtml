@@ -13,274 +13,274 @@
     };
 }
 
-<div class="admin-console-page">
-    <section class="admin-console-topbar compact-only">
-        <div>
-            <h1 class="admin-console-title">Usuarios, permisos y seguridad activa</h1>
-            <div class="admin-console-subtitle">Administracion compacta para trabajar rapido y sin perder contexto.</div>
-        </div>
-        <div class="admin-console-actions">
-            <a class="btn btn-primary" asp-action="Users" asp-route-create="true" data-ajax-link="true" data-ajax-target=".admin-console-page">Agregar usuario</a>
-            <a class="btn btn-outline-secondary" asp-action="Audit">Bitacora</a>
-        </div>
-    </section>
-
-    @if (!string.IsNullOrWhiteSpace(Model.Message))
-    {
-        <div class="app-toast-inline success">@Model.Message</div>
-    }
-
-    <section class="admin-console-summarygrid compact-summary">
-        @foreach (var card in Model.SummaryCards)
-        {
-            <article class="admin-console-summarycard @card.Tone">
-                <span>@card.Label</span>
-                <strong>@card.Value</strong>
-                <small>@card.Caption</small>
-            </article>
-        }
-        <article class="admin-console-summarycard neutral admin-console-summarycard-link">
-            <span>Bitacora</span>
-            <strong>@Model.AuditTotal</strong>
-            <a asp-action="Audit">Ver eventos</a>
-        </article>
-    </section>
-
-    <section class="admin-console-layout responsive-dense">
-        <div class="admin-console-main responsive-dense-grid">
-            <section class="admin-users-section compact-shell">
-                <div class="admin-section-head compact">
-                    <div>
-                        <h2 class="admin-section-title">Usuarios</h2>
-                        <div class="admin-section-subtitle">Registros compactos con acciones directas y lectura rapida.</div>
-                    </div>
-                    <a class="btn btn-sm btn-outline-primary" asp-action="Users" asp-route-create="true" data-ajax-link="true" data-ajax-target=".admin-console-page">Nuevo</a>
-                </div>
-
-                <div class="admin-filterline">
-                    <div class="admin-filterline-search">
-                        <span class="admin-filterline-icon">&#8981;</span>
-                        <input id="adminUserSearch" type="search" placeholder="Buscar usuario o nombre" autocomplete="off" />
-                    </div>
-                    <select id="adminRoleFilter" class="form-select form-select-sm">
-                        <option value="">Todos los roles</option>
-                        <option value="FULL">FULL</option>
-                        <option value="SALES">SALES</option>
-                        <option value="COLLECTIONS">COLLECTIONS</option>
-                    </select>
-                    <select id="adminStatusFilter" class="form-select form-select-sm">
-                        <option value="">Todos los estados</option>
-                        <option value="ACTIVO">Activo</option>
-                        <option value="INACTIVO">Inactivo</option>
-                    </select>
-                </div>
-
-                <div class="admin-users-grid-compact denser">
-                    @foreach (var user in Model.Users)
-                    {
-                        var userSearch = $"{user.Name} {user.Username}".ToUpperInvariant();
-                        <article class="admin-user-rowcard @(user.Status == "Activo" ? "is-active" : "is-inactive")"
-                                 data-user-search="@userSearch"
-                                 data-user-role="@user.RoleCode.ToUpperInvariant()"
-                                 data-user-status="@user.Status.ToUpperInvariant()">
-                            <div class="admin-user-rowmain">
-                                <div class="admin-user-rowtop">
-                                    <div>
-                                        <div class="admin-user-rowname">@user.Name</div>
-                                        <div class="admin-user-rowusername">@user.Username</div>
-                                    </div>
-                                    <div class="admin-user-rowchips">
-                                        <span class="admin-user-rolepill">@user.RoleCode</span>
-                                        <span class="admin-user-statusbadge @(user.Status == "Activo" ? "active" : "inactive")">@user.Status</span>
-                                    </div>
-                                </div>
-                                <div class="admin-user-rowmeta compact-grid">
-                                    <span><strong>Zona</strong> @user.Zone</span>
-                                    <span><strong>Tema</strong> @themeCatalog.FirstOrDefault(x => x.Code == user.Theme)?.Name ?? user.Theme</span>
-                                    <span><strong>Permisos</strong> @user.PermissionCount</span>
-                                    <span><strong>2FA</strong> @(user.TwoFactorEnabled ? "Si" : "No")</span>
-                                </div>
-                            </div>
-                            <div class="admin-user-rowactions compact-row">
-                                <a class="btn btn-sm btn-outline-primary" asp-action="Users" asp-route-editUsername="@user.Username" data-ajax-link="true" data-ajax-target=".admin-console-page">Editar</a>
-                                <form asp-action="SetUserStatus" method="post" data-ajaxify="true" data-ajax-target=".admin-console-page">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="username" value="@user.Username" />
-                                    <input type="hidden" name="isActive" value="@(user.Status == "Activo" ? "false" : "true")" />
-                                    <button type="submit" class="btn btn-sm @(user.Status == "Activo" ? "btn-outline-danger" : "btn-outline-success")">@(user.Status == "Activo" ? "Deshabilitar" : "Habilitar")</button>
-                                </form>
-                            </div>
-                        </article>
-                    }
-                </div>
-            </section>
-
-            <section class="admin-security-section compact-shell">
-                <div class="admin-section-head compact">
-                    <div>
-                        <h2 class="admin-section-title">Seguridad activa</h2>
-                        <div class="admin-section-subtitle">Supervision y control rapido de sesiones activas.</div>
-                    </div>
-                </div>
-
-                <div class="admin-session-listcompact denser">
-                    @foreach (var session in Model.Sessions)
-                    {
-                        <article class="admin-session-row @(session.IsConnected ? "connected" : session.IsActive ? "idle" : "inactive")">
-                            <div class="admin-session-rowmain">
-                                <div class="admin-session-rowtop">
-                                    <div>
-                                        <div class="admin-user-rowname">@session.DisplayName</div>
-                                        <div class="admin-user-rowusername">@session.Username â€¢ @session.RoleLabel</div>
-                                    </div>
-                                    <span class="admin-session-badge @(session.IsConnected ? "connected" : session.IsActive ? "idle" : "inactive")">
-                                        @(session.IsConnected ? "Conectado" : session.IsActive ? "Sin sesion" : "Inactivo")
-                                    </span>
-                                </div>
-                                <div class="admin-user-rowmeta compact-grid">
-                                    <span><strong>Zona</strong> @session.Zone</span>
-                                    <span><strong>Actividad</strong> @session.LastSeen</span>
-                                    <span><strong>Ruta</strong> @session.LastPath</span>
-                                    <span><strong>IP</strong> @session.LastIp</span>
-                                    <span><strong>GPS</strong> @session.LastCoordinates</span>
-                                </div>
-                            </div>
-                            <div class="admin-user-rowactions compact-row">
-                                <form asp-action="ForceLogout" method="post" data-ajaxify="true" data-ajax-target=".admin-console-page">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="username" value="@session.Username" />
-                                    <button type="submit" class="btn btn-sm btn-outline-warning">Desconectar</button>
-                                </form>
-                                <a class="btn btn-sm btn-outline-primary" asp-action="Users" asp-route-editUsername="@session.Username" data-ajax-link="true" data-ajax-target=".admin-console-page">Usuario</a>
-                            </div>
-                        </article>
-                    }
-                </div>
-            </section>
-        </div>
-    </section>
-</div>
-
-@if (Model.ShowEditor)
-{
-    <div class="admin-editor-modal" role="dialog" aria-modal="true" aria-labelledby="adminEditorTitle">
-        <div class="admin-editor-backdrop">
-            <a class="admin-editor-backdrop-close" asp-action="Users" aria-label="Cerrar" data-ajax-link="true" data-ajax-target=".admin-console-page"></a>
-        </div>
-        <aside class="admin-editor-dialog">
-            <div class="admin-section-head compact sticky-head">
-                <div>
-                    <h2 class="admin-section-title" id="adminEditorTitle">@Model.Editor.Title</h2>
-                    <div class="admin-section-subtitle">Editor compacto sin quitar espacio al listado principal.</div>
-                </div>
-                    <a class="btn btn-sm btn-outline-secondary" asp-action="Users" data-ajax-link="true" data-ajax-target=".admin-console-page">Cerrar</a>
+<div class="admin-users-view">
+    <div class="admin-console-page">
+        <section class="admin-console-topbar compact-only">
+            <div>
+                <h1 class="admin-console-title">Usuarios, permisos y seguridad activa</h1>
+                <div class="admin-console-subtitle">Administracion compacta para trabajar rapido y sin perder contexto.</div>
             </div>
+            <div class="admin-console-actions">
+                <a class="btn btn-primary" asp-action="Users" asp-route-create="true" data-ajax-link="true" data-ajax-target=".admin-users-view">Agregar usuario</a>
+                <a class="btn btn-outline-secondary" asp-action="Audit">Bitacora</a>
+            </div>
+        </section>
 
-            <form asp-action="SaveUser" method="post" class="admin-user-form compact" data-ajaxify="true" data-ajax-target=".admin-console-page">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="OriginalUsername" value="@editor.OriginalUsername" />
+        @if (!string.IsNullOrWhiteSpace(Model.Message))
+        {
+            <div class="app-toast-inline success">@Model.Message</div>
+        }
 
-                <div class="admin-form-grid compact single">
-                    <div>
-                        <label class="form-label" for="username">Usuario</label>
-                        <input class="form-control" id="username" name="Username" value="@editor.Username" />
+        <section class="admin-console-summarygrid compact-summary">
+            @foreach (var card in Model.SummaryCards)
+            {
+                <article class="admin-console-summarycard @card.Tone">
+                    <span>@card.Label</span>
+                    <strong>@card.Value</strong>
+                    <small>@card.Caption</small>
+                </article>
+            }
+            <article class="admin-console-summarycard neutral admin-console-summarycard-link">
+                <span>Bitacora</span>
+                <strong>@Model.AuditTotal</strong>
+                <a asp-action="Audit">Ver eventos</a>
+            </article>
+        </section>
+
+        <section class="admin-console-layout responsive-dense">
+            <div class="admin-console-main responsive-dense-grid">
+                <section class="admin-users-section compact-shell">
+                    <div class="admin-section-head compact">
+                        <div>
+                            <h2 class="admin-section-title">Usuarios</h2>
+                            <div class="admin-section-subtitle">Registros compactos con acciones directas y lectura rapida.</div>
+                        </div>
                     </div>
-                    <div>
-                        <label class="form-label" for="displayName">Nombre</label>
-                        <input class="form-control" id="displayName" name="DisplayName" value="@editor.DisplayName" />
+
+                    <div class="admin-filterline">
+                        <div class="admin-filterline-search">
+                            <span class="admin-filterline-icon">&#8981;</span>
+                            <input id="adminUserSearch" type="search" placeholder="Buscar usuario o nombre" autocomplete="off" />
+                        </div>
+                        <select id="adminRoleFilter" class="form-select form-select-sm">
+                            <option value="">Todos los roles</option>
+                            <option value="FULL">FULL</option>
+                            <option value="SALES">SALES</option>
+                            <option value="COLLECTIONS">COLLECTIONS</option>
+                        </select>
+                        <select id="adminStatusFilter" class="form-select form-select-sm">
+                            <option value="">Todos los estados</option>
+                            <option value="ACTIVO">Activo</option>
+                            <option value="INACTIVO">Inactivo</option>
+                        </select>
                     </div>
-                    <div>
-                        <label class="form-label" for="zone">Zona</label>
-                        <input class="form-control" id="zone" name="Zone" value="@editor.Zone" />
+
+                    <div class="admin-users-grid-compact denser">
+                        @foreach (var user in Model.Users)
+                        {
+                            var userSearch = $"{user.Name} {user.Username}".ToUpperInvariant();
+                            <article class="admin-user-rowcard @(user.Status == "Activo" ? "is-active" : "is-inactive")"
+                                     data-user-search="@userSearch"
+                                     data-user-role="@user.RoleCode.ToUpperInvariant()"
+                                     data-user-status="@user.Status.ToUpperInvariant()">
+                                <div class="admin-user-rowmain">
+                                    <div class="admin-user-rowtop">
+                                        <div>
+                                            <div class="admin-user-rowname">@user.Name</div>
+                                            <div class="admin-user-rowusername">@user.Username</div>
+                                        </div>
+                                        <div class="admin-user-rowchips">
+                                            <span class="admin-user-rolepill">@user.RoleCode</span>
+                                            <span class="admin-user-statusbadge @(user.Status == "Activo" ? "active" : "inactive")">@user.Status</span>
+                                        </div>
+                                    </div>
+                                    <div class="admin-user-rowmeta compact-grid">
+                                        <span><strong>Zona</strong> @user.Zone</span>
+                                        <span><strong>Tema</strong> @themeCatalog.FirstOrDefault(x => x.Code == user.Theme)?.Name ?? user.Theme</span>
+                                        <span><strong>Permisos</strong> @user.PermissionCount</span>
+                                        <span><strong>2FA</strong> @(user.TwoFactorEnabled ? "Si" : "No")</span>
+                                    </div>
+                                </div>
+                                <div class="admin-user-rowactions compact-row">
+                                    <a class="btn btn-sm btn-outline-primary" asp-action="Users" asp-route-editUsername="@user.Username" data-ajax-link="true" data-ajax-target=".admin-users-view">Editar</a>
+                                    <form asp-action="SetUserStatus" method="post" data-ajaxify="true" data-ajax-target=".admin-users-view">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="username" value="@user.Username" />
+                                        <input type="hidden" name="isActive" value="@(user.Status == "Activo" ? "false" : "true")" />
+                                        <button type="submit" class="btn btn-sm @(user.Status == "Activo" ? "btn-outline-danger" : "btn-outline-success")">@(user.Status == "Activo" ? "Deshabilitar" : "Habilitar")</button>
+                                    </form>
+                                </div>
+                            </article>
+                        }
                     </div>
+                </section>
+
+                <section class="admin-security-section compact-shell">
+                    <div class="admin-section-head compact">
+                        <div>
+                            <h2 class="admin-section-title">Seguridad activa</h2>
+                            <div class="admin-section-subtitle">Supervision y control rapido de sesiones activas.</div>
+                        </div>
+                    </div>
+
+                    <div class="admin-session-listcompact denser">
+                        @foreach (var session in Model.Sessions)
+                        {
+                            <article class="admin-session-row @(session.IsConnected ? "connected" : session.IsActive ? "idle" : "inactive")">
+                                <div class="admin-session-rowmain">
+                                    <div class="admin-session-rowtop">
+                                        <div>
+                                            <div class="admin-user-rowname">@session.DisplayName</div>
+                                            <div class="admin-user-rowusername">@session.Username · @session.RoleLabel</div>
+                                        </div>
+                                        <span class="admin-session-badge @(session.IsConnected ? "connected" : session.IsActive ? "idle" : "inactive")">
+                                            @(session.IsConnected ? "Conectado" : session.IsActive ? "Sin sesion" : "Inactivo")
+                                        </span>
+                                    </div>
+                                    <div class="admin-user-rowmeta compact-grid">
+                                        <span><strong>Zona</strong> @session.Zone</span>
+                                        <span><strong>Actividad</strong> @session.LastSeen</span>
+                                        <span><strong>Ruta</strong> @session.LastPath</span>
+                                        <span><strong>IP</strong> @session.LastIp</span>
+                                        <span><strong>GPS</strong> @session.LastCoordinates</span>
+                                    </div>
+                                </div>
+                                <div class="admin-user-rowactions compact-row">
+                                    <form asp-action="ForceLogout" method="post" data-ajaxify="true" data-ajax-target=".admin-users-view">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="username" value="@session.Username" />
+                                        <button type="submit" class="btn btn-sm btn-outline-warning">Desconectar</button>
+                                    </form>
+                                    <a class="btn btn-sm btn-outline-primary" asp-action="Users" asp-route-editUsername="@session.Username" data-ajax-link="true" data-ajax-target=".admin-users-view">Usuario</a>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                </section>
+            </div>
+        </section>
+    </div>
+
+    @if (Model.ShowEditor)
+    {
+        <div class="admin-editor-modal" role="dialog" aria-modal="true" aria-labelledby="adminEditorTitle">
+            <div class="admin-editor-backdrop">
+                <a class="admin-editor-backdrop-close" asp-action="Users" aria-label="Cerrar" data-ajax-link="true" data-ajax-target=".admin-users-view"></a>
+            </div>
+            <aside class="admin-editor-dialog">
+                <div class="admin-section-head compact sticky-head">
                     <div>
-                        <label class="form-label" for="theme">Tema</label>
-                        <select class="form-select admin-theme-select" id="theme" name="Theme">
+                        <h2 class="admin-section-title" id="adminEditorTitle">@Model.Editor.Title</h2>
+                        <div class="admin-section-subtitle">Editor compacto sin quitar espacio al listado principal.</div>
+                    </div>
+                    <a class="btn btn-sm btn-outline-secondary" asp-action="Users" data-ajax-link="true" data-ajax-target=".admin-users-view">Cerrar</a>
+                </div>
+
+                <form asp-action="SaveUser" method="post" class="admin-user-form compact" data-ajaxify="true" data-ajax-target=".admin-users-view">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="OriginalUsername" value="@editor.OriginalUsername" />
+
+                    <div class="admin-form-grid compact single">
+                        <div>
+                            <label class="form-label" for="username">Usuario</label>
+                            <input class="form-control" id="username" name="Username" value="@editor.Username" />
+                        </div>
+                        <div>
+                            <label class="form-label" for="displayName">Nombre</label>
+                            <input class="form-control" id="displayName" name="DisplayName" value="@editor.DisplayName" />
+                        </div>
+                        <div>
+                            <label class="form-label" for="zone">Zona</label>
+                            <input class="form-control" id="zone" name="Zone" value="@editor.Zone" />
+                        </div>
+                        <div>
+                            <label class="form-label" for="theme">Tema</label>
+                            <select class="form-select admin-theme-select" id="theme" name="Theme">
+                                @foreach (var theme in themeCatalog)
+                                {
+                                    if (theme.Code == editor.Theme)
+                                    {
+                                        <option value="@theme.Code" selected>@theme.Name</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@theme.Code">@theme.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="admin-theme-preview-grid">
                             @foreach (var theme in themeCatalog)
                             {
-                                if (theme.Code == editor.Theme)
-                                {
-                                    <option value="@theme.Code" selected>@theme.Name</option>
-                                }
-                                else
-                                {
-                                    <option value="@theme.Code">@theme.Name</option>
-                                }
+                                <button type="button"
+                                        class="admin-theme-preview @(theme.Code == editor.Theme ? "active" : string.Empty)"
+                                        data-theme-option="@theme.Code"
+                                        style="--theme-tone:@theme.Tone; --theme-accent:@theme.Accent; --theme-surface:@theme.Surface;">
+                                    <span class="admin-theme-preview-swatch"></span>
+                                    <strong>@theme.Name</strong>
+                                    <small>@theme.Code</small>
+                                </button>
                             }
-                        </select>
+                        </div>
+                        <div>
+                            <label class="form-label" for="role">Perfil base</label>
+                            <select class="form-select" id="role" name="Role">
+                                @if (editor.Role == AppRoles.Full) { <option value="@AppRoles.Full" selected>@AppRoles.Full</option> } else { <option value="@AppRoles.Full">@AppRoles.Full</option> }
+                                @if (editor.Role == AppRoles.Sales) { <option value="@AppRoles.Sales" selected>@AppRoles.Sales</option> } else { <option value="@AppRoles.Sales">@AppRoles.Sales</option> }
+                                @if (editor.Role == AppRoles.Collections) { <option value="@AppRoles.Collections" selected>@AppRoles.Collections</option> } else { <option value="@AppRoles.Collections">@AppRoles.Collections</option> }
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label" for="password">Contrasena @(string.IsNullOrWhiteSpace(editor.OriginalUsername) ? "inicial" : "nueva")</label>
+                            <input class="form-control" id="password" name="Password" type="password" autocomplete="new-password" />
+                        </div>
                     </div>
-                    <div class="admin-theme-preview-grid">
-                        @foreach (var theme in themeCatalog)
-                        {
-                            <button type="button"
-                                    class="admin-theme-preview @(theme.Code == editor.Theme ? "active" : string.Empty)"
-                                    data-theme-option="@theme.Code"
-                                    style="--theme-tone:@theme.Tone; --theme-accent:@theme.Accent; --theme-surface:@theme.Surface;">
-                                <span class="admin-theme-preview-swatch"></span>
-                                <strong>@theme.Name</strong>
-                                <small>@theme.Code</small>
-                            </button>
-                        }
+
+                    <div class="admin-form-switches compact">
+                        <label class="admin-check-chip">
+                            <input type="hidden" name="IsActive" value="false" />
+                            <input type="checkbox" name="IsActive" value="true" @(editor.IsActive ? "checked" : null) />
+                            <span>Activo</span>
+                        </label>
+                        <label class="admin-check-chip">
+                            <input type="hidden" name="TwoFactorEnabled" value="false" />
+                            <input type="checkbox" name="TwoFactorEnabled" value="true" @(editor.TwoFactorEnabled ? "checked" : null) />
+                            <span>2FA requerido</span>
+                        </label>
                     </div>
+
                     <div>
-                        <label class="form-label" for="role">Perfil base</label>
-                        <select class="form-select" id="role" name="Role">
-                            @if (editor.Role == AppRoles.Full) { <option value="@AppRoles.Full" selected>@AppRoles.Full</option> } else { <option value="@AppRoles.Full">@AppRoles.Full</option> }
-                            @if (editor.Role == AppRoles.Sales) { <option value="@AppRoles.Sales" selected>@AppRoles.Sales</option> } else { <option value="@AppRoles.Sales">@AppRoles.Sales</option> }
-                            @if (editor.Role == AppRoles.Collections) { <option value="@AppRoles.Collections" selected>@AppRoles.Collections</option> } else { <option value="@AppRoles.Collections">@AppRoles.Collections</option> }
-                        </select>
+                        <div class="admin-role-block-title mb-2">Permisos por vista</div>
+                        <div class="admin-permissions-grid compact single">
+                            @foreach (var permission in Model.Editor.AvailablePermissions)
+                            {
+                                var isChecked = editor.Permissions.Contains(permission);
+                                <label class="admin-permission-chip">
+                                    <input type="checkbox" name="Permissions" value="@permission" @(isChecked ? "checked" : null) />
+                                    <span>@permission</span>
+                                </label>
+                            }
+                        </div>
                     </div>
-                    <div>
-                        <label class="form-label" for="password">Contrasena @(string.IsNullOrWhiteSpace(editor.OriginalUsername) ? "inicial" : "nueva")</label>
-                        <input class="form-control" id="password" name="Password" type="password" autocomplete="new-password" />
-                    </div>
-                </div>
 
-                <div class="admin-form-switches compact">
-                    <label class="admin-check-chip">
-                        <input type="hidden" name="IsActive" value="false" />
-                        <input type="checkbox" name="IsActive" value="true" @(editor.IsActive ? "checked" : null) />
-                        <span>Activo</span>
-                    </label>
-                    <label class="admin-check-chip">
-                        <input type="hidden" name="TwoFactorEnabled" value="false" />
-                        <input type="checkbox" name="TwoFactorEnabled" value="true" @(editor.TwoFactorEnabled ? "checked" : null) />
-                        <span>2FA requerido</span>
-                    </label>
-                </div>
-
-                <div>
-                    <div class="admin-role-block-title mb-2">Permisos por vista</div>
-                    <div class="admin-permissions-grid compact single">
-                        @foreach (var permission in Model.Editor.AvailablePermissions)
-                        {
-                            var isChecked = editor.Permissions.Contains(permission);
-                            <label class="admin-permission-chip">
-                                <input type="checkbox" name="Permissions" value="@permission" @(isChecked ? "checked" : null) />
-                                <span>@permission</span>
-                            </label>
-                        }
-                    </div>
-                </div>
-
-                <div class="admin-editor-actions compact">
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                    <a class="btn btn-outline-secondary" asp-action="Users" asp-route-create="true" data-ajax-link="true" data-ajax-target=".admin-console-page">Nuevo</a>
-                </div>
-            </form>
-
-            @if (!string.IsNullOrWhiteSpace(editor.Username))
-            {
-                <form asp-action="ResetPassword" method="post" class="admin-reset-form compact" data-ajaxify="true" data-ajax-target=".admin-console-page">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="username" value="@editor.Username" />
-                    <div class="admin-role-block-title mb-2">Reset de contrasena</div>
-                    <div class="input-group">
-                        <input class="form-control" type="password" name="newPassword" placeholder="Nueva contrasena segura" autocomplete="new-password" />
-                        <button type="submit" class="btn btn-outline-warning">Reset</button>
+                    <div class="admin-editor-actions compact">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
                     </div>
                 </form>
-            }
-        </aside>
-    </div>
-}
+
+                @if (!string.IsNullOrWhiteSpace(editor.Username))
+                {
+                    <form asp-action="ResetPassword" method="post" class="admin-reset-form compact" data-ajaxify="true" data-ajax-target=".admin-users-view">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="username" value="@editor.Username" />
+                        <div class="admin-role-block-title mb-2">Reset de contrasena</div>
+                        <div class="input-group">
+                            <input class="form-control" type="password" name="newPassword" placeholder="Nueva contrasena segura" autocomplete="new-password" />
+                            <button type="submit" class="btn btn-outline-warning">Reset</button>
+                        </div>
+                    </form>
+                }
+            </aside>
+        </div>
+    }
+</div>
