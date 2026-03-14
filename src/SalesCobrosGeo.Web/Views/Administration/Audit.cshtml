@@ -1,0 +1,65 @@
+﻿@model SalesCobrosGeo.Web.Models.Administration.AuditListPageViewModel
+@{
+    ViewData["Title"] = "Bitacora de auditoria";
+}
+
+<div class="admin-console-page admin-audit-page">
+    <section class="admin-console-topbar">
+        <div>
+            <h1 class="admin-console-title">Bitacora de auditoria</h1>
+            <div class="admin-console-subtitle">Consulta compacta de eventos. Entra al detalle solo cuando realmente lo necesites.</div>
+        </div>
+        <div class="admin-console-actions">
+            <a class="btn btn-outline-secondary" asp-action="Users">Volver a usuarios</a>
+        </div>
+    </section>
+
+    <section class="admin-console-summarygrid audit-only">
+        <article class="admin-console-summarycard neutral">
+            <span>Eventos</span>
+            <strong>@Model.TotalEvents</strong>
+            <small>Registrados en la bitacora</small>
+        </article>
+        <article class="admin-console-summarycard info">
+            <span>Paginacion</span>
+            <strong>@Model.AuditPage / @Model.TotalAuditPages</strong>
+            <small>Navega por bloques compactos</small>
+        </article>
+    </section>
+
+    <section class="admin-users-table-shell compact-shell">
+        <div class="admin-section-head compact">
+            <div>
+                <h2 class="admin-section-title">Eventos recientes</h2>
+                <div class="admin-section-subtitle">Grid compacto. Toca cualquier fila para ir al detalle completo.</div>
+            </div>
+            <div class="admin-audit-pager compact">
+                <a class="btn btn-sm btn-outline-secondary @(Model.AuditPage <= 1 ? "disabled" : string.Empty)" asp-action="Audit" asp-route-page="@(Model.AuditPage - 1)">Anterior</a>
+                <span>Pag. @Model.AuditPage / @Model.TotalAuditPages</span>
+                <a class="btn btn-sm btn-outline-secondary @(Model.AuditPage >= Model.TotalAuditPages ? "disabled" : string.Empty)" asp-action="Audit" asp-route-page="@(Model.AuditPage + 1)">Siguiente</a>
+            </div>
+        </div>
+
+        @if (Model.AuditTrail.Count == 0)
+        {
+            <div class="app-empty-state compact">
+                <strong>Sin eventos registrados</strong>
+                <span>La bitacora aparecera aqui cuando haya actividad operativa o cambios de seguridad.</span>
+            </div>
+        }
+        else
+        {
+            <div class="admin-audit-table compact-table">
+                @foreach (var entry in Model.AuditTrail)
+                {
+                    <a class="admin-audit-row compact-row" asp-action="AuditDetail" asp-route-id="@entry.Id">
+                        <span class="admin-audit-cell event">@entry.EventType</span>
+                        <span class="admin-audit-cell user">@entry.Username</span>
+                        <span class="admin-audit-cell desc">@entry.Description</span>
+                        <span class="admin-audit-cell date">@entry.Timestamp</span>
+                    </a>
+                }
+            </div>
+        }
+    </section>
+</div>

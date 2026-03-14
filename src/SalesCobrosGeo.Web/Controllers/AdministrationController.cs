@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SalesCobrosGeo.Web.Data;
@@ -35,19 +35,18 @@ public sealed class AdministrationController : Controller
     }
 
     [HttpGet]
-    public IActionResult Users(int page = 1, string? editUsername = null)
+    public IActionResult Users(string? editUsername = null, bool create = false)
     {
         var userSummaries = _userService.GetUsers();
         var message = TempData["AdminSecurityMessage"] as string;
-        var auditTotal = _dbContext.AuditLogs.Count();
-        var totalPages = Math.Max(1, (int)Math.Ceiling(auditTotal / (double)AuditPageSize));
-        page = Math.Clamp(page, 1, totalPages);
-
+        var sessionSnapshots = _sessionTracker.GetSnapshots(userSummaries).ToArray();
         var editorUser = string.IsNullOrWhiteSpace(editUsername) ? null : _userService.GetUser(editUsername);
         var editor = BuildEditor(editorUser);
-        var model = new AdministrationPageViewModel(
-            BuildRoles(),
-            userSummaries.Select(user => new AdminUserCard(
+
+        var model = new AdministrationPageViewModel
+        {
+            Roles = BuildRoles(),
+            Users = userSummaries.Select(user => new AdminUserCard(
                 user.DisplayName,
                 user.Username,
                 user.Role,
@@ -57,21 +56,48 @@ public sealed class AdministrationController : Controller
                 user.Theme,
                 user.TwoFactorEnabled,
                 user.Permissions.Count)).ToArray(),
-            _sessionTracker.GetSnapshots(userSummaries)
-                .Select(session => new AdminSessionCard(
-                    session.Username,
-                    session.DisplayName,
-                    session.RoleLabel,
-                    session.Zone,
-                    session.IsActive,
-                    session.IsConnected,
-                    session.LastSeenLabel,
-                    session.LastPath,
-                    session.LastIp,
-                    session.LastUserAgent,
-                    session.LastCoordinates,
-                    session.LastLocationSource)).ToArray(),
-            _dbContext.AuditLogs
+            Sessions = sessionSnapshots.Select(session => new AdminSessionCard(
+                session.Username,
+                session.DisplayName,
+                session.RoleLabel,
+                session.Zone,
+                session.IsActive,
+                session.IsConnected,
+                session.LastSeenLabel,
+                session.LastPath,
+                session.LastIp,
+                session.LastUserAgent,
+                session.LastCoordinates,
+                session.LastLocationSource)).ToArray(),
+            Editor = editor,
+            ShowEditor = create || !string.IsNullOrWhiteSpace(editUsername),
+            SummaryCards =
+            [
+                new AdminSummaryCard("Usuarios", userSummaries.Count.ToString(), "neutral", "Configurados en el sistema"),
+                new AdminSummaryCard("Activos", userSummaries.Count(x => x.IsActive).ToString(), "success", "Con acceso habilitado"),
+                new AdminSummaryCard("Sesiones", sessionSnapshots.Count(x => x.IsConnected).ToString(), "info", "Conectadas en este momento"),
+                new AdminSummaryCard("2FA", userSummaries.Count(x => x.TwoFactorEnabled).ToString(), "warning", "Doble factor habilitado")
+            ],
+            AuditTotal = _dbContext.AuditLogs.Count(),
+            Message = message
+        };
+
+        return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult Audit(int page = 1)
+    {
+        var auditTotal = _dbContext.AuditLogs.Count();
+        var totalPages = Math.Max(1, (int)Math.Ceiling(auditTotal / (double)AuditPageSize));
+        page = Math.Clamp(page, 1, totalPages);
+
+        var model = new AuditListPageViewModel
+        {
+            AuditPage = page,
+            TotalAuditPages = totalPages,
+            TotalEvents = auditTotal,
+            AuditTrail = _dbContext.AuditLogs
                 .AsNoTracking()
                 .OrderByDescending(x => x.CreatedUtc)
                 .Skip((page - 1) * AuditPageSize)
@@ -84,11 +110,8 @@ public sealed class AdministrationController : Controller
                     x.Description,
                     x.Path,
                     x.Coordinates))
-                .ToArray(),
-            editor,
-            page,
-            totalPages,
-            message);
+                .ToArray()
+        };
 
         return View(model);
     }
@@ -102,12 +125,12 @@ public sealed class AdministrationController : Controller
             ApplyRoleDefaults(input);
             var saved = _userService.SaveUser(input);
             TempData["AdminSecurityMessage"] = $"Usuario {saved.Username} guardado correctamente.";
-            return RedirectToAction(nameof(Users), new { editUsername = saved.Username });
+            return RedirectToAction(nameof(Users), new { editUsername = saved.Username, create = false });
         }
         catch (InvalidOperationException ex)
         {
             TempData["AdminSecurityMessage"] = ex.Message;
-            return RedirectToAction(nameof(Users), new { editUsername = input.OriginalUsername ?? input.Username });
+            return RedirectToAction(nameof(Users), new { editUsername = input.OriginalUsername ?? input.Username, create = false });
         }
     }
 
@@ -118,14 +141,14 @@ public sealed class AdministrationController : Controller
         if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
         {
             TempData["AdminSecurityMessage"] = "La nueva contrasena debe tener al menos 8 caracteres.";
-            return RedirectToAction(nameof(Users), new { editUsername = username });
+            return RedirectToAction(nameof(Users), new { editUsername = username, create = false });
         }
 
         TempData["AdminSecurityMessage"] = _userService.ResetPassword(username, newPassword)
             ? $"Contrasena reiniciada para {username}."
             : "No se pudo reiniciar la contrasena.";
 
-        return RedirectToAction(nameof(Users), new { editUsername = username });
+        return RedirectToAction(nameof(Users), new { editUsername = username, create = false });
     }
 
     [HttpPost]
@@ -140,7 +163,7 @@ public sealed class AdministrationController : Controller
                 : $"{username} fue desactivado y cualquier sesion abierta quedo invalidada.";
         }
 
-        return RedirectToAction(nameof(Users), new { editUsername = username });
+        return RedirectToAction(nameof(Users), new { editUsername = username, create = false });
     }
 
     [HttpPost]
@@ -149,7 +172,7 @@ public sealed class AdministrationController : Controller
     {
         _sessionTracker.ForceLogout(username);
         TempData["AdminSecurityMessage"] = $"Se forzo el cierre de sesion de {username}.";
-        return RedirectToAction(nameof(Users), new { editUsername = username });
+        return RedirectToAction(nameof(Users), new { editUsername = username, create = false });
     }
 
     [HttpGet]

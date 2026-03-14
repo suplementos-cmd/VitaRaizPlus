@@ -1,4 +1,4 @@
-namespace SalesCobrosGeo.Web.Models.Administration;
+﻿namespace SalesCobrosGeo.Web.Models.Administration;
 
 public sealed record RoleTheme(string Name, string PrimaryColor, string AccentColor, string SurfaceColor);
 
@@ -46,12 +46,28 @@ public sealed record AdminAuditCard(
     string Path,
     string Coordinates);
 
-public sealed record AdministrationPageViewModel(
-    IReadOnlyList<RoleProfileCard> Roles,
-    IReadOnlyList<AdminUserCard> Users,
-    IReadOnlyList<AdminSessionCard> Sessions,
-    IReadOnlyList<AdminAuditCard> AuditTrail,
-    UserEditViewModel Editor,
-    int AuditPage,
-    int TotalAuditPages,
-    string? Message = null);
+public sealed record AdminSummaryCard(
+    string Label,
+    string Value,
+    string Tone,
+    string Caption);
+
+public sealed class AdministrationPageViewModel
+{
+    public IReadOnlyList<RoleProfileCard> Roles { get; init; } = [];
+    public IReadOnlyList<AdminUserCard> Users { get; init; } = [];
+    public IReadOnlyList<AdminSessionCard> Sessions { get; init; } = [];
+    public UserEditViewModel Editor { get; init; } = new(string.Empty, new UserAdminInput(), [], [], []);
+    public bool ShowEditor { get; init; }
+    public IReadOnlyList<AdminSummaryCard> SummaryCards { get; init; } = [];
+    public int AuditTotal { get; init; }
+    public string? Message { get; init; }
+}
+
+public sealed class AuditListPageViewModel
+{
+    public IReadOnlyList<AdminAuditCard> AuditTrail { get; init; } = [];
+    public int AuditPage { get; init; }
+    public int TotalAuditPages { get; init; }
+    public int TotalEvents { get; init; }
+}
