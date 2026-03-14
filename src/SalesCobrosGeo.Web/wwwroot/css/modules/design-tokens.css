@@ -2,14 +2,18 @@
   --vr-color-bg: #f4f7fb;
   --vr-color-surface: rgba(255, 255, 255, 0.94);
   --vr-color-surface-strong: #ffffff;
+  --vr-color-surface-soft: #f8fbff;
   --vr-color-text: #203149;
   --vr-color-text-soft: #65758b;
   --vr-color-brand: #1f66d1;
   --vr-color-brand-2: #5f9cff;
+  --vr-color-brand-3: #dfe9ff;
   --vr-color-success: #1f8a5b;
   --vr-color-warning: #c37a1f;
   --vr-color-danger: #c54455;
   --vr-color-border: #dbe5f0;
+  --vr-color-shell: rgba(255, 255, 255, 0.78);
+  --vr-color-backdrop: rgba(15, 29, 51, 0.38);
   --vr-shadow-soft: 0 10px 24px rgba(18, 35, 58, 0.08);
   --vr-shadow-strong: 0 18px 38px rgba(17, 31, 52, 0.16);
   --vr-radius-sm: 12px;
@@ -26,32 +30,71 @@
 }
 
 [data-role-theme="root"] {
-  --vr-color-brand: #24334f;
-  --vr-color-brand-2: #6da7ff;
+  --vr-color-bg: #eef3ff;
+  --vr-color-surface: rgba(255, 255, 255, 0.94);
+  --vr-color-surface-soft: #f5f8ff;
+  --vr-color-brand: #203a72;
+  --vr-color-brand-2: #5f8cff;
+  --vr-color-brand-3: #dce6ff;
+  --vr-color-border: #cfdbf5;
+  --vr-color-shell: rgba(237, 243, 255, 0.82);
 }
 
 [data-role-theme="sales"] {
-  --vr-color-brand: #2468d7;
-  --vr-color-brand-2: #7ab0ff;
+  --vr-color-bg: #eff7ff;
+  --vr-color-surface-soft: #f7fbff;
+  --vr-color-brand: #2f7dff;
+  --vr-color-brand-2: #8bc2ff;
+  --vr-color-brand-3: #dff0ff;
+  --vr-color-border: #d4e6fb;
+  --vr-color-shell: rgba(239, 247, 255, 0.84);
 }
 
 [data-role-theme="collections"] {
-  --vr-color-brand: #9b4e1f;
-  --vr-color-brand-2: #ed9d69;
+  --vr-color-bg: #f3efff;
+  --vr-color-surface-soft: #faf8ff;
+  --vr-color-brand: #6d4fd5;
+  --vr-color-brand-2: #b39afc;
+  --vr-color-brand-3: #e8e1ff;
+  --vr-color-border: #ddd6f7;
+  --vr-color-shell: rgba(243, 239, 255, 0.84);
 }
 
 [data-role-theme="forest"] {
-  --vr-color-brand: #196b54;
-  --vr-color-brand-2: #54be93;
+  --vr-color-bg: #edf9f3;
+  --vr-color-surface-soft: #f6fcf8;
+  --vr-color-brand: #1f8a63;
+  --vr-color-brand-2: #64d2a2;
+  --vr-color-brand-3: #dbf5ea;
+  --vr-color-border: #cfe9dd;
+  --vr-color-shell: rgba(237, 249, 243, 0.84);
 }
 
 [data-role-theme="sunset"] {
-  --vr-color-brand: #944646;
-  --vr-color-brand-2: #f08c67;
+  --vr-color-bg: #fff0f7;
+  --vr-color-surface-soft: #fff8fb;
+  --vr-color-brand: #c64d83;
+  --vr-color-brand-2: #f59bc5;
+  --vr-color-brand-3: #ffe0ef;
+  --vr-color-border: #f2d3e1;
+  --vr-color-shell: rgba(255, 240, 247, 0.84);
+}
+
+[data-role-theme="graphite"] {
+  --vr-color-bg: #f2f5f8;
+  --vr-color-surface-soft: #f8fafc;
+  --vr-color-brand: #516176;
+  --vr-color-brand-2: #95a6bc;
+  --vr-color-brand-3: #dfe6ed;
+  --vr-color-border: #d7dfe8;
+  --vr-color-shell: rgba(242, 245, 248, 0.84);
 }
 
 body {
   color: var(--vr-color-text);
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--vr-color-brand-2) 14%, transparent) 0%, transparent 34%),
+    linear-gradient(180deg, var(--vr-color-bg) 0%, color-mix(in srgb, var(--vr-color-surface-soft) 85%, #ffffff) 100%);
   background-color: var(--vr-color-bg);
 }
 
@@ -142,10 +185,52 @@ body {
   min-height: 28px;
   padding: 0 10px;
   border-radius: 999px;
-  background: #eef4fb;
-  color: #355072;
+  background: color-mix(in srgb, var(--vr-color-brand-3) 88%, #ffffff);
+  color: var(--vr-color-brand);
   font-size: 0.75rem;
   font-weight: 800;
+}
+
+.btn-primary {
+  border-color: var(--vr-color-brand);
+  background: linear-gradient(135deg, var(--vr-color-brand) 0%, color-mix(in srgb, var(--vr-color-brand-2) 74%, var(--vr-color-brand)) 100%);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--vr-color-brand) 22%, transparent);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  border-color: var(--vr-color-brand);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--vr-color-brand) 88%, #101b2c) 0%, var(--vr-color-brand-2) 100%);
+}
+
+.btn-outline-primary {
+  color: var(--vr-color-brand);
+  border-color: color-mix(in srgb, var(--vr-color-brand) 36%, #cfdcf2);
+  background: color-mix(in srgb, var(--vr-color-brand-3) 50%, #ffffff);
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus {
+  color: #fff;
+  border-color: var(--vr-color-brand);
+  background: var(--vr-color-brand);
+}
+
+.btn-outline-secondary {
+  color: color-mix(in srgb, var(--vr-color-brand) 72%, #4d5e73);
+  border-color: color-mix(in srgb, var(--vr-color-brand) 18%, #d6dee9);
+}
+
+.btn-outline-warning {
+  border-color: color-mix(in srgb, var(--vr-color-warning) 44%, #e0c39d);
+}
+
+.btn-outline-success {
+  border-color: color-mix(in srgb, var(--vr-color-success) 40%, #b8dccb);
+}
+
+.btn-outline-danger {
+  border-color: color-mix(in srgb, var(--vr-color-danger) 40%, #edc4ca);
 }
 
 @media (max-width: 640px) {

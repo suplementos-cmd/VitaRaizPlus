@@ -5,6 +5,15 @@
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
     var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
     var theme = isAuthenticated ? User.GetTheme() : "public";
+    var themeColor = theme switch
+    {
+        "sales" => "#2f7dff",
+        "forest" => "#1f8a63",
+        "sunset" => "#c64d83",
+        "collections" => "#6d4fd5",
+        "graphite" => "#516176",
+        _ => "#203a72"
+    };
     var displayName = isAuthenticated ? User.GetDisplayName() : "Invitado";
     var displayRole = isAuthenticated ? User.GetDisplayRole() : "Acceso publico";
     var canDashboard = isAuthenticated && User.HasPermission(AppPermissions.DashboardView);
@@ -26,7 +35,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="request-verification-token" content="@antiForgeryToken" />
-    <meta name="theme-color" content="#173252" />
+    <meta name="theme-color" content="@themeColor" />
     <title>@ViewData["Title"] - VitaRaizPlus</title>
     <script type="importmap"></script>
     <link rel="manifest" href="~/manifest.webmanifest" />

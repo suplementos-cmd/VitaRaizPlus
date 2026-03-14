@@ -21,7 +21,7 @@ public sealed class AdministrationController : Controller
         AppPermissions.AdministrationView
     ];
 
-    private static readonly string[] AvailableThemes = ["root", "sales", "collections", "forest", "sunset"];
+    private static readonly string[] AvailableThemes = ["root", "sales", "forest", "sunset", "collections", "graphite"];
 
     private readonly IApplicationUserService _userService;
     private readonly IUserSessionTracker _sessionTracker;
@@ -205,6 +205,16 @@ public sealed class AdministrationController : Controller
             _ => "Modulo ventas"
         };
 
+        if (string.IsNullOrWhiteSpace(input.Theme))
+        {
+            input.Theme = input.Role switch
+            {
+                AppRoles.Full => "root",
+                AppRoles.Collections => "collections",
+                _ => "sales"
+            };
+        }
+
         if (input.Permissions.Count > 0)
         {
             return;
@@ -257,7 +267,7 @@ public sealed class AdministrationController : Controller
                 AppRoles.Full,
                 "Acceso total",
                 "Control completo del sistema, seguridad, mantenimiento, ventas, cobros y dashboards.",
-                new RoleTheme("Root", "#24334f", "#6da7ff", "#eef4ff"),
+                new RoleTheme("Azul ejecutivo", "#203a72", "#5f8cff", "#eef3ff"),
                 ["Inicio", "Dashboard", "Ventas", "Cobros", "Mantenimiento", "Usuarios"],
                 [
                     new RolePermissionRow("Seguridad", "Full", "Usuarios, sesiones, bitacora, 2FA y configuracion sensible"),
@@ -268,7 +278,7 @@ public sealed class AdministrationController : Controller
                 AppRoles.Sales,
                 "Modulo ventas",
                 "Usuario comercial con acceso al registro, consulta y edicion operativa de ventas.",
-                new RoleTheme("Ventas", "#2c74d8", "#7bb3ff", "#edf5ff"),
+                new RoleTheme("Azul claro", "#2f7dff", "#8bc2ff", "#eff7ff"),
                 ["Inicio", "Dashboard", "Ventas"],
                 [
                     new RolePermissionRow("Ventas", "Ver/crear/editar", "Cliente, producto, fotos, zona, coordenadas y forma de pago"),
@@ -279,7 +289,7 @@ public sealed class AdministrationController : Controller
                 AppRoles.Collections,
                 "Modulo cobros",
                 "Usuario de ruta con acceso a cartera, detalle de venta y registro de cobros.",
-                new RoleTheme("Cobros", "#a44b24", "#f2a86c", "#fff4ea"),
+                new RoleTheme("Morado ejecutivo", "#6d4fd5", "#b39afc", "#f3efff"),
                 ["Inicio", "Dashboard", "Cobros"],
                 [
                     new RolePermissionRow("Cobros", "Ver/registrar", "Importe, observacion, coordenadas, historial y estatus"),

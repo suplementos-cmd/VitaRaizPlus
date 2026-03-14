@@ -181,6 +181,10 @@
         const page = root.querySelector('.admin-console-page');
         if (!page) {
             document.body.classList.remove('admin-modal-open');
+            const persistedTheme = document.body.dataset.persistedTheme;
+            if (persistedTheme) {
+                document.body.dataset.roleTheme = persistedTheme;
+            }
             return;
         }
 
@@ -210,28 +214,70 @@
         }
 
         const select = root.querySelector('.admin-theme-select');
-        const previews = Array.from(root.querySelectorAll('[data-theme-option]'));
-        if (select && previews.length > 0 && select.dataset.bound !== 'true') {
+        const roleSelect = root.querySelector('.admin-role-select');
+        const themeSuggest = root.querySelector('[data-role-theme-suggest="true"]');
+        if (select && select.dataset.bound !== 'true') {
             select.dataset.bound = 'true';
-            const sync = (value) => {
-                previews.forEach((preview) => {
-                    preview.classList.toggle('active', preview.getAttribute('data-theme-option') === value);
-                });
+            let themeCustomized = false;
+
+            const applyThemeValue = (value, markCustomized) => {
+                if (!value) {
+                    return;
+                }
+
+                if (markCustomized) {
+                    themeCustomized = true;
+                }
+
+                select.value = value;
+                syncThemeSelect();
             };
 
-            previews.forEach((preview) => {
-                preview.addEventListener('click', () => {
-                    const value = preview.getAttribute('data-theme-option');
-                    if (!value) {
-                        return;
-                    }
-                    select.value = value;
-                    sync(value);
-                });
-            });
+            const syncThemeSelect = () => {
+                const selected = select.options[select.selectedIndex];
+                const tone = selected?.dataset.themeTone || '#203a72';
+                const accent = selected?.dataset.themeAccent || '#5f8cff';
+                const surface = selected?.dataset.themeSurface || '#eef3ff';
+                select.style.color = tone;
+                select.style.borderColor = tone;
+                select.style.boxShadow = `0 0 0 4px color-mix(in srgb, ${accent} 16%, transparent)`;
 
-            select.addEventListener('change', () => sync(select.value));
-            sync(select.value);
+                const dialog = select.closest('.admin-editor-dialog');
+                if (dialog) {
+                    dialog.style.setProperty('--admin-theme-tone', tone);
+                    dialog.style.setProperty('--admin-theme-accent', accent);
+                    dialog.style.setProperty('--admin-theme-surface', surface);
+                }
+
+                document.body.dataset.roleTheme = select.value || document.body.dataset.persistedTheme || 'root';
+            };
+
+            select.addEventListener('change', () => applyThemeValue(select.value, true));
+
+            if (roleSelect && roleSelect.dataset.bound !== 'true') {
+                roleSelect.dataset.bound = 'true';
+                roleSelect.addEventListener('change', () => {
+                    const selectedRole = roleSelect.options[roleSelect.selectedIndex];
+                    const suggestedTheme = selectedRole?.dataset.defaultTheme;
+                    if (!themeCustomized && suggestedTheme) {
+                        applyThemeValue(suggestedTheme, false);
+                    }
+                });
+            }
+
+            if (themeSuggest && themeSuggest.dataset.bound !== 'true') {
+                themeSuggest.dataset.bound = 'true';
+                themeSuggest.addEventListener('click', () => {
+                    const selectedRole = roleSelect?.options[roleSelect.selectedIndex];
+                    const suggestedTheme = selectedRole?.dataset.defaultTheme;
+                    if (suggestedTheme) {
+                        themeCustomized = false;
+                        applyThemeValue(suggestedTheme, false);
+                    }
+                });
+            }
+
+            syncThemeSelect();
         }
 
         const modal = root.querySelector('.admin-editor-modal');
@@ -246,6 +292,10 @@
             }, 80);
         } else {
             document.body.classList.remove('admin-modal-open');
+            const persistedTheme = document.body.dataset.persistedTheme;
+            if (persistedTheme) {
+                document.body.dataset.roleTheme = persistedTheme;
+            }
         }
     }
 
@@ -377,6 +427,9 @@
 
     function boot() {
         document.body.classList.add('app-ready');
+        if (!document.body.dataset.persistedTheme && document.body.dataset.roleTheme) {
+            document.body.dataset.persistedTheme = document.body.dataset.roleTheme;
+        }
         initializePage(document);
         initHeartbeat();
         initAjaxUi();
