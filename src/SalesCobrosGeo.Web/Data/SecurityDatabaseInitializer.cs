@@ -242,6 +242,19 @@ CREATE TABLE IF NOT EXISTS Collections (
     {
         if (_dbContext.Users.Any())
         {
+            var rootAdmin = _dbContext.Users.Include(x => x.Permissions)
+                .FirstOrDefault(x => x.Username == "RaizAdmin");
+
+            if (rootAdmin is not null)
+            {
+                rootAdmin.IsActive = true;
+                rootAdmin.Role = AppRoles.Full;
+                rootAdmin.RoleLabel = "Acceso total";
+                rootAdmin.Theme = string.IsNullOrWhiteSpace(rootAdmin.Theme) ? "root" : rootAdmin.Theme;
+                rootAdmin.TwoFactorEnabled = true;
+                rootAdmin.UpdatedUtc = now;
+            }
+
             return;
         }
 
