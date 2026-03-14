@@ -155,6 +155,12 @@ public sealed class AdministrationController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult SetUserStatus(string username, bool isActive)
     {
+        if (username.Equals("RaizAdmin", StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["AdminSecurityMessage"] = "RaizAdmin es el administrador principal y siempre debe permanecer activo.";
+            return RedirectToAction(nameof(Users));
+        }
+
         if (_userService.SetActive(username, isActive))
         {
             _sessionTracker.SetUserActive(username, isActive);
@@ -163,7 +169,7 @@ public sealed class AdministrationController : Controller
                 : $"{username} fue desactivado y cualquier sesion abierta quedo invalidada.";
         }
 
-        return RedirectToAction(nameof(Users), new { editUsername = username, create = false });
+        return RedirectToAction(nameof(Users));
     }
 
     [HttpPost]
@@ -172,7 +178,7 @@ public sealed class AdministrationController : Controller
     {
         _sessionTracker.ForceLogout(username);
         TempData["AdminSecurityMessage"] = $"Se forzo el cierre de sesion de {username}.";
-        return RedirectToAction(nameof(Users), new { editUsername = username, create = false });
+        return RedirectToAction(nameof(Users));
     }
 
     [HttpGet]

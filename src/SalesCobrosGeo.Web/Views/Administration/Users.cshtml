@@ -82,6 +82,7 @@
                         {
                             var userSearch = $"{user.Name} {user.Username}".ToUpperInvariant();
                             var userTheme = themeCatalog.FirstOrDefault(x => x.Code == user.Theme);
+                            var isProtectedAdmin = user.Username.Equals("RaizAdmin", StringComparison.OrdinalIgnoreCase);
                             <article class="admin-user-rowcard @(user.Status == "Activo" ? "is-active" : "is-inactive")"
                                      data-user-search="@userSearch"
                                      data-user-role="@user.RoleCode.ToUpperInvariant()"
@@ -111,7 +112,7 @@
                                 </div>
                                 <div class="admin-user-rowactions compact-row">
                                     <a class="btn btn-sm btn-outline-primary" asp-action="Users" asp-route-editUsername="@user.Username" data-ajax-link="true" data-ajax-target=".admin-users-view">Editar</a>
-                                    <form asp-action="SetUserStatus" method="post" class="admin-status-form admin-inline-toggle-form" data-ajaxify="true" data-ajax-target=".admin-users-view">
+                                    <form asp-action="SetUserStatus" method="post" class="admin-status-form admin-inline-toggle-form @(isProtectedAdmin ? "is-locked" : string.Empty)" data-ajaxify="true" data-ajax-target=".admin-users-view">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="username" value="@user.Username" />
                                         <input type="hidden" name="isActive" value="@(user.Status == "Activo" ? "true" : "false")" />
@@ -119,10 +120,11 @@
                                             <input type="checkbox"
                                                    class="app-switch-input"
                                                    @(user.Status == "Activo" ? "checked" : null)
+                                                   @(isProtectedAdmin ? "disabled" : null)
                                                    data-toggle-submit="true"
                                                    data-working-label="Procesando..." />
                                             <span class="app-switch-track"></span>
-                                            <span class="app-switch-label">@(user.Status == "Activo" ? "Activo" : "Inactivo")</span>
+                                            <span class="app-switch-label">@(isProtectedAdmin ? "Siempre activo" : user.Status == "Activo" ? "Activo" : "Inactivo")</span>
                                         </label>
                                     </form>
                                 </div>
