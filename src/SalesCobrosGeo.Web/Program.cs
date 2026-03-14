@@ -78,6 +78,9 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+var contentSecurityPolicy = app.Environment.IsDevelopment()
+    ? "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:*;"
+    : "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self';";
 
 using (var scope = app.Services.CreateScope())
 {
@@ -103,7 +106,7 @@ app.Use(async (context, next) =>
     context.Response.Headers["X-Content-Type-Options"] = "nosniff";
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
     context.Response.Headers["Permissions-Policy"] = "geolocation=(self), camera=(self)";
-    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self';";
+    context.Response.Headers["Content-Security-Policy"] = contentSecurityPolicy;
 
     var shouldApplyNoCache = context.User.Identity?.IsAuthenticated == true ||
         context.Request.Path.StartsWithSegments("/Account", StringComparison.OrdinalIgnoreCase);
