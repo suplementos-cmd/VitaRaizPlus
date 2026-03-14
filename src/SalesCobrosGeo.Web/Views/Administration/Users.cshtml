@@ -1,16 +1,18 @@
-@model SalesCobrosGeo.Web.Models.Administration.AdministrationPageViewModel
+﻿@model SalesCobrosGeo.Web.Models.Administration.AdministrationPageViewModel
 @using SalesCobrosGeo.Web.Security
 @{
     ViewData["Title"] = "Administracion";
     var editor = Model.Editor.Input;
     var themeCatalog = new[]
     {
-        new { Code = "root", Name = "Root Ejecutivo", Tone = "#24334f", Accent = "#6da7ff", Surface = "#eef4ff" },
-        new { Code = "sales", Name = "Ventas Azul", Tone = "#2c74d8", Accent = "#7bb3ff", Surface = "#edf5ff" },
-        new { Code = "collections", Name = "Cobros Terracota", Tone = "#a44b24", Accent = "#f2a86c", Surface = "#fff4ea" },
-        new { Code = "forest", Name = "Bosque Operativo", Tone = "#23654f", Accent = "#67c49a", Surface = "#effaf5" },
-        new { Code = "sunset", Name = "Sunset Calido", Tone = "#9c4f28", Accent = "#f4b36e", Surface = "#fff6ed" }
+        new { Code = "root", Name = "Azul ejecutivo", Tone = "#203a72", Accent = "#5f8cff", Surface = "#eef3ff" },
+        new { Code = "sales", Name = "Azul claro", Tone = "#2f7dff", Accent = "#8bc2ff", Surface = "#eff7ff" },
+        new { Code = "forest", Name = "Verde operativo", Tone = "#1f8a63", Accent = "#64d2a2", Surface = "#edf9f3" },
+        new { Code = "sunset", Name = "Rosa comercial", Tone = "#c64d83", Accent = "#f59bc5", Surface = "#fff0f7" },
+        new { Code = "collections", Name = "Morado ejecutivo", Tone = "#6d4fd5", Accent = "#b39afc", Surface = "#f3efff" },
+        new { Code = "graphite", Name = "Gris profesional", Tone = "#516176", Accent = "#95a6bc", Surface = "#f2f5f8" }
     };
+    var selectedTheme = themeCatalog.FirstOrDefault(x => x.Code == editor.Theme) ?? themeCatalog[0];
 }
 
 <div class="admin-users-view">
@@ -79,6 +81,7 @@
                         @foreach (var user in Model.Users)
                         {
                             var userSearch = $"{user.Name} {user.Username}".ToUpperInvariant();
+                            var userTheme = themeCatalog.FirstOrDefault(x => x.Code == user.Theme);
                             <article class="admin-user-rowcard @(user.Status == "Activo" ? "is-active" : "is-inactive")"
                                      data-user-search="@userSearch"
                                      data-user-role="@user.RoleCode.ToUpperInvariant()"
@@ -96,7 +99,12 @@
                                     </div>
                                     <div class="admin-user-rowmeta compact-grid">
                                         <span><strong>Zona</strong> @user.Zone</span>
-                                        <span><strong>Tema</strong> @themeCatalog.FirstOrDefault(x => x.Code == user.Theme)?.Name ?? user.Theme</span>
+                                        <span>
+                                            <strong>Tema</strong>
+                                            <span class="admin-theme-chip" style="--theme-chip-tone:@(userTheme?.Tone ?? "#516176"); --theme-chip-accent:@(userTheme?.Accent ?? "#95a6bc"); --theme-chip-surface:@(userTheme?.Surface ?? "#f2f5f8");">
+                                                @(userTheme?.Name ?? user.Theme)
+                                            </span>
+                                        </span>
                                         <span><strong>Permisos</strong> @user.PermissionCount</span>
                                         <span><strong>2FA</strong> @(user.TwoFactorEnabled ? "Si" : "No")</span>
                                     </div>
@@ -131,7 +139,7 @@
                                     <div class="admin-session-rowtop">
                                         <div>
                                             <div class="admin-user-rowname">@session.DisplayName</div>
-                                            <div class="admin-user-rowusername">@session.Username � @session.RoleLabel</div>
+                                            <div class="admin-user-rowusername">@session.Username · @session.RoleLabel</div>
                                         </div>
                                         <span class="admin-session-badge @(session.IsConnected ? "connected" : session.IsActive ? "idle" : "inactive")">
                                             @(session.IsConnected ? "Conectado" : session.IsActive ? "Sin sesion" : "Inactivo")
@@ -167,11 +175,11 @@
             <div class="admin-editor-backdrop">
                 <a class="admin-editor-backdrop-close" asp-action="Users" aria-label="Cerrar" data-ajax-link="true" data-ajax-target=".admin-users-view"></a>
             </div>
-            <aside class="admin-editor-dialog">
+            <aside class="admin-editor-dialog" style="--admin-theme-tone:@selectedTheme.Tone; --admin-theme-accent:@selectedTheme.Accent; --admin-theme-surface:@selectedTheme.Surface;">
                 <div class="admin-section-head compact sticky-head">
                     <div>
                         <h2 class="admin-section-title" id="adminEditorTitle">@Model.Editor.Title</h2>
-                        <div class="admin-section-subtitle">Editor compacto sin quitar espacio al listado principal.</div>
+                        <div class="admin-section-subtitle">Editor compacto, centrado y comodo para trabajar en pantalla grande.</div>
                     </div>
                     <a class="btn btn-sm btn-outline-secondary" asp-action="Users" data-ajax-link="true" data-ajax-target=".admin-users-view">Cerrar</a>
                 </div>
@@ -180,7 +188,7 @@
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="OriginalUsername" value="@editor.OriginalUsername" />
 
-                    <div class="admin-form-grid compact single">
+                    <div class="admin-form-grid compact single admin-editor-grid">
                         <div>
                             <label class="form-label" for="username">Usuario</label>
                             <input class="form-control" id="username" name="Username" value="@editor.Username" />
@@ -200,35 +208,25 @@
                                 {
                                     if (theme.Code == editor.Theme)
                                     {
-                                        <option value="@theme.Code" selected>@theme.Name</option>
+                                        <option value="@theme.Code" data-theme-tone="@theme.Tone" data-theme-accent="@theme.Accent" data-theme-surface="@theme.Surface" selected>@theme.Name</option>
                                     }
                                     else
                                     {
-                                        <option value="@theme.Code">@theme.Name</option>
+                                        <option value="@theme.Code" data-theme-tone="@theme.Tone" data-theme-accent="@theme.Accent" data-theme-surface="@theme.Surface">@theme.Name</option>
                                     }
                                 }
                             </select>
-                        </div>
-                        <div class="admin-theme-preview-grid">
-                            @foreach (var theme in themeCatalog)
-                            {
-                                <button type="button"
-                                        class="admin-theme-preview @(theme.Code == editor.Theme ? "active" : string.Empty)"
-                                        data-theme-option="@theme.Code"
-                                        style="--theme-tone:@theme.Tone; --theme-accent:@theme.Accent; --theme-surface:@theme.Surface;">
-                                    <span class="admin-theme-preview-swatch"></span>
-                                    <strong>@theme.Name</strong>
-                                    <small>@theme.Code</small>
-                                </button>
-                            }
+                            <div class="admin-theme-help">El tema colorea navegacion, fondos, botones de enfasis y superficies del sistema.</div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary admin-theme-suggest" data-role-theme-suggest="true">Aplicar sugerido por perfil</button>
                         </div>
                         <div>
                             <label class="form-label" for="role">Perfil base</label>
-                            <select class="form-select" id="role" name="Role">
-                                @if (editor.Role == AppRoles.Full) { <option value="@AppRoles.Full" selected>@AppRoles.Full</option> } else { <option value="@AppRoles.Full">@AppRoles.Full</option> }
-                                @if (editor.Role == AppRoles.Sales) { <option value="@AppRoles.Sales" selected>@AppRoles.Sales</option> } else { <option value="@AppRoles.Sales">@AppRoles.Sales</option> }
-                                @if (editor.Role == AppRoles.Collections) { <option value="@AppRoles.Collections" selected>@AppRoles.Collections</option> } else { <option value="@AppRoles.Collections">@AppRoles.Collections</option> }
+                            <select class="form-select admin-role-select" id="role" name="Role">
+                                @if (editor.Role == AppRoles.Full) { <option value="@AppRoles.Full" data-default-theme="root" selected>@AppRoles.Full</option> } else { <option value="@AppRoles.Full" data-default-theme="root">@AppRoles.Full</option> }
+                                @if (editor.Role == AppRoles.Sales) { <option value="@AppRoles.Sales" data-default-theme="sales" selected>@AppRoles.Sales</option> } else { <option value="@AppRoles.Sales" data-default-theme="sales">@AppRoles.Sales</option> }
+                                @if (editor.Role == AppRoles.Collections) { <option value="@AppRoles.Collections" data-default-theme="collections" selected>@AppRoles.Collections</option> } else { <option value="@AppRoles.Collections" data-default-theme="collections">@AppRoles.Collections</option> }
                             </select>
+                            <div class="admin-theme-help">Cada perfil propone un tema base y luego puedes personalizarlo por usuario.</div>
                         </div>
                         <div>
                             <label class="form-label" for="password">Contrasena @(string.IsNullOrWhiteSpace(editor.OriginalUsername) ? "inicial" : "nueva")</label>
@@ -251,7 +249,7 @@
 
                     <div>
                         <div class="admin-role-block-title mb-2">Permisos por vista</div>
-                        <div class="admin-permissions-grid compact single">
+                        <div class="admin-permissions-grid compact single admin-permissions-editor-grid">
                             @foreach (var permission in Model.Editor.AvailablePermissions)
                             {
                                 var isChecked = editor.Permissions.Contains(permission);

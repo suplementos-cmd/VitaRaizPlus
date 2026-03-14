@@ -59,7 +59,7 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #4f74b9;
+  color: var(--vr-color-brand);
 }
 
 .security-auth-title {
@@ -115,8 +115,8 @@
   display: inline-flex;
   padding: 3px 9px;
   border-radius: 999px;
-  background: #edf4ff;
-  color: #2f5da5;
+  background: color-mix(in srgb, var(--vr-color-brand-3) 88%, #ffffff);
+  color: var(--vr-color-brand);
   font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -124,7 +124,7 @@
 
 .security-hint-password {
   margin: 4px 0 6px;
-  color: #a44b24;
+  color: var(--vr-color-brand);
   font-weight: 800;
 }
 
@@ -152,20 +152,10 @@
   margin-top: 18px;
 }
 
-body[data-role-theme="root"] {
-  --theme-accent: #6da7ff;
-}
 
-body[data-role-theme="sales"] {
-  --theme-accent: #2c74d8;
-}
-
-body[data-role-theme="collections"] {
-  --theme-accent: #a44b24;
-}
 
 body[data-role-theme] .app-topbar {
-  background: linear-gradient(135deg, #24334f 0%, var(--theme-accent, #6da7ff) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--vr-color-brand) 88%, #162235) 0%, color-mix(in srgb, var(--vr-color-brand-2) 72%, #1d3150) 100%);
 }
 
 @media (max-width: 991px) {
@@ -200,3 +190,4 @@ body[data-role-theme] .app-topbar {
     width: 100%;
   }
 }
+

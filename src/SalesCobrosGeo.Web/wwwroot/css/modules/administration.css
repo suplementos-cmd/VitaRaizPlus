@@ -926,6 +926,30 @@
   color: #3c5274;
 }
 
+.admin-theme-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--theme-chip-tone) 20%, #dce6f2);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-chip-surface) 86%, #ffffff) 0%, color-mix(in srgb, var(--theme-chip-accent) 18%, #ffffff) 100%);
+  color: var(--theme-chip-tone);
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.admin-theme-chip::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--theme-chip-tone) 0%, var(--theme-chip-accent) 100%);
+}
+
 .admin-user-rowactions.compact-row {
   align-items: center;
   justify-content: flex-end;
@@ -977,46 +1001,6 @@ body.admin-modal-open {
   background: linear-gradient(180deg, #fbfdff 70%, rgba(251, 253, 255, 0.4) 100%);
 }
 
-.admin-theme-preview-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.admin-theme-preview {
-  display: grid;
-  gap: 4px;
-  justify-items: start;
-  padding: 10px 12px;
-  border-radius: 16px;
-  border: 1px solid #dce6f2;
-  background: linear-gradient(180deg, var(--theme-surface) 0%, #ffffff 100%);
-  text-align: left;
-  color: #223753;
-}
-
-.admin-theme-preview.active {
-  border-color: var(--theme-tone);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-tone) 18%, #ffffff);
-}
-
-.admin-theme-preview-swatch {
-  width: 100%;
-  height: 30px;
-  border-radius: 12px;
-  background: linear-gradient(90deg, var(--theme-tone) 0%, var(--theme-accent) 60%, var(--theme-surface) 100%);
-}
-
-.admin-theme-preview strong {
-  font-size: 0.82rem;
-}
-
-.admin-theme-preview small {
-  color: #697b96;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
 @media (max-width: 1199px) {
   .admin-console-main.responsive-dense-grid {
     grid-template-columns: 1fr;
@@ -1043,8 +1027,67 @@ body.admin-modal-open {
   }
 }
 
-@media (max-width: 480px) {
-  .admin-theme-preview-grid {
-    grid-template-columns: 1fr;
+
+
+.admin-editor-dialog::before {
+  content: "";
+  position: sticky;
+  top: -20px;
+  display: block;
+  height: 6px;
+  margin: -20px -22px 18px;
+  border-radius: 28px 28px 0 0;
+  background: linear-gradient(90deg, var(--admin-theme-tone, #203a72) 0%, var(--admin-theme-accent, #5f8cff) 100%);
+}
+
+.admin-editor-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-permissions-editor-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-theme-select {
+  color: var(--admin-theme-tone, #203a72);
+  font-weight: 700;
+  border-color: color-mix(in srgb, var(--admin-theme-tone, #203a72) 22%, #dce6f2);
+  background-color: color-mix(in srgb, var(--admin-theme-surface, #eef3ff) 68%, #ffffff);
+}
+
+.admin-theme-select:focus {
+  border-color: var(--admin-theme-tone, #203a72);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--admin-theme-accent, #5f8cff) 18%, transparent);
+}
+
+.admin-theme-help {
+  margin-top: 6px;
+  color: #64758f;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.admin-theme-suggest {
+  margin-top: 10px;
+}
+
+.admin-user-statusbadge.active,
+.admin-session-badge.connected {
+  box-shadow: inset 0 0 0 1px rgba(25, 119, 70, 0.08), 0 8px 18px rgba(36, 122, 80, 0.08);
+}
+
+.admin-user-statusbadge.inactive,
+.admin-session-badge.inactive {
+  box-shadow: inset 0 0 0 1px rgba(161, 53, 53, 0.08), 0 8px 18px rgba(161, 53, 53, 0.08);
+}
+
+.admin-session-badge.idle {
+  box-shadow: inset 0 0 0 1px rgba(47, 93, 165, 0.08), 0 8px 18px rgba(47, 93, 165, 0.08);
+}
+
+@media (min-width: 1200px) {
+  .admin-editor-dialog {
+    width: min(980px, calc(100vw - 110px));
   }
 }
+
