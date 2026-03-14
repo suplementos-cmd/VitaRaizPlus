@@ -1,7 +1,9 @@
-using Microsoft.AspNetCore.Identity;
-using SalesCobrosGeo.Web.Security;
+using System.Data.Common;
 using System.Text.Json;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using SalesCobrosGeo.Web.Models.Sales;
+using SalesCobrosGeo.Web.Security;
 
 namespace SalesCobrosGeo.Web.Data;
 
@@ -17,12 +19,177 @@ public sealed class SecurityDatabaseInitializer
     public void Initialize()
     {
         _dbContext.Database.EnsureCreated();
+        EnsureSchemaUpToDate();
 
         var now = DateTime.UtcNow;
         SeedUsers(now);
         SeedCatalogs();
         SeedSalesAndCollections();
         _dbContext.SaveChanges();
+    }
+
+    private void EnsureSchemaUpToDate()
+    {
+        EnsureUserColumns();
+        EnsureSessionColumns();
+        EnsureCatalogTables();
+        EnsureSalesTables();
+    }
+
+    private void EnsureUserColumns()
+    {
+        EnsureColumn("Users", "TwoFactorEnabled", "INTEGER NOT NULL DEFAULT 0");
+        EnsureColumn("Users", "TwoFactorSecret", "TEXT NULL");
+    }
+
+    private void EnsureSessionColumns()
+    {
+        EnsureColumn("Sessions", "LastHeartbeatUtc", "TEXT NULL");
+    }
+
+    private void EnsureCatalogTables()
+    {
+        if (!TableExists("CatalogItems"))
+        {
+            _dbContext.Database.ExecuteSqlRaw(@"
+CREATE TABLE IF NOT EXISTS CatalogItems (
+    Id INTEGER NOT NULL CONSTRAINT PK_CatalogItems PRIMARY KEY AUTOINCREMENT,
+    Category TEXT NOT NULL,
+    Code TEXT NOT NULL,
+    Name TEXT NOT NULL,
+    Price TEXT NULL,
+    IsActive INTEGER NOT NULL,
+    SortOrder INTEGER NOT NULL
+);");
+            _dbContext.Database.ExecuteSqlRaw("CREATE UNIQUE INDEX IF NOT EXISTS IX_CatalogItems_Category_Code ON CatalogItems (Category, Code);");
+        }
+    }
+
+    private void EnsureSalesTables()
+    {
+        if (!TableExists("Sales"))
+        {
+            _dbContext.Database.ExecuteSqlRaw(@"
+CREATE TABLE IF NOT EXISTS Sales (
+    IdV TEXT NOT NULL CONSTRAINT PK_Sales PRIMARY KEY,
+    NumVenta INTEGER NOT NULL,
+    FechaVenta TEXT NOT NULL,
+    NombreCliente TEXT NOT NULL,
+    Celular TEXT NOT NULL,
+    Telefono TEXT NULL,
+    Zona TEXT NOT NULL,
+    FormaPago TEXT NOT NULL,
+    DiaCobro TEXT NOT NULL,
+    FotoCliente TEXT NULL,
+    FotoFachada TEXT NULL,
+    FotoContrato TEXT NULL,
+    ObservacionVenta TEXT NULL,
+    Vendedor TEXT NOT NULL,
+    Usuario TEXT NOT NULL,
+    Cobrador TEXT NOT NULL,
+    Coordenadas TEXT NOT NULL,
+    UrlUbicacion TEXT NULL,
+    FechaPrimerCobro TEXT NULL,
+    Estado TEXT NOT NULL,
+    FechaActu TEXT NOT NULL,
+    Cliente TEXT NOT NULL,
+    Producto TEXT NOT NULL,
+    Estado2 TEXT NOT NULL,
+    ComisionVendedorPct TEXT NOT NULL,
+    Cobrar TEXT NOT NULL,
+    FotoAdd1 TEXT NULL,
+    FotoAdd2 TEXT NULL,
+    Coordenadas2 TEXT NULL,
+    ProductosCantidad INTEGER NOT NULL,
+    ImporteTotal TEXT NOT NULL,
+    ProductLinesJson TEXT NOT NULL
+);");
+            _dbContext.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Sales_FechaVenta ON Sales (FechaVenta);");
+            _dbContext.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Sales_Zona ON Sales (Zona);");
+        }
+
+        if (!TableExists("Collections"))
+        {
+            _dbContext.Database.ExecuteSqlRaw(@"
+CREATE TABLE IF NOT EXISTS Collections (
+    IdCc TEXT NOT NULL CONSTRAINT PK_Collections PRIMARY KEY,
+    IdV TEXT NOT NULL,
+    NumVenta INTEGER NOT NULL,
+    NombreCliente TEXT NOT NULL,
+    ImporteCobro TEXT NOT NULL,
+    FechaCobro TEXT NOT NULL,
+    ObservacionCobro TEXT NULL,
+    FechaCaptura TEXT NOT NULL,
+    ImporteTotal TEXT NOT NULL,
+    ImporteRestante TEXT NOT NULL,
+    EstadoCc TEXT NOT NULL,
+    Usuario TEXT NOT NULL,
+    ImporteAbonado TEXT NOT NULL,
+    Estatus TEXT NOT NULL,
+    Zona TEXT NOT NULL,
+    DiaCobroPrevisto TEXT NOT NULL,
+    DiaCobrado TEXT NOT NULL,
+    CoordenadasCobro TEXT NULL,
+    CONSTRAINT FK_Collections_Sales_IdV FOREIGN KEY (IdV) REFERENCES Sales (IdV) ON DELETE CASCADE
+);");
+            _dbContext.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Collections_FechaCobro ON Collections (FechaCobro);");
+            _dbContext.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Collections_Usuario ON Collections (Usuario);");
+            _dbContext.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Collections_IdV ON Collections (IdV);");
+        }
+    }
+
+    private bool TableExists(string tableName)
+    {
+        using var connection = _dbContext.Database.GetDbConnection();
+        EnsureOpen(connection);
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = $name LIMIT 1;";
+        AddParameter(command, "$name", tableName);
+        return command.ExecuteScalar() is not null;
+    }
+
+    private void EnsureColumn(string tableName, string columnName, string definition)
+    {
+        if (!TableExists(tableName) || ColumnExists(tableName, columnName))
+        {
+            return;
+        }
+
+        _dbContext.Database.ExecuteSqlRaw($"ALTER TABLE {tableName} ADD COLUMN {columnName} {definition};");
+    }
+
+    private bool ColumnExists(string tableName, string columnName)
+    {
+        using var connection = _dbContext.Database.GetDbConnection();
+        EnsureOpen(connection);
+        using var command = connection.CreateCommand();
+        command.CommandText = $"PRAGMA table_info({tableName});";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            if (string.Equals(reader.GetString(1), columnName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void EnsureOpen(DbConnection connection)
+    {
+        if (connection.State != System.Data.ConnectionState.Open)
+        {
+            connection.Open();
+        }
+    }
+
+    private static void AddParameter(DbCommand command, string name, object? value)
+    {
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = name;
+        parameter.Value = value ?? DBNull.Value;
+        command.Parameters.Add(parameter);
     }
 
     private void SeedUsers(DateTime now)
