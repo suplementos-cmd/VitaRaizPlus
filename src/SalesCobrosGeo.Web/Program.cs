@@ -9,6 +9,9 @@ using SalesCobrosGeo.Web.Security;
 using SalesCobrosGeo.Web.Services.Sales;
 
 var builder = WebApplication.CreateBuilder(args);
+var secureCookiePolicy = builder.Environment.IsDevelopment()
+    ? CookieSecurePolicy.SameAsRequest
+    : CookieSecurePolicy.Always;
 
 builder.Services.AddControllersWithViews(options =>
 {
@@ -31,14 +34,14 @@ builder.Services.AddAntiforgery(options =>
     options.Cookie.Name = "VRP.AntiXsrf";
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Strict;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = secureCookiePolicy;
 });
 
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {
     options.MinimumSameSitePolicy = SameSiteMode.Lax;
     options.HttpOnly = HttpOnlyPolicy.Always;
-    options.Secure = CookieSecurePolicy.Always;
+    options.Secure = secureCookiePolicy;
 });
 
 builder.Services
@@ -48,7 +51,7 @@ builder.Services
         options.Cookie.Name = "VRP.Auth";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SecurePolicy = secureCookiePolicy;
         options.LoginPath = "/Account/Login";
         options.AccessDeniedPath = "/Account/AccessDenied";
         options.SlidingExpiration = true;
