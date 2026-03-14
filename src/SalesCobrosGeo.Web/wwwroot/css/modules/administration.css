@@ -960,6 +960,22 @@
   min-width: 64px;
 }
 
+.admin-inline-toggle-form.is-locked {
+  opacity: 0.92;
+}
+
+.admin-inline-toggle-form.is-locked .app-switch {
+  cursor: not-allowed;
+}
+
+.admin-inline-toggle-form.is-locked .app-switch-track {
+  background: linear-gradient(135deg, #203a72 0%, #5f8cff 100%);
+}
+
+.admin-inline-toggle-form.is-locked .app-switch-track::after {
+  transform: translateX(22px);
+}
+
 .admin-editor-modal {
   position: fixed;
   inset: 0;
