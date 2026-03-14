@@ -1091,3 +1091,66 @@ body.admin-modal-open {
   }
 }
 
+.admin-user-rowactions form {
+  margin: 0;
+}
+
+.admin-status-button,
+.admin-save-button {
+  min-width: 132px;
+  font-weight: 800;
+}
+
+.admin-editor-modal {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.admin-editor-backdrop {
+  background: rgba(18, 34, 57, 0.42);
+}
+
+.admin-editor-dialog {
+  width: min(960px, calc(100vw - 72px));
+  max-height: min(88vh, 920px);
+  height: auto;
+  border-left: 0;
+  border-radius: 28px;
+  box-shadow: 0 28px 64px rgba(18, 34, 57, 0.26);
+}
+
+.admin-editor-actions.compact {
+  position: sticky;
+  bottom: 0;
+  justify-content: flex-end;
+  padding-top: 12px;
+  margin-top: 4px;
+  background: linear-gradient(180deg, rgba(255,255,255,0) 0%, color-mix(in srgb, var(--admin-theme-surface, #eef3ff) 72%, #ffffff) 24%, #ffffff 100%);
+}
+
+.admin-save-button[disabled],
+.admin-status-button[disabled] {
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .admin-editor-modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .admin-editor-dialog {
+    width: 100%;
+    max-width: none;
+    max-height: 100dvh;
+    border-radius: 22px 22px 0 0;
+    padding: 14px;
+  }
+
+  .admin-editor-actions.compact {
+    justify-content: stretch;
+  }
+}
+
