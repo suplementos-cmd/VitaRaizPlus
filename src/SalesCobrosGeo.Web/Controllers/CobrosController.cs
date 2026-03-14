@@ -79,6 +79,26 @@ public sealed class CobrosController : Controller
                     Count = g.Count()
                 })
                 .ToArray(),
+            DayTree = portfolio
+                .GroupBy(x => NormalizeKey(x.DiaCobroPrevisto))
+                .Where(g => !string.IsNullOrWhiteSpace(g.Key))
+                .OrderBy(g => DayOrder.TryGetValue(g.Key, out var order) ? order : 99)
+                .Select(g => new CollectorDayTreeSummary
+                {
+                    Day = g.First().DiaCobroPrevisto,
+                    Count = g.Count(),
+                    Statuses = g
+                        .GroupBy(x => NormalizeKey(x.Estatus))
+                        .Where(statusGroup => !string.IsNullOrWhiteSpace(statusGroup.Key))
+                        .OrderBy(statusGroup => StatusOrder.TryGetValue(statusGroup.Key, out var order) ? order : 99)
+                        .Select(statusGroup => new CollectorStatusSummary
+                        {
+                            Status = statusGroup.First().Estatus,
+                            Count = statusGroup.Count()
+                        })
+                        .ToArray()
+                })
+                .ToArray(),
             Statuses = byDay
                 .GroupBy(x => NormalizeKey(x.Estatus))
                 .Where(g => !string.IsNullOrWhiteSpace(g.Key))
