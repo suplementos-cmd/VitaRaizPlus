@@ -345,6 +345,16 @@
                 return;
             }
 
+            const submitButton = form.find('button[type="submit"]').first();
+            const originalLabel = submitButton.length > 0 ? submitButton.html() : '';
+            const workingLabel = submitButton.data('workingLabel');
+            if (submitButton.length > 0) {
+                submitButton.prop('disabled', true);
+                if (workingLabel) {
+                    submitButton.text(workingLabel);
+                }
+            }
+
             requestAjax(form.attr('action') || window.location.href, {
                 method: (form.attr('method') || 'GET').toUpperCase(),
                 data: form.serialize()
@@ -353,6 +363,10 @@
                     window.location.href = form.attr('action') || window.location.href;
                 }
             }).fail(() => {
+                if (submitButton.length > 0) {
+                    submitButton.prop('disabled', false);
+                    submitButton.html(originalLabel);
+                }
                 window.location.href = form.attr('action') || window.location.href;
             });
         });

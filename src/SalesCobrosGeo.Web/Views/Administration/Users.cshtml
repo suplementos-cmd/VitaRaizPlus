@@ -111,11 +111,13 @@
                                 </div>
                                 <div class="admin-user-rowactions compact-row">
                                     <a class="btn btn-sm btn-outline-primary" asp-action="Users" asp-route-editUsername="@user.Username" data-ajax-link="true" data-ajax-target=".admin-users-view">Editar</a>
-                                    <form asp-action="SetUserStatus" method="post" data-ajaxify="true" data-ajax-target=".admin-users-view">
+                                    <form asp-action="SetUserStatus" method="post" class="admin-status-form" data-ajaxify="true" data-ajax-target=".admin-users-view">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="username" value="@user.Username" />
                                         <input type="hidden" name="isActive" value="@(user.Status == "Activo" ? "false" : "true")" />
-                                        <button type="submit" class="btn btn-sm @(user.Status == "Activo" ? "btn-outline-danger" : "btn-outline-success")">@(user.Status == "Activo" ? "Deshabilitar" : "Habilitar")</button>
+                                        <button type="submit"
+                                                class="btn btn-sm admin-status-button @(user.Status == "Activo" ? "btn-outline-danger" : "btn-outline-success")"
+                                                data-working-label="Procesando...">@(user.Status == "Activo" ? "Deshabilitar" : "Habilitar")</button>
                                     </form>
                                 </div>
                             </article>
@@ -154,10 +156,10 @@
                                     </div>
                                 </div>
                                 <div class="admin-user-rowactions compact-row">
-                                    <form asp-action="ForceLogout" method="post" data-ajaxify="true" data-ajax-target=".admin-users-view">
+                                    <form asp-action="ForceLogout" method="post" class="admin-status-form" data-ajaxify="true" data-ajax-target=".admin-users-view">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="username" value="@session.Username" />
-                                        <button type="submit" class="btn btn-sm btn-outline-warning">Desconectar</button>
+                                        <button type="submit" class="btn btn-sm admin-status-button btn-outline-warning" data-working-label="Cerrando...">Desconectar</button>
                                     </form>
                                     <a class="btn btn-sm btn-outline-primary" asp-action="Users" asp-route-editUsername="@session.Username" data-ajax-link="true" data-ajax-target=".admin-users-view">Usuario</a>
                                 </div>
@@ -262,7 +264,8 @@
                     </div>
 
                     <div class="admin-editor-actions compact">
-                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <a class="btn btn-outline-secondary" asp-action="Users" data-ajax-link="true" data-ajax-target=".admin-users-view">Cancelar</a>
+                        <button type="submit" class="btn btn-primary admin-save-button" data-working-label="Guardando...">Guardar cambios</button>
                     </div>
                 </form>
 
