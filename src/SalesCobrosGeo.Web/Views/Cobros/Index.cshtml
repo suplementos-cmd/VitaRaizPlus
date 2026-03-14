@@ -266,10 +266,10 @@
                 <h1 class="collector-desktop-title">Panel de ruta</h1>
                 <div class="collector-desktop-subtitle">Navega por dia y estado para entrar mas rapido a cada cartera.</div>
             </div>
-            <a class="collector-desktop-alllink @(Model.ShowAll ? "active" : string.Empty)" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-all="true">Todo</a>
+            <a class="collector-desktop-alllink @(Model.ShowAll ? "active" : string.Empty)" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-all="true" data-ajax-link="true" data-ajax-target=".collector-desktop-workbench">Todo</a>
         </div>
 
-        <form method="get" class="collector-desktop-filterbox">
+        <form method="get" class="collector-desktop-filterbox" data-ajaxify="true" data-ajax-target=".collector-desktop-workbench">
             <input type="hidden" name="day" value="@Model.SelectedDay" />
             <input type="hidden" name="status" value="@Model.SelectedStatus" />
             <input type="hidden" name="zone" value="@Model.SelectedZone" />
@@ -320,7 +320,7 @@
                                 aria-label="Mostrar u ocultar estados de @dayGroup.Day">
                             <span class="collector-desktop-toggleicon">@Html.Raw("&rsaquo;")</span>
                         </button>
-                        <a class="collector-desktop-daylink" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@dayGroup.Day">
+                        <a class="collector-desktop-daylink" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@dayGroup.Day" data-ajax-link="true" data-ajax-target=".collector-desktop-workbench">
                             <span class="collector-desktop-daylabel">@dayGroup.Day</span>
                             <span class="collector-desktop-daycount">@dayGroup.Count</span>
                         </a>
@@ -333,7 +333,9 @@
                                    asp-action="Index"
                                    asp-route-profile="@Model.Profile"
                                    asp-route-day="@dayGroup.Day"
-                                   asp-route-status="@statusItem.Status">
+                                   asp-route-status="@statusItem.Status"
+                                   data-ajax-link="true"
+                                   data-ajax-target=".collector-desktop-workbench">
                                     <span class="collector-desktop-statusdot">@StatusIcon(statusItem.Status ?? string.Empty)</span>
                                     <span class="collector-desktop-statuslabel">@statusItem.Status</span>
                                     <span class="collector-desktop-statuscount">@statusItem.Count</span>
@@ -358,11 +360,11 @@
                 </div>
                 @if (Model.ShowAll)
                 {
-                    <a class="btn btn-outline-secondary" asp-action="Index" asp-route-profile="@Model.Profile">Agrupado</a>
+                    <a class="btn btn-outline-secondary" asp-action="Index" asp-route-profile="@Model.Profile" data-ajax-link="true" data-ajax-target=".collector-desktop-workbench">Agrupado</a>
                 }
                 else
                 {
-                    <a class="btn btn-outline-primary" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-all="true">Ver todo</a>
+                    <a class="btn btn-outline-primary" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-all="true" data-ajax-link="true" data-ajax-target=".collector-desktop-workbench">Ver todo</a>
                 }
             </div>
         </header>
@@ -391,7 +393,7 @@
             <div class="collector-desktop-zonestrip">
                 @foreach (var zoneItem in Model.Zones)
                 {
-                    <a class="collector-desktop-zonepill" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@zoneItem.Zone">
+                    <a class="collector-desktop-zonepill" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@zoneItem.Zone" data-ajax-link="true" data-ajax-target=".collector-desktop-workbench">
                         <span>@zoneItem.Zone</span>
                         <strong>@zoneItem.Count</strong>
                     </a>
@@ -455,60 +457,3 @@
         </div>
     </section>
 </div>
-
-@section Scripts {
-    <script>
-        (() => {
-            const bindSearch = (inputId, listId, rowSelector, countId, emptyId) => {
-                const input = document.getElementById(inputId);
-                const list = document.getElementById(listId);
-                const count = document.getElementById(countId);
-                const empty = document.getElementById(emptyId);
-                if (!input || !list || !count) {
-                    return;
-                }
-
-                const rows = Array.from(list.querySelectorAll(rowSelector));
-                count.textContent = String(rows.length);
-
-                const applyFilter = () => {
-                    const term = input.value.trim().toLowerCase();
-                    let visible = 0;
-                    rows.forEach((row) => {
-                        const haystack = row.getAttribute('data-search') || '';
-                        const match = term.length === 0 || haystack.includes(term);
-                        row.hidden = !match;
-                        if (match) {
-                            visible += 1;
-                        }
-                    });
-                    count.textContent = String(visible);
-                    if (empty) {
-                        empty.hidden = visible !== 0;
-                    }
-                };
-
-                input.addEventListener('input', applyFilter);
-            };
-
-            bindSearch('collectorMobileSearch', 'collectorMobileSalesList', '.collector-mobile-sale-row', 'collectorMobileCount', 'collectorMobileEmptySearch');
-            bindSearch('collectorDesktopSearch', 'collectorDesktopSalesList', '.collector-desktop-record', 'collectorDesktopCount', 'collectorDesktopEmptySearch');
-
-            document.querySelectorAll('[data-tree-toggle]').forEach((button) => {
-                button.addEventListener('click', () => {
-                    const group = button.closest('.collector-desktop-treegroup');
-                    const list = group?.querySelector('.collector-desktop-statuslist');
-                    if (!group || !list) {
-                        return;
-                    }
-
-                    const willOpen = list.hasAttribute('hidden');
-                    list.toggleAttribute('hidden', !willOpen);
-                    button.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-                    button.classList.toggle('open', willOpen);
-                    group.classList.toggle('is-open', willOpen);
-                });
-            });
-        })();
-    </script>
-}

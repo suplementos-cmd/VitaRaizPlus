@@ -1,4 +1,7 @@
 (function () {
+    let heartbeatInitialized = false;
+    let ajaxUiInitialized = false;
+
     function ensureViewer() {
         let overlay = document.getElementById('imagePreviewOverlay');
         if (overlay) {
@@ -26,11 +29,16 @@
         return overlay;
     }
 
-    function initImagePreview() {
+    function initImagePreview(root) {
         const overlay = ensureViewer();
         const full = overlay.querySelector('.image-preview-full');
 
-        document.querySelectorAll('[data-previewable="true"]').forEach((el) => {
+        root.querySelectorAll('[data-previewable="true"]').forEach((el) => {
+            if (el.dataset.previewBound === 'true') {
+                return;
+            }
+
+            el.dataset.previewBound = 'true';
             el.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -81,10 +89,11 @@
 
     function initHeartbeat() {
         const body = document.body;
-        if (!body || body.dataset.authenticated !== 'true') {
+        if (!body || body.dataset.authenticated !== 'true' || heartbeatInitialized) {
             return;
         }
 
+        heartbeatInitialized = true;
         postHeartbeat();
         window.setInterval(postHeartbeat, 120000);
         document.addEventListener('visibilitychange', () => {
@@ -94,12 +103,226 @@
         });
     }
 
-    function initToasts() {
-        document.querySelectorAll('[data-auto-toast="true"]').forEach((toast) => {
+    function initToasts(root) {
+        root.querySelectorAll('[data-auto-toast="true"]').forEach((toast) => {
+            if (toast.dataset.toastBound === 'true') {
+                return;
+            }
+
+            toast.dataset.toastBound = 'true';
             window.setTimeout(() => {
                 toast.setAttribute('data-hiding', 'true');
                 window.setTimeout(() => toast.remove(), 260);
             }, 3200);
+        });
+    }
+
+    function bindCollectorFeatures(root) {
+        const bindSearch = (inputId, listId, rowSelector, countId, emptyId) => {
+            const input = $(root).find(`#${inputId}`);
+            const list = $(root).find(`#${listId}`);
+            const count = $(root).find(`#${countId}`);
+            const empty = $(root).find(`#${emptyId}`);
+            if (input.length === 0 || list.length === 0 || count.length === 0 || input.data('bound') === true) {
+                return;
+            }
+
+            input.data('bound', true);
+            const rows = list.find(rowSelector);
+            count.text(String(rows.length));
+
+            const applyFilter = () => {
+                const term = String(input.val() || '').trim().toLowerCase();
+                let visible = 0;
+                rows.each(function () {
+                    const row = $(this);
+                    const haystack = String(row.attr('data-search') || '');
+                    const match = term.length === 0 || haystack.includes(term);
+                    row.prop('hidden', !match);
+                    if (match) {
+                        visible += 1;
+                    }
+                });
+                count.text(String(visible));
+                if (empty.length > 0) {
+                    empty.prop('hidden', visible !== 0);
+                }
+            };
+
+            input.on('input', applyFilter);
+        };
+
+        bindSearch('collectorMobileSearch', 'collectorMobileSalesList', '.collector-mobile-sale-row', 'collectorMobileCount', 'collectorMobileEmptySearch');
+        bindSearch('collectorDesktopSearch', 'collectorDesktopSalesList', '.collector-desktop-record', 'collectorDesktopCount', 'collectorDesktopEmptySearch');
+
+        root.querySelectorAll('[data-tree-toggle]').forEach((button) => {
+            if (button.dataset.bound === 'true') {
+                return;
+            }
+
+            button.dataset.bound = 'true';
+            button.addEventListener('click', () => {
+                const group = button.closest('.collector-desktop-treegroup');
+                const list = group?.querySelector('.collector-desktop-statuslist');
+                if (!group || !list) {
+                    return;
+                }
+
+                const willOpen = list.hasAttribute('hidden');
+                list.toggleAttribute('hidden', !willOpen);
+                button.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+                button.classList.toggle('open', willOpen);
+                group.classList.toggle('is-open', willOpen);
+            });
+        });
+    }
+
+    function bindAdminUsers(root) {
+        const page = root.querySelector('.admin-console-page');
+        if (!page) {
+            document.body.classList.remove('admin-modal-open');
+            return;
+        }
+
+        const searchInput = root.querySelector('#adminUserSearch');
+        const roleFilter = root.querySelector('#adminRoleFilter');
+        const statusFilter = root.querySelector('#adminStatusFilter');
+        const rows = Array.from(root.querySelectorAll('.admin-user-rowcard'));
+
+        if (searchInput && roleFilter && statusFilter && searchInput.dataset.bound !== 'true') {
+            searchInput.dataset.bound = 'true';
+            const applyUserFilter = () => {
+                const term = String(searchInput.value || '').trim().toUpperCase();
+                const role = String(roleFilter.value || '').trim().toUpperCase();
+                const status = String(statusFilter.value || '').trim().toUpperCase();
+
+                rows.forEach((row) => {
+                    const matchText = !term || String(row.getAttribute('data-user-search') || '').includes(term);
+                    const matchRole = !role || String(row.getAttribute('data-user-role') || '') === role;
+                    const matchStatus = !status || String(row.getAttribute('data-user-status') || '') === status;
+                    row.hidden = !(matchText && matchRole && matchStatus);
+                });
+            };
+
+            searchInput.addEventListener('input', applyUserFilter);
+            roleFilter.addEventListener('change', applyUserFilter);
+            statusFilter.addEventListener('change', applyUserFilter);
+        }
+
+        const select = root.querySelector('.admin-theme-select');
+        const previews = Array.from(root.querySelectorAll('[data-theme-option]'));
+        if (select && previews.length > 0 && select.dataset.bound !== 'true') {
+            select.dataset.bound = 'true';
+            const sync = (value) => {
+                previews.forEach((preview) => {
+                    preview.classList.toggle('active', preview.getAttribute('data-theme-option') === value);
+                });
+            };
+
+            previews.forEach((preview) => {
+                preview.addEventListener('click', () => {
+                    const value = preview.getAttribute('data-theme-option');
+                    if (!value) {
+                        return;
+                    }
+                    select.value = value;
+                    sync(value);
+                });
+            });
+
+            select.addEventListener('change', () => sync(select.value));
+            sync(select.value);
+        }
+
+        const modal = root.querySelector('.admin-editor-modal');
+        if (modal) {
+            document.body.classList.add('admin-modal-open');
+            const focusTarget = modal.querySelector('#displayName') || modal.querySelector('#username') || modal.querySelector('input, select, textarea');
+            window.setTimeout(() => {
+                focusTarget?.focus();
+                if (window.innerWidth <= 767) {
+                    modal.querySelector('.admin-editor-dialog')?.scrollTo({ top: 0, behavior: 'instant' });
+                }
+            }, 80);
+        } else {
+            document.body.classList.remove('admin-modal-open');
+        }
+    }
+
+    function replaceAjaxTarget(targetSelector, html) {
+        const target = document.querySelector(targetSelector);
+        if (!target) {
+            return false;
+        }
+
+        const parsed = new DOMParser().parseFromString(html, 'text/html');
+        const replacement = parsed.querySelector(targetSelector);
+        if (!replacement) {
+            return false;
+        }
+
+        target.replaceWith(replacement);
+        document.title = parsed.title || document.title;
+        initializePage(document);
+        return true;
+    }
+
+    function requestAjax(url, options) {
+        const token = document.querySelector('meta[name="request-verification-token"]')?.getAttribute('content') || '';
+        return $.ajax({
+            url,
+            method: options.method || 'GET',
+            data: options.data,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'RequestVerificationToken': token
+            }
+        });
+    }
+
+    function initAjaxUi() {
+        if (ajaxUiInitialized || typeof window.jQuery === 'undefined') {
+            return;
+        }
+
+        ajaxUiInitialized = true;
+
+        $(document).on('submit', 'form[data-ajaxify="true"]', function (event) {
+            event.preventDefault();
+            const form = $(this);
+            const target = form.data('ajaxTarget');
+            if (!target) {
+                return;
+            }
+
+            requestAjax(form.attr('action') || window.location.href, {
+                method: (form.attr('method') || 'GET').toUpperCase(),
+                data: form.serialize()
+            }).done((html) => {
+                if (!replaceAjaxTarget(target, html)) {
+                    window.location.href = form.attr('action') || window.location.href;
+                }
+            }).fail(() => {
+                window.location.href = form.attr('action') || window.location.href;
+            });
+        });
+
+        $(document).on('click', 'a[data-ajax-link="true"]', function (event) {
+            const link = $(this);
+            const target = link.data('ajaxTarget');
+            const href = link.attr('href');
+            if (!target || !href) {
+                return;
+            }
+
+            event.preventDefault();
+            requestAjax(href, { method: 'GET' }).done((html) => {
+                if (!replaceAjaxTarget(target, html)) {
+                    window.location.href = href;
+                }
+            }).fail(() => {
+                window.location.href = href;
+            });
         });
     }
 
@@ -145,19 +368,24 @@
         });
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            document.body.classList.add('app-ready');
-            initImagePreview();
-            initHeartbeat();
-            initToasts();
-            setupServiceWorker();
-        });
-    } else {
+    function initializePage(root) {
+        initImagePreview(root);
+        initToasts(root);
+        bindCollectorFeatures(root);
+        bindAdminUsers(root);
+    }
+
+    function boot() {
         document.body.classList.add('app-ready');
-        initImagePreview();
+        initializePage(document);
         initHeartbeat();
-        initToasts();
+        initAjaxUi();
         setupServiceWorker();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
     }
 })();
