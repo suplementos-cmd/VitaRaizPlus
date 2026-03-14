@@ -233,6 +233,67 @@ body {
   border-color: color-mix(in srgb, var(--vr-color-danger) 40%, #edc4ca);
 }
 
+.app-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.app-switch-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.app-switch-track {
+  position: relative;
+  width: 52px;
+  height: 30px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--vr-color-danger) 22%, #e5ebf3);
+  border: 1px solid color-mix(in srgb, var(--vr-color-border) 85%, #ffffff);
+  transition: background-color var(--vr-speed-base) ease, box-shadow var(--vr-speed-base) ease;
+  flex-shrink: 0;
+}
+
+.app-switch-track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 4px 10px rgba(23, 40, 67, 0.16);
+  transition: transform var(--vr-speed-base) ease;
+}
+
+.app-switch-input:checked + .app-switch-track {
+  background: linear-gradient(135deg, var(--vr-color-brand) 0%, var(--vr-color-brand-2) 100%);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--vr-color-brand) 18%, transparent);
+}
+
+.app-switch-input:checked + .app-switch-track::after {
+  transform: translateX(22px);
+}
+
+.app-switch-input:focus-visible + .app-switch-track {
+  outline: 0;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--vr-color-brand-2) 20%, transparent);
+}
+
+.app-switch-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--vr-color-text);
+}
+
 @media (max-width: 640px) {
   .app-toast-host {
     top: 66px;

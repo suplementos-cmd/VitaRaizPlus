@@ -299,3 +299,12 @@
     font-size: 1.15rem;
   }
 }
+
+.maintenance-status-switch .app-switch-label {
+  min-width: 64px;
+}
+
+.maintenance-row-actions form {
+  margin: 0;
+}
+
