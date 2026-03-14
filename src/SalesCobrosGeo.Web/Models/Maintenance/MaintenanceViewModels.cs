@@ -1,4 +1,4 @@
-﻿namespace SalesCobrosGeo.Web.Models.Maintenance;
+namespace SalesCobrosGeo.Web.Models.Maintenance;
 
 public sealed record MaintenanceStat(string Title, string Value, string Tone);
 
@@ -8,7 +8,8 @@ public sealed record MaintenanceItem(
     string Name,
     string Detail,
     string Badge,
-    string Tone);
+    string Tone,
+    bool IsActive);
 
 public sealed record MaintenanceSection(
     string Key,
@@ -22,6 +23,7 @@ public sealed record MaintenancePageViewModel(
     IReadOnlyList<MaintenanceStat> Stats,
     IReadOnlyList<MaintenanceSection> Sections,
     MaintenanceEditorInput Editor,
+    bool ShowEditor,
     string? Message = null);
 
 public sealed class MaintenanceEditorInput

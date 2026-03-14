@@ -1,5 +1,4 @@
 @model SalesCobrosGeo.Web.Models.Maintenance.MaintenancePageViewModel
-@using SalesCobrosGeo.Web.Models.Shared
 @{
     ViewData["Title"] = "Mantenimiento";
     var current = Model.Sections.First(x => x.Key == Model.SelectedSection);
@@ -14,183 +13,159 @@
         _ => "maintenance-badge brand"
     };
 
-    string StatClass(string tone) => tone switch
-    {
-        "success" => "maintenance-stat success",
-        "warning" => "maintenance-stat warning",
-        "danger" => "maintenance-stat danger",
-        _ => "maintenance-stat brand"
-    };
+    string RowClass(bool active) => active ? "maintenance-row" : "maintenance-row inactive";
 }
 
-<div class="app-page-shell maintenance-page-shell">
-    @await Html.PartialAsync("_PageHeader", new PageHeaderViewModel(
-        "Mantenimiento",
-        "Catalogos, personal y base comercial",
-        "Gestiona zonas, productos, dias, cobradores y vendedores desde un panel unico pensado para escritorio y movil.",
-        current.Summary))
+<div class="maintenance-compact-page">
+    <section class="maintenance-titlebar">
+        <div>
+            <h1 class="maintenance-compact-title">Mantenimiento</h1>
+            <div class="maintenance-compact-subtitle">Gestion compacta de catalogos y equipo operativo.</div>
+        </div>
+        @if (editableSection)
+        {
+            <a class="btn btn-primary maintenance-add-btn" asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-create="true">Agregar</a>
+        }
+    </section>
 
     @if (!string.IsNullOrWhiteSpace(Model.Message))
     {
         <div class="app-toast-inline success">@Model.Message</div>
     }
 
-    <section class="maintenance-stats">
-        @foreach (var item in Model.Stats)
+    <section class="maintenance-summary-cards">
+        @foreach (var stat in Model.Stats)
         {
-            <article class="@StatClass(item.Tone)">
-                <div class="maintenance-stat-label">@item.Title</div>
-                <strong class="maintenance-stat-value">@item.Value</strong>
+            <article class="maintenance-summary-card @stat.Tone">
+                <small>@stat.Title</small>
+                <strong>@stat.Value</strong>
             </article>
         }
     </section>
 
-    <div class="maintenance-nav-strip">
+    <nav class="maintenance-top-tabs" aria-label="Catalogos">
         @foreach (var navItem in Model.Sections)
         {
-            <a class="maintenance-nav-chip @(navItem.Key == Model.SelectedSection ? "active" : string.Empty)"
+            <a class="maintenance-tab @(navItem.Key == Model.SelectedSection ? "active" : string.Empty)"
                asp-action="Index"
                asp-route-section="@navItem.Key">
                 <span>@navItem.Title</span>
                 <small>@navItem.Items.Count</small>
             </a>
         }
-    </div>
+    </nav>
 
-    <section class="maintenance-layout maintenance-admin-layout">
-        <aside class="maintenance-sidebar maintenance-sidebar-master">
-            <div class="maintenance-sidebar-title">Secciones</div>
-            <div class="maintenance-nav">
-                @foreach (var navItem in Model.Sections)
-                {
-                    <a class="maintenance-nav-link @(navItem.Key == Model.SelectedSection ? "active" : string.Empty)"
-                       asp-action="Index"
-                       asp-route-section="@navItem.Key">
-                        <span>@navItem.Title</span>
-                        <small>@navItem.Items.Count</small>
-                    </a>
-                }
-            </div>
-        </aside>
+    <section class="maintenance-section-strip">
+        <div>
+            <h2 class="maintenance-section-title compact">@current.Title</h2>
+            <div class="maintenance-section-subtitle compact">@current.Subtitle</div>
+        </div>
+        <div class="maintenance-section-summary compact">@current.Summary</div>
+    </section>
 
-        <div class="maintenance-content maintenance-content-master">
-            <section class="maintenance-section-head maintenance-section-head-master">
-                <div>
-                    <h2 class="maintenance-section-title">@current.Title</h2>
-                    <div class="maintenance-section-subtitle">@current.Subtitle</div>
+    <section class="maintenance-rows-layout @(Model.ShowEditor ? "with-editor" : string.Empty)">
+        <div class="maintenance-rows-panel">
+            @if (current.Items.Count == 0)
+            {
+                <div class="app-empty-state compact">
+                    <strong>Sin registros todavia</strong>
+                    <span>Cuando agregues registros apareceran aqui en formato compacto.</span>
                 </div>
-                <div class="maintenance-section-summary">@current.Summary</div>
-            </section>
-
-            <div class="maintenance-workbench">
-                <div class="maintenance-grid-shell">
-                    @if (current.Items.Count == 0)
+            }
+            else
+            {
+                <div class="maintenance-row-head">
+                    <span>Nombre</span>
+                    <span>Codigo</span>
+                    <span>Detalle</span>
+                    <span>Estatus</span>
+                    <span>Acciones</span>
+                </div>
+                <div class="maintenance-rows-grid">
+                    @foreach (var item in current.Items)
                     {
-                        <div class="app-empty-state">
-                            <strong>Sin registros todavia</strong>
-                            <span>Cuando agregues elementos nuevos aqui mismo iran apareciendo en forma compacta.</span>
-                        </div>
-                    }
-                    else
-                    {
-                        <section class="maintenance-grid maintenance-grid-compact">
-                            @foreach (var item in current.Items)
-                            {
-                                <article class="maintenance-card">
-                                    <div class="maintenance-card-top">
-                                        <div>
-                                            <div class="maintenance-card-title">@item.Name</div>
-                                            <div class="maintenance-card-code">@item.Code</div>
-                                        </div>
-                                        <span class="@ToneClass(item.Tone)">@item.Badge</span>
-                                    </div>
-                                    <div class="maintenance-card-detail">@item.Detail</div>
-                                    <div class="maintenance-card-actions">
-                                        @if (editableSection)
-                                        {
-                                            <a class="btn btn-sm btn-outline-primary" asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-editId="@item.Id">Editar</a>
-                                            <form asp-action="Delete" method="post">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="section" value="@Model.SelectedSection" />
-                                                <input type="hidden" name="id" value="@item.Id" />
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-                                            </form>
-                                        }
-                                        else if (Model.SelectedSection == "empleados")
-                                        {
-                                            <a class="btn btn-sm btn-outline-secondary" asp-controller="Administration" asp-action="Users" asp-route-editUsername="@item.Code">Ir a usuario</a>
-                                        }
-                                        else
-                                        {
-                                            <a class="btn btn-sm btn-outline-secondary" asp-action="Index" asp-route-section="productos">Configurar</a>
-                                        }
-                                    </div>
-                                </article>
-                            }
-                        </section>
+                        <article class="@RowClass(item.IsActive)">
+                            <div class="maintenance-row-main">
+                                <strong>@item.Name</strong>
+                                <small>@item.Code</small>
+                            </div>
+                            <div class="maintenance-row-code">@item.Code</div>
+                            <div class="maintenance-row-detail">@item.Detail</div>
+                            <div class="maintenance-row-status">
+                                <span class="@ToneClass(item.Tone)">@item.Badge</span>
+                            </div>
+                            <div class="maintenance-row-actions">
+                                @if (editableSection)
+                                {
+                                    <form asp-action="ToggleStatus" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="section" value="@Model.SelectedSection" />
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" class="btn btn-sm @(item.IsActive ? "btn-outline-warning" : "btn-outline-success")">@(item.IsActive ? "Inhabilitar" : "Habilitar")</button>
+                                    </form>
+                                    <a class="btn btn-sm btn-outline-primary" asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-editId="@item.Id">Editar</a>
+                                }
+                                else if (Model.SelectedSection == "empleados")
+                                {
+                                    <a class="btn btn-sm btn-outline-secondary" asp-controller="Administration" asp-action="Users" asp-route-editUsername="@item.Code">Usuario</a>
+                                }
+                                else
+                                {
+                                    <a class="btn btn-sm btn-outline-secondary" asp-action="Index" asp-route-section="productos">Ver</a>
+                                }
+                            </div>
+                        </article>
                     }
                 </div>
+            }
+        </div>
 
-                <aside class="maintenance-editor-panel @(editableSection ? string.Empty : "is-disabled")">
-                    <div class="maintenance-editor-head">
-                        <div>
-                            <div class="maintenance-sidebar-title">Editor rapido</div>
-                            <h3>@(editableSection ? "Alta y edicion" : "Modulo no editable aqui")</h3>
-                        </div>
+        @if (editableSection && Model.ShowEditor)
+        {
+            <aside class="maintenance-side-editor">
+                <div class="maintenance-editor-titlebar">
+                    <div>
+                        <div class="maintenance-editor-caption">@(Model.Editor.Id is > 0 ? "Editar registro" : "Nuevo registro")</div>
+                        <h3>@current.Title</h3>
+                    </div>
+                    <a class="btn btn-sm btn-outline-secondary" asp-action="Index" asp-route-section="@Model.SelectedSection">Cerrar</a>
+                </div>
+
+                <form asp-action="Save" method="post" class="maintenance-editor-form compact">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Section" value="@Model.SelectedSection" />
+                    <input type="hidden" name="Id" value="@Model.Editor.Id" />
+
+                    <div>
+                        <label class="form-label" for="maintenanceCode">Codigo</label>
+                        <input class="form-control" id="maintenanceCode" name="Code" value="@Model.Editor.Code" />
                     </div>
 
-                    @if (editableSection)
-                    {
-                        <form asp-action="Save" method="post" class="maintenance-editor-form">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" asp-for="Editor.Id" />
-                            <input type="hidden" asp-for="Editor.Section" />
-                            <input type="hidden" name="Section" value="@Model.SelectedSection" />
-                            <input type="hidden" name="Id" value="@Model.Editor.Id" />
+                    <div>
+                        <label class="form-label" for="maintenanceName">Nombre</label>
+                        <input class="form-control" id="maintenanceName" name="Name" value="@Model.Editor.Name" />
+                    </div>
 
-                            <div class="mb-3">
-                                <label class="form-label" for="maintenanceCode">Codigo</label>
-                                <input class="form-control" id="maintenanceCode" name="Code" value="@Model.Editor.Code" />
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label" for="maintenanceName">Nombre</label>
-                                <input class="form-control" id="maintenanceName" name="Name" value="@Model.Editor.Name" />
-                            </div>
-                            @if (Model.SelectedSection == "productos")
-                            {
-                                <div class="mb-3">
-                                    <label class="form-label" for="maintenancePrice">Precio base</label>
-                                    <input class="form-control" id="maintenancePrice" name="Price" type="number" step="0.01" min="0" value="@Model.Editor.Price" />
-                                </div>
-                            }
-                            <div class="form-check form-switch mb-3">
-                                <input class="form-check-input" type="checkbox" id="maintenanceActive" name="IsActive" value="true" @(Model.Editor.IsActive ? "checked" : null) />
-                                <input type="hidden" name="IsActive" value="false" />
-                                <label class="form-check-label" for="maintenanceActive">Activo para operacion</label>
-                            </div>
-                            <div class="maintenance-editor-actions">
-                                <button type="submit" class="btn btn-primary">Guardar</button>
-                                <a class="btn btn-outline-secondary" asp-action="Index" asp-route-section="@Model.SelectedSection">Nuevo</a>
-                            </div>
-                        </form>
-                    }
-                    else if (Model.SelectedSection == "empleados")
+                    @if (Model.SelectedSection == "productos")
                     {
-                        <div class="app-empty-state compact">
-                            <strong>La gestion de empleados vive en Usuarios</strong>
-                            <span>Desde administracion puedes crear, activar, inactivar, resetear contrasenas y controlar permisos por vista.</span>
-                            <a class="btn btn-outline-primary" asp-controller="Administration" asp-action="Users">Abrir usuarios</a>
+                        <div>
+                            <label class="form-label" for="maintenancePrice">Precio base</label>
+                            <input class="form-control" id="maintenancePrice" name="Price" type="number" step="0.01" min="0" value="@Model.Editor.Price" />
                         </div>
                     }
-                    else
-                    {
-                        <div class="app-empty-state compact">
-                            <strong>Selecciona un catalogo editable</strong>
-                            <span>Zonas, productos, dias, vendedores, cobradores y formas de pago se editan con el panel lateral.</span>
-                        </div>
-                    }
-                </aside>
-            </div>
-        </div>
+
+                    <label class="admin-check-chip maintenance-check-chip">
+                        <input type="hidden" name="IsActive" value="false" />
+                        <input type="checkbox" name="IsActive" value="true" @(Model.Editor.IsActive ? "checked" : null) />
+                        <span>Activo para operacion</span>
+                    </label>
+
+                    <div class="maintenance-editor-actions compact">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <a class="btn btn-outline-secondary" asp-action="Index" asp-route-section="@Model.SelectedSection">Cancelar</a>
+                    </div>
+                </form>
+            </aside>
+        }
     </section>
 </div>
