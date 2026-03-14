@@ -99,11 +99,20 @@
                             <div class="maintenance-row-actions">
                                 @if (editableSection)
                                 {
-                                    <form asp-action="ToggleStatus" method="post" data-ajaxify="true" data-ajax-target=".maintenance-compact-page">
+                                    <form asp-action="ToggleStatus" method="post" class="maintenance-toggle-form admin-inline-toggle-form" data-ajaxify="true" data-ajax-target=".maintenance-compact-page">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="section" value="@Model.SelectedSection" />
                                         <input type="hidden" name="id" value="@item.Id" />
-                                        <button type="submit" class="btn btn-sm @(item.IsActive ? "btn-outline-warning" : "btn-outline-success")">@(item.IsActive ? "Inhabilitar" : "Habilitar")</button>
+                                        <input type="hidden" name="isActive" value="@(item.IsActive ? "true" : "false")" />
+                                        <label class="app-switch maintenance-status-switch" title="Cambiar estado del registro">
+                                            <input type="checkbox"
+                                                   class="app-switch-input"
+                                                   @(item.IsActive ? "checked" : null)
+                                                   data-toggle-submit="true"
+                                                   data-working-label="Procesando..." />
+                                            <span class="app-switch-track"></span>
+                                            <span class="app-switch-label">@(item.IsActive ? "Activo" : "Inactivo")</span>
+                                        </label>
                                     </form>
                                     <a class="btn btn-sm btn-outline-primary" asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-editId="@item.Id" data-ajax-link="true" data-ajax-target=".maintenance-compact-page">Editar</a>
                                 }

@@ -49,7 +49,7 @@ public sealed class MaintenanceController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult ToggleStatus(string section, long id)
+    public IActionResult ToggleStatus(string section, long id, bool isActive)
     {
         var record = _repository.GetMaintenanceCatalog(section).FirstOrDefault(x => x.Id == id);
         if (record is null)
@@ -65,10 +65,10 @@ public sealed class MaintenanceController : Controller
             Code = record.Code,
             Name = record.Name,
             Price = record.Price,
-            IsActive = !record.IsActive
+            IsActive = isActive
         });
 
-        TempData["MaintenanceMessage"] = !record.IsActive
+        TempData["MaintenanceMessage"] = isActive
             ? "Registro habilitado correctamente."
             : "Registro inhabilitado correctamente.";
 
@@ -195,3 +195,4 @@ public sealed class MaintenanceController : Controller
         };
     }
 }
+

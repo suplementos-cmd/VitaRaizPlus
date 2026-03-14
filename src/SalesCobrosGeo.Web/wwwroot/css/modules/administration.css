@@ -956,6 +956,10 @@
   margin-top: 0;
 }
 
+.admin-status-switch .app-switch-label {
+  min-width: 64px;
+}
+
 .admin-editor-modal {
   position: fixed;
   inset: 0;

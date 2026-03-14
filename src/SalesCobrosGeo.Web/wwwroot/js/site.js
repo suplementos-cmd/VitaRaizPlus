@@ -299,6 +299,35 @@
         }
     }
 
+    function bindInlineToggles(root) {
+        root.querySelectorAll('[data-toggle-submit="true"]').forEach((toggle) => {
+            if (toggle.dataset.bound === 'true') {
+                return;
+            }
+
+            toggle.dataset.bound = 'true';
+            toggle.addEventListener('change', () => {
+                const form = toggle.closest('form');
+                const hidden = form?.querySelector('input[type="hidden"][name="isActive"]');
+                const label = form?.querySelector('.app-switch-label');
+                if (!form || !hidden) {
+                    return;
+                }
+
+                hidden.value = toggle.checked ? 'true' : 'false';
+                if (label) {
+                    label.textContent = toggle.checked ? 'Activo' : 'Inactivo';
+                }
+
+                if (typeof window.jQuery !== 'undefined') {
+                    $(form).trigger('submit');
+                } else {
+                    form.submit();
+                }
+            });
+        });
+    }
+
     function replaceAjaxTarget(targetSelector, html) {
         const target = document.querySelector(targetSelector);
         if (!target) {
@@ -437,6 +466,7 @@
         initToasts(root);
         bindCollectorFeatures(root);
         bindAdminUsers(root);
+        bindInlineToggles(root);
     }
 
     function boot() {
