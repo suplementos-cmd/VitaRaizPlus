@@ -1,4 +1,4 @@
-﻿@model SalesCobrosGeo.Web.Models.Dashboard.DashboardPageViewModel
+@model SalesCobrosGeo.Web.Models.Dashboard.DashboardPageViewModel
 @{
     ViewData["Title"] = "Dashboard";
 
@@ -14,7 +14,7 @@
         <section class="dashboard-filter-bar dashboard-filter-panel">
             <div class="dashboard-filter-title">Filtros</div>
             <div class="dashboard-filter-copy">Selecciona el rango y navega el resumen administrativo.</div>
-            <form method="get" class="dashboard-period-form compact-range-form">
+            <form method="get" class="dashboard-period-form compact-range-form" data-ajaxify="true" data-ajax-target=".dashboard-shell">
                 <div class="compact-range-line compact-range-stack">
                     <div class="compact-range-field">
                         <label for="from">Inicio</label>

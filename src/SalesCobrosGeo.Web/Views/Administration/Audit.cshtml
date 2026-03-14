@@ -1,4 +1,4 @@
-﻿@model SalesCobrosGeo.Web.Models.Administration.AuditListPageViewModel
+@model SalesCobrosGeo.Web.Models.Administration.AuditListPageViewModel
 @{
     ViewData["Title"] = "Bitacora de auditoria";
 }
@@ -10,7 +10,7 @@
             <div class="admin-console-subtitle">Consulta compacta de eventos. Entra al detalle solo cuando realmente lo necesites.</div>
         </div>
         <div class="admin-console-actions">
-            <a class="btn btn-outline-secondary" asp-action="Users">Volver a usuarios</a>
+            <a class="btn btn-outline-secondary" asp-action="Users" data-ajax-link="true" data-ajax-target=".admin-console-page">Volver a usuarios</a>
         </div>
     </section>
 
@@ -34,9 +34,9 @@
                 <div class="admin-section-subtitle">Grid compacto. Toca cualquier fila para ir al detalle completo.</div>
             </div>
             <div class="admin-audit-pager compact">
-                <a class="btn btn-sm btn-outline-secondary @(Model.AuditPage <= 1 ? "disabled" : string.Empty)" asp-action="Audit" asp-route-page="@(Model.AuditPage - 1)">Anterior</a>
+                <a class="btn btn-sm btn-outline-secondary @(Model.AuditPage <= 1 ? "disabled" : string.Empty)" asp-action="Audit" asp-route-page="@(Model.AuditPage - 1)" data-ajax-link="true" data-ajax-target=".admin-audit-page">Anterior</a>
                 <span>Pag. @Model.AuditPage / @Model.TotalAuditPages</span>
-                <a class="btn btn-sm btn-outline-secondary @(Model.AuditPage >= Model.TotalAuditPages ? "disabled" : string.Empty)" asp-action="Audit" asp-route-page="@(Model.AuditPage + 1)">Siguiente</a>
+                <a class="btn btn-sm btn-outline-secondary @(Model.AuditPage >= Model.TotalAuditPages ? "disabled" : string.Empty)" asp-action="Audit" asp-route-page="@(Model.AuditPage + 1)" data-ajax-link="true" data-ajax-target=".admin-audit-page">Siguiente</a>
             </div>
         </div>
 

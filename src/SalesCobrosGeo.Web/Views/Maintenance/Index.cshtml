@@ -24,7 +24,7 @@
         </div>
         @if (editableSection)
         {
-            <a class="btn btn-primary maintenance-add-btn" asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-create="true">Agregar</a>
+            <a class="btn btn-primary maintenance-add-btn" asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-create="true" data-ajax-link="true" data-ajax-target=".maintenance-compact-page">Agregar</a>
         }
     </section>
 
@@ -48,7 +48,9 @@
         {
             <a class="maintenance-tab @(navItem.Key == Model.SelectedSection ? "active" : string.Empty)"
                asp-action="Index"
-               asp-route-section="@navItem.Key">
+               asp-route-section="@navItem.Key"
+               data-ajax-link="true"
+               data-ajax-target=".maintenance-compact-page">
                 <span>@navItem.Title</span>
                 <small>@navItem.Items.Count</small>
             </a>
@@ -97,13 +99,13 @@
                             <div class="maintenance-row-actions">
                                 @if (editableSection)
                                 {
-                                    <form asp-action="ToggleStatus" method="post">
+                                    <form asp-action="ToggleStatus" method="post" data-ajaxify="true" data-ajax-target=".maintenance-compact-page">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="section" value="@Model.SelectedSection" />
                                         <input type="hidden" name="id" value="@item.Id" />
                                         <button type="submit" class="btn btn-sm @(item.IsActive ? "btn-outline-warning" : "btn-outline-success")">@(item.IsActive ? "Inhabilitar" : "Habilitar")</button>
                                     </form>
-                                    <a class="btn btn-sm btn-outline-primary" asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-editId="@item.Id">Editar</a>
+                                    <a class="btn btn-sm btn-outline-primary" asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-editId="@item.Id" data-ajax-link="true" data-ajax-target=".maintenance-compact-page">Editar</a>
                                 }
                                 else if (Model.SelectedSection == "empleados")
                                 {
@@ -128,10 +130,10 @@
                         <div class="maintenance-editor-caption">@(Model.Editor.Id is > 0 ? "Editar registro" : "Nuevo registro")</div>
                         <h3>@current.Title</h3>
                     </div>
-                    <a class="btn btn-sm btn-outline-secondary" asp-action="Index" asp-route-section="@Model.SelectedSection">Cerrar</a>
+                    <a class="btn btn-sm btn-outline-secondary" asp-action="Index" asp-route-section="@Model.SelectedSection" data-ajax-link="true" data-ajax-target=".maintenance-compact-page">Cerrar</a>
                 </div>
 
-                <form asp-action="Save" method="post" class="maintenance-editor-form compact">
+                <form asp-action="Save" method="post" class="maintenance-editor-form compact" data-ajaxify="true" data-ajax-target=".maintenance-compact-page">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="Section" value="@Model.SelectedSection" />
                     <input type="hidden" name="Id" value="@Model.Editor.Id" />
@@ -162,7 +164,7 @@
 
                     <div class="maintenance-editor-actions compact">
                         <button type="submit" class="btn btn-primary">Guardar</button>
-                        <a class="btn btn-outline-secondary" asp-action="Index" asp-route-section="@Model.SelectedSection">Cancelar</a>
+                        <a class="btn btn-outline-secondary" asp-action="Index" asp-route-section="@Model.SelectedSection" data-ajax-link="true" data-ajax-target=".maintenance-compact-page">Cancelar</a>
                     </div>
                 </form>
             </aside>
