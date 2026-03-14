@@ -42,7 +42,7 @@
     <link rel="stylesheet" href="~/css/modules/security.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/SalesCobrosGeo.Web.styles.css" asp-append-version="true" />
 </head>
-<body data-role-theme="@theme" data-authenticated="@(isAuthenticated ? "true" : "false")">
+<body data-role-theme="@theme" data-authenticated="@(isAuthenticated ? "true" : "false")" data-controller="@currentController.ToLowerInvariant()" data-action="@currentAction.ToLowerInvariant()">
     <div class="app-shell">
         <header class="app-header-shell">
             <nav class="navbar navbar-expand-lg navbar-dark app-topbar">

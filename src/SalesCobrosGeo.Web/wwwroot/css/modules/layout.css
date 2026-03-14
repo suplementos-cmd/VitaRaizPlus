@@ -186,3 +186,79 @@
     padding: 0.22rem 0.38rem;
   }
 }
+
+@media (max-width: 640px) {
+  .mobile-bottom-nav {
+    position: fixed;
+    left: 50%;
+    bottom: 6px;
+    transform: translateX(-50%);
+    width: min(calc(100vw - 14px), 390px);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    padding: 7px 8px 10px;
+    border-radius: 22px 22px 14px 14px;
+    background: linear-gradient(180deg, rgba(27, 44, 70, 0.96), rgba(34, 60, 96, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 16px 34px rgba(10, 24, 46, 0.28);
+    backdrop-filter: blur(16px);
+    z-index: 1045;
+  }
+
+  .mobile-bottom-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 58px;
+    padding: 6px 4px 7px;
+    border-radius: 16px;
+    color: rgba(236, 242, 255, 0.78);
+    text-decoration: none;
+    transition: transform 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+  }
+
+  .mobile-bottom-link.active {
+    background: linear-gradient(180deg, rgba(84, 132, 255, 0.35), rgba(55, 101, 219, 0.45));
+    color: #fff;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  .mobile-bottom-link:active {
+    transform: translateY(1px) scale(0.98);
+  }
+
+  .mobile-bottom-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.09);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+  }
+
+  .mobile-bottom-link.active .mobile-bottom-icon {
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  .mobile-bottom-text {
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  body[data-controller='cobros'] .mobile-bottom-nav {
+    background: linear-gradient(180deg, rgba(20, 52, 115, 0.98), rgba(29, 71, 150, 0.98));
+    box-shadow: 0 18px 36px rgba(13, 38, 87, 0.34);
+  }
+
+  body[data-controller='cobros'] .mobile-bottom-link.active {
+    background: linear-gradient(180deg, rgba(122, 168, 255, 0.32), rgba(80, 123, 228, 0.52));
+  }
+}
