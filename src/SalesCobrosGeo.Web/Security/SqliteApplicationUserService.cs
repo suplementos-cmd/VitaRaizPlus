@@ -72,6 +72,11 @@ public sealed class SqliteApplicationUserService : IApplicationUserService
             return false;
         }
 
+        if (user.Username.Equals("RaizAdmin", StringComparison.OrdinalIgnoreCase) && !isActive)
+        {
+            return false;
+        }
+
         user.IsActive = isActive;
         user.UpdatedUtc = DateTime.UtcNow;
         _dbContext.AuditLogs.Add(new AuditLogEntity
