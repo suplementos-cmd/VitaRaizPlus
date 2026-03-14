@@ -493,3 +493,354 @@
     text-align: left;
   }
 }
+
+.admin-console-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.admin-console-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 4px 2px 0;
+}
+
+.admin-console-title {
+  margin: 0;
+  color: #1e324f;
+  font-size: 1.48rem;
+  font-weight: 800;
+}
+
+.admin-console-subtitle {
+  margin-top: 4px;
+  color: #667791;
+  font-size: 0.92rem;
+}
+
+.admin-console-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-console-summarygrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-console-summarygrid.audit-only {
+  grid-template-columns: repeat(2, minmax(0, 220px));
+}
+
+.admin-console-summarycard {
+  padding: 14px 15px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid #dce6f2;
+  box-shadow: var(--vr-shadow-soft);
+}
+
+.admin-console-summarycard span,
+.admin-console-summarycard small,
+.admin-console-summarycard a {
+  display: block;
+}
+
+.admin-console-summarycard span {
+  color: #6d7e98;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-console-summarycard strong {
+  display: block;
+  margin-top: 4px;
+  color: #18365f;
+  font-size: 1.18rem;
+}
+
+.admin-console-summarycard small,
+.admin-console-summarycard a {
+  margin-top: 6px;
+  color: #6a7b96;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.admin-console-summarycard.success strong { color: #17784f; }
+.admin-console-summarycard.info strong { color: #2657a8; }
+.admin-console-summarycard.warning strong { color: #ba6a18; }
+
+.admin-console-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+  gap: 16px;
+  align-items: start;
+}
+
+.admin-console-main {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-users-section,
+.admin-security-section,
+.admin-editor-dock,
+.compact-shell {
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid #dbe5f0;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--vr-shadow-soft);
+}
+
+.admin-section-head.compact {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.admin-section-title {
+  margin: 0;
+  color: #223753;
+  font-size: 1.14rem;
+  font-weight: 800;
+}
+
+.admin-section-subtitle {
+  margin-top: 4px;
+  color: #6a7b95;
+  font-size: 0.84rem;
+}
+
+.admin-users-grid-compact,
+.admin-session-listcompact {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-user-rowcard,
+.admin-session-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid #dfe7f2;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.admin-user-rowcard.is-active {
+  border-left: 4px solid #22a062;
+}
+
+.admin-user-rowcard.is-inactive {
+  border-left: 4px solid #d0566f;
+}
+
+.admin-user-rowmain,
+.admin-session-rowmain {
+  min-width: 0;
+}
+
+.admin-user-rowtop,
+.admin-session-rowtop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-user-rowname {
+  color: #1d3454;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.admin-user-rowusername {
+  margin-top: 2px;
+  color: #6a7c97;
+  font-size: 0.84rem;
+}
+
+.admin-user-rolepill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #eef3fb;
+  color: #315697;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.admin-user-rowmeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 8px;
+}
+
+.admin-user-rowmeta span {
+  color: #61748f;
+  font-size: 0.8rem;
+}
+
+.admin-user-rowside {
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+
+.admin-user-statusbadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.admin-user-statusbadge.active,
+.admin-session-badge.connected {
+  background: #e5f8ec;
+  color: #1d7c47;
+}
+
+.admin-user-statusbadge.inactive,
+.admin-session-badge.inactive {
+  background: #fdeaea;
+  color: #a13535;
+}
+
+.admin-session-badge.idle {
+  background: #eef4ff;
+  color: #2f5da5;
+}
+
+.admin-user-rowactions,
+.admin-audit-pager.compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-editor-dock {
+  position: sticky;
+  top: 84px;
+}
+
+.admin-user-form.compact,
+.admin-reset-form.compact {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.admin-form-grid.compact.single,
+.admin-permissions-grid.compact.single {
+  grid-template-columns: 1fr;
+}
+
+.admin-form-switches.compact,
+.admin-editor-actions.compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.compact-table .admin-audit-row.compact-row {
+  grid-template-columns: 150px 140px 1fr 140px;
+}
+
+.admin-audit-detail-body.secondary {
+  margin-top: 12px;
+  background: #fff;
+}
+
+@media (max-width: 1199px) {
+  .admin-console-summarygrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-console-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-editor-dock {
+    position: static;
+  }
+}
+
+@media (max-width: 767px) {
+  .admin-console-topbar,
+  .admin-section-head.compact,
+  .admin-user-rowcard,
+  .admin-session-row {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .admin-console-summarygrid,
+  .admin-console-summarygrid.audit-only {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-console-actions,
+  .admin-user-rowactions,
+  .admin-audit-pager.compact,
+  .admin-editor-actions.compact,
+  .admin-form-switches.compact {
+    flex-direction: column;
+  }
+
+  .admin-console-actions .btn,
+  .admin-user-rowactions .btn,
+  .admin-user-rowactions form,
+  .admin-user-rowactions form .btn,
+  .admin-audit-pager.compact .btn,
+  .admin-editor-actions.compact .btn {
+    width: 100%;
+  }
+
+  .admin-user-rowside {
+    justify-items: stretch;
+  }
+
+  .compact-table .admin-audit-row.compact-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-console-summarygrid,
+  .admin-console-summarygrid.audit-only {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-users-section,
+  .admin-security-section,
+  .admin-editor-dock,
+  .compact-shell {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .admin-console-title {
+    font-size: 1.2rem;
+  }
+}
