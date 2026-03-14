@@ -25,10 +25,13 @@
     };
 }
 
-<div class="collector-register-page">
-    <div class="collector-register-topbar">
-        <a class="btn btn-outline-secondary btn-sm" asp-controller="Cobros" asp-action="Index" asp-route-profile="@Model.ReturnProfile" asp-route-day="@Model.ReturnDay" asp-route-status="@Model.ReturnStatus" asp-route-zone="@Model.ReturnZone">Volver</a>
-        <div class="collector-register-title-wrap">
+<div class="collector-register-page collector-register-page-tight">
+    <div class="collector-register-topbar compact">
+        <a class="btn btn-outline-secondary btn-sm collector-back-btn" asp-controller="Cobros" asp-action="Index" asp-route-profile="@Model.ReturnProfile" asp-route-day="@Model.ReturnDay" asp-route-status="@Model.ReturnStatus" asp-route-zone="@Model.ReturnZone">
+            <span class="collector-back-icon">?</span>
+            <span class="collector-back-text">Volver</span>
+        </a>
+        <div class="collector-register-title-wrap compact">
             <h1 class="collector-register-title">Venta para cobro</h1>
             <div class="collector-register-subtitle">El estado se actualiza automaticamente al registrar cobro o abono</div>
         </div>
@@ -41,21 +44,21 @@
 
     @if (Model.PortfolioItem is not null)
     {
-        <div class="collector-register-hero mb-3">
+        <div class="collector-register-hero mb-3 compact-hero">
             <img class="image-previewable" data-previewable="true" src="@mainPhoto" alt="Venta" loading="lazy" decoding="async" />
             <div class="collector-register-overlay">
                 <div class="collector-register-badge @StatusClass(Model.PortfolioItem.Estatus)">@Model.PortfolioItem.Estatus</div>
             </div>
         </div>
 
-        <div class="collector-quick-actions collector-quick-actions-wide mb-3">
+        <div class="collector-quick-actions collector-quick-actions-wide mb-3 compact-actions">
             @if (!string.IsNullOrWhiteSpace(cleanPhone))
             {
                 <a class="btn btn-outline-secondary" href="tel:@cleanPhone">Llamar</a>
                 <a class="btn btn-outline-success" href="https://wa.me/@cleanPhone" target="_blank" rel="noopener">WhatsApp</a>
             }
-            <a class="btn btn-outline-primary @(mapLink == "#" ? "disabled" : string.Empty)" href="@mapLink" target="_blank" rel="noopener">Abrir mapa</a>
-            <button type="button" class="btn btn-outline-primary" id="btnCollectorGps">Tomar GPS</button>
+            <a class="btn btn-outline-primary @(mapLink == "#" ? "disabled" : string.Empty)" href="@mapLink" target="_blank" rel="noopener">Abrir</a>
+            <button type="button" class="btn btn-outline-primary" id="btnCollectorGps">GPS</button>
         </div>
 
         <div class="collector-register-grid mb-3">
