@@ -10,44 +10,83 @@
 }
 
 <div class="sales-detail-mobile">
-    <div class="detail-topbar">
-        <a class="btn btn-sm btn-outline-secondary" asp-controller="Sales" asp-action="Index">Volver</a>
-        <div class="detail-id">@sale.IdV</div>
-        <a class="btn btn-sm btn-primary detail-edit-fab" asp-controller="Sales" asp-action="Edit" asp-route-id="@sale.IdV">Editar</a>
+    <div class="sales-detail-appbar">
+        <a class="sales-detail-navbtn" asp-controller="Sales" asp-action="Index" aria-label="Volver">&#8592;</a>
+        <div class="sales-detail-headcopy">
+            <strong>@sale.NombreCliente</strong>
+            <span>Venta #@sale.NumVenta</span>
+        </div>
+        <a class="sales-detail-navbtn primary" asp-controller="Sales" asp-action="Edit" asp-route-id="@sale.IdV" aria-label="Editar">ED</a>
     </div>
 
-    <div class="detail-hero">
+    <div class="detail-hero sales-detail-hero">
         <img class="image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoFachada, "https://placehold.co/900x420?text=Fachada")" alt="Fachada" loading="lazy" decoding="async" />
     </div>
 
-    <div class="card card-body mt-3">
-        <div class="detail-client-photo-wrap">
+    <div class="sales-detail-summary">
+        <span class="sales-detail-pill">@sale.Zona</span>
+        <span class="sales-detail-pill">@sale.DiaCobro</span>
+        <span class="sales-detail-pill amount">@sale.ImporteTotal.ToString("0,0")</span>
+    </div>
+
+    <div class="sales-detail-actionrow">
+        @if (!string.IsNullOrWhiteSpace(sale.Celular))
+        {
+            <a class="sales-detail-actionbtn" href="tel:@sale.Celular">TEL</a>
+        }
+        @if (!string.IsNullOrWhiteSpace(sale.Coordenadas))
+        {
+            <a class="sales-detail-actionbtn" href="https://maps.google.com/?q=@sale.Coordenadas" target="_blank" rel="noopener noreferrer">GPS</a>
+        }
+        <a class="sales-detail-actionbtn primary" asp-controller="Sales" asp-action="Edit" asp-route-id="@sale.IdV">Editar</a>
+    </div>
+
+    <div class="sales-detail-panel mt-3">
+        <div class="detail-client-photo-wrap sales-detail-photo">
             <img class="detail-client-photo image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoCliente, "https://placehold.co/320x220?text=Cliente")" alt="Foto cliente" loading="lazy" decoding="async" />
             <div class="text-muted small">Toca la imagen para ampliar</div>
         </div>
     </div>
 
-    <div class="detail-grid card card-body mt-3">
-        <div><strong>NUM_VENTA</strong><br /><span class="detail-value">@sale.NumVenta</span></div>
-        <div><strong>FECHA DE VENTA</strong><br /><span class="detail-highlight">@sale.FechaVenta.ToString("d/M/yyyy")</span></div>
-        <div><strong>CLIENTE</strong><br /><span class="detail-value">@sale.NombreCliente</span></div>
-        <div><strong>CELULAR</strong><br /><span class="detail-value">@sale.Celular</span></div>
-        <div><strong>ZONA</strong><br /><span class="detail-highlight">@sale.Zona</span></div>
-        <div><strong>FORMA DE PAGO</strong><br /><span class="detail-value">@sale.FormaPago</span></div>
-        <div><strong>DIA DE COBRO</strong><br /><span class="detail-highlight">@sale.DiaCobro</span></div>
-        <div><strong>IMPORTE TOTAL</strong><br /><span class="detail-amount">@sale.ImporteTotal.ToString("0,0")</span></div>
-        <div><strong>COORDENADAS</strong><br /><span class="detail-value">@sale.Coordenadas</span></div>
-        <div><strong>ESTADO</strong><br /><span class="detail-value">@sale.Estado2</span></div>
+    <div class="sales-detail-form mt-3">
+        <div class="sales-detail-row">
+            <span>Fecha venta</span>
+            <strong>@sale.FechaVenta.ToString("d/M/yyyy")</strong>
+        </div>
+        <div class="sales-detail-row">
+            <span>Cliente</span>
+            <strong>@sale.NombreCliente</strong>
+        </div>
+        <div class="sales-detail-row">
+            <span>Celular</span>
+            <strong>@sale.Celular</strong>
+        </div>
+        <div class="sales-detail-row">
+            <span>Vendedora</span>
+            <strong>@sale.Vendedor</strong>
+        </div>
+        <div class="sales-detail-row">
+            <span>Forma pago</span>
+            <strong>@sale.FormaPago</strong>
+        </div>
+        <div class="sales-detail-row">
+            <span>Estado</span>
+            <strong>@sale.Estado2</strong>
+        </div>
+        <div class="sales-detail-row">
+            <span>Coordenadas</span>
+            <strong>@sale.Coordenadas</strong>
+        </div>
     </div>
 
-    <div class="card mt-3">
-        <div class="card-header">Productos</div>
-        <div class="card-body">
+    <div class="sales-detail-products mt-3">
+        <div class="sales-detail-sectiontitle">Productos</div>
+        <div class="sales-detail-productlist">
             @foreach (var p in sale.Productos)
             {
-                <div class="d-flex justify-content-between border-bottom py-2">
+                <div class="sales-detail-productitem">
                     <span>@p.ProductCode x @p.Quantity</span>
-                    <span>@((p.UnitPrice ?? 0m) * p.Quantity)</span>
+                    <strong>@((p.UnitPrice ?? 0m) * p.Quantity)</strong>
                 </div>
             }
         </div>

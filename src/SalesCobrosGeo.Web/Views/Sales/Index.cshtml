@@ -9,12 +9,38 @@
 }
 
 <div class="ventas-mobile">
+    <section class="sales-app-header">
+        <div class="sales-app-header-main">
+            <button type="button" class="sales-app-iconbtn" data-bs-toggle="offcanvas" data-bs-target="#mobileMoreMenu" aria-label="Abrir menu">
+                <span aria-hidden="true">&#9776;</span>
+            </button>
+            <div class="sales-app-brand">
+                <span class="sales-app-brand-mark">VE</span>
+                <div>
+                    <strong>Ventas</strong>
+                    <small>Modo app movil</small>
+                </div>
+            </div>
+        </div>
+        <div class="sales-app-header-actions">
+            <button type="button" class="sales-app-iconbtn" data-sales-search-toggle="true" aria-label="Buscar ventas">
+                <span aria-hidden="true">&#8981;</span>
+            </button>
+        </div>
+    </section>
+
+    <section class="sales-app-search" data-sales-search-shell="true" hidden>
+        <div class="sales-app-search-box">
+            <span class="sales-app-search-icon" aria-hidden="true">&#8981;</span>
+            <input id="salesAppSearch" type="search" placeholder="Buscar cliente, zona, producto o vendedora" autocomplete="off" />
+        </div>
+    </section>
+
     <div class="ventas-toolbar">
         <div>
             <div class="ventas-title">Perfil ventas</div>
             <div class="ventas-subtitle">Ventas agrupadas por semana y dia</div>
         </div>
-        <a class="btn btn-primary btn-add" asp-controller="Sales" asp-action="Create">+ Agregar</a>
     </div>
 
     @if (TempData["SalesMessage"] is string msg)
@@ -42,37 +68,54 @@
                 <div class="sales-week-body">
                     @foreach (var group in week.Days)
                     {
-                        <div class="day-header compact">
+                        <div class="day-header compact sales-app-dayhead">
                             <span>@group.Day.ToString("ddd dd/MM")</span>
                             <span class="day-count">@group.Sales.Count</span>
                         </div>
 
                         foreach (var sale in group.Sales)
                         {
-                            <a class="sale-touch-card compact" asp-controller="Sales" asp-action="Details" asp-route-id="@sale.IdV">
-                                <div class="sale-images compact">
-                                    <img class="image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoFachada, "https://placehold.co/96x72?text=Fachada")" alt="Fachada" loading="lazy" decoding="async" />
-                                    <img class="image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoCliente, "https://placehold.co/96x72?text=Cliente")" alt="Cliente" loading="lazy" decoding="async" />
+                            var firstProduct = sale.Productos.FirstOrDefault()?.ProductCode ?? sale.Producto;
+                            var saleSearch = $"{sale.NombreCliente} {sale.Zona} {sale.DiaCobro} {sale.Vendedor} {firstProduct}".ToLowerInvariant();
+                            var mapsUrl = $"https://maps.google.com/?q={sale.Coordenadas}";
+                            <article class="sales-app-record" data-sales-search="@saleSearch">
+                                <a class="sales-app-record-link" asp-controller="Sales" asp-action="Details" asp-route-id="@sale.IdV">
+                                    <div class="sales-app-record-photo">
+                                        <img class="image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoFachada, "https://placehold.co/96x96?text=Venta")" alt="Fachada" loading="lazy" decoding="async" />
+                                    </div>
+                                    <div class="sales-app-record-body">
+                                        <div class="sales-app-record-top">
+                                            <strong class="sales-app-record-client">@sale.NombreCliente</strong>
+                                            <span class="sales-app-record-amount">@sale.ImporteTotal.ToString("0,0")</span>
+                                        </div>
+                                        <div class="sales-app-record-line">
+                                            <span class="sales-app-record-zone">@sale.Zona</span>
+                                            <span>@sale.DiaCobro</span>
+                                        </div>
+                                        <div class="sales-app-record-line muted">
+                                            <span>@sale.Vendedor</span>
+                                            <span>@sale.FormaPago</span>
+                                        </div>
+                                        <div class="sales-app-record-product">@firstProduct</div>
+                                    </div>
+                                </a>
+                                <div class="sales-app-record-actions">
+                                    @if (!string.IsNullOrWhiteSpace(sale.Coordenadas))
+                                    {
+                                        <a class="sales-app-actionbtn" href="@mapsUrl" target="_blank" rel="noopener noreferrer">GPS</a>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(sale.Celular))
+                                    {
+                                        <a class="sales-app-actionbtn" href="tel:@sale.Celular">TEL</a>
+                                    }
                                 </div>
-                                <div class="sale-main compact">
-                                    <div class="sale-main-top">
-                                        <div class="sale-client">@sale.NombreCliente</div>
-                                        <div class="sale-amount">@sale.ImporteTotal.ToString("0,0")</div>
-                                    </div>
-                                    <div class="sale-meta-row">
-                                        <span>@sale.Zona</span>
-                                        <span>@sale.FormaPago</span>
-                                    </div>
-                                    <div class="sale-meta-row muted">
-                                        <span>Venta #@sale.NumVenta</span>
-                                        <span>@sale.DiaCobro</span>
-                                    </div>
-                                </div>
-                            </a>
+                            </article>
                         }
                     }
                 </div>
             </details>
         }
     }
+
+    <a class="sales-app-fab" asp-controller="Sales" asp-action="Create" aria-label="Agregar venta">+</a>
 </div>
