@@ -177,6 +177,38 @@
         });
     }
 
+    function bindSalesFeatures(root) {
+        const searchShell = root.querySelector('[data-sales-search-shell="true"]');
+        const searchToggle = root.querySelector('[data-sales-search-toggle="true"]');
+        const searchInput = root.querySelector('#salesAppSearch');
+        const records = Array.from(root.querySelectorAll('[data-sales-search]'));
+
+        if (searchToggle && searchShell && searchToggle.dataset.bound !== 'true') {
+            searchToggle.dataset.bound = 'true';
+            searchToggle.addEventListener('click', () => {
+                const isOpen = searchShell.dataset.open === 'true';
+                searchShell.dataset.open = isOpen ? 'false' : 'true';
+                searchShell.hidden = isOpen;
+                if (!isOpen) {
+                    window.setTimeout(() => searchInput?.focus(), 60);
+                }
+            });
+        }
+
+        if (searchInput && searchInput.dataset.bound !== 'true') {
+            searchInput.dataset.bound = 'true';
+            const applySalesFilter = () => {
+                const term = String(searchInput.value || '').trim().toLowerCase();
+                records.forEach((record) => {
+                    const haystack = String(record.getAttribute('data-sales-search') || '');
+                    record.hidden = term.length > 0 && !haystack.includes(term);
+                });
+            };
+
+            searchInput.addEventListener('input', applySalesFilter);
+        }
+    }
+
     function bindAdminUsers(root) {
         const page = root.querySelector('.admin-console-page');
         if (!page) {
@@ -465,6 +497,7 @@
         initImagePreview(root);
         initToasts(root);
         bindCollectorFeatures(root);
+        bindSalesFeatures(root);
         bindAdminUsers(root);
         bindInlineToggles(root);
     }
