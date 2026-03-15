@@ -5,13 +5,13 @@
 }
 
 <div class="sale-form-shell">
-    <div class="sale-form-topbar">
-        <div>
+    <div class="sale-form-topbar sale-form-topbar-app">
+        <a class="sale-form-backbtn" asp-controller="Sales" asp-action="Index" aria-label="Volver a ventas">&#8592;</a>
+        <div class="sale-form-headcopy">
             <div class="app-page-eyebrow">Ventas</div>
             <h1 class="app-page-title">@Model.PageTitle</h1>
-            <div class="app-page-subtitle">Wizard compacto para capturar cliente, producto, fotos, ubicacion y confirmacion sin saturar la pantalla.</div>
+            <div class="app-page-subtitle">Captura rapida de cliente, producto, fotos y ubicacion.</div>
         </div>
-        <a class="btn btn-outline-secondary" asp-controller="Sales" asp-action="Index">Volver</a>
     </div>
 
     @if (!ViewData.ModelState.IsValid)
@@ -23,8 +23,8 @@
         <button type="button" class="sale-step-chip active" data-step-target="1"><span>1</span><small>Cliente</small></button>
         <button type="button" class="sale-step-chip" data-step-target="2"><span>2</span><small>Producto</small></button>
         <button type="button" class="sale-step-chip" data-step-target="3"><span>3</span><small>Fotos</small></button>
-        <button type="button" class="sale-step-chip" data-step-target="4"><span>4</span><small>Ubicacion</small></button>
-        <button type="button" class="sale-step-chip" data-step-target="5"><span>5</span><small>Confirmar</small></button>
+        <button type="button" class="sale-step-chip" data-step-target="4"><span>4</span><small>GPS</small></button>
+        <button type="button" class="sale-step-chip" data-step-target="5"><span>5</span><small>OK</small></button>
     </div>
 
     <form method="post" class="sale-form" id="saleForm">
@@ -279,10 +279,10 @@
         </section>
 
         <div class="sale-wizard-footer">
-            <button type="button" class="btn btn-outline-secondary" id="btnPrevStep">Anterior</button>
+            <button type="button" class="btn btn-outline-secondary sale-wizard-iconbtn" id="btnPrevStep" aria-label="Paso anterior"><span aria-hidden="true">&#8592;</span><strong>Atras</strong></button>
             <div class="sale-wizard-progress"><span id="saleWizardLabel">Paso 1 de 5</span></div>
-            <button type="button" class="btn btn-primary" id="btnNextStep">Siguiente</button>
-            <button type="submit" class="btn btn-success" id="btnSubmitSale">@(Model.IsEdit ? "Guardar cambios" : "Registrar venta")</button>
+            <button type="button" class="btn btn-primary sale-wizard-iconbtn" id="btnNextStep" aria-label="Paso siguiente"><strong>Sigue</strong><span aria-hidden="true">&#8594;</span></button>
+            <button type="submit" class="btn btn-success sale-wizard-iconbtn" id="btnSubmitSale"><span aria-hidden="true">&#10003;</span><strong>@(Model.IsEdit ? "Guardar" : "Registrar")</strong></button>
         </div>
     </form>
 </div>

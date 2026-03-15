@@ -321,6 +321,40 @@
   gap: 12px;
 }
 
+.sale-form-topbar-app {
+  align-items: center;
+  justify-content: flex-start;
+  padding: 4px 0 0;
+}
+
+.sale-form-backbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  border: 1px solid #d9e3ef;
+  background: #fff;
+  color: #203149;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 900;
+  box-shadow: var(--vr-shadow-soft);
+}
+
+.sale-form-headcopy {
+  min-width: 0;
+}
+
+.sale-form-headcopy .app-page-title {
+  margin-bottom: 2px;
+}
+
+.sale-form-headcopy .app-page-subtitle {
+  max-width: 42rem;
+}
+
 .sale-wizard-steps {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -338,6 +372,11 @@
   background: rgba(255,255,255,0.94);
   color: #55657d;
   font-weight: 800;
+}
+
+.sale-step-chip small {
+  font-size: 0.78rem;
+  line-height: 1;
 }
 
 .sale-step-chip span {
@@ -384,6 +423,13 @@
   text-align: center;
   font-weight: 800;
   color: #42536a;
+}
+
+.sale-wizard-iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .sale-confirm-grid {
@@ -512,31 +558,170 @@
     padding-bottom: 108px;
   }
 
+  .sale-form-shell {
+    gap: 10px;
+  }
+
   .sale-form-topbar {
-    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .sale-form-headcopy .app-page-eyebrow {
+    display: none;
+  }
+
+  .sale-form-headcopy .app-page-title {
+    margin: 0;
+    font-size: 1.02rem;
+    line-height: 1.1;
+  }
+
+  .sale-form-headcopy .app-page-subtitle {
+    margin-top: 2px;
+    font-size: 0.72rem;
+    line-height: 1.2;
   }
 
   .sale-wizard-steps {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    padding: 4px 0 6px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--vr-color-bg) 94%, #ffffff), rgba(255,255,255,0.82));
+    backdrop-filter: blur(10px);
   }
 
   .sale-step-chip {
-    justify-content: flex-start;
-    padding-inline: 12px;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 54px;
+    padding: 6px 4px;
+    border-radius: 14px;
+  }
+
+  .sale-step-chip span {
+    width: 24px;
+    height: 24px;
+    font-size: 0.74rem;
+  }
+
+  .sale-step-chip small {
+    font-size: 0.65rem;
   }
 
   .sale-wizard-footer {
     bottom: 74px;
-    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 16px;
+    grid-template-columns: 52px 1fr 52px 72px;
   }
 
   .sale-wizard-progress {
-    grid-column: 1 / -1;
-    order: -1;
+    grid-column: auto;
+    order: 0;
+    font-size: 0.76rem;
   }
 
   .sale-wizard-footer .btn {
     width: 100%;
+    min-height: 46px;
+    padding-inline: 0;
+    border-radius: 14px;
+  }
+
+  .sale-wizard-iconbtn strong {
+    display: none;
+  }
+
+  .sale-wizard-iconbtn span {
+    font-size: 1rem;
+  }
+
+  .sale-step-panel .card {
+    margin-bottom: 0.75rem !important;
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  .sale-step-panel .card-header {
+    min-height: 42px;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.82rem;
+  }
+
+  .sale-step-panel .card-body {
+    padding: 0.85rem;
+  }
+
+  .sale-step-panel .row.g-3 {
+    --bs-gutter-y: 0.65rem;
+    --bs-gutter-x: 0.65rem;
+  }
+
+  .sale-step-panel .form-label {
+    margin-bottom: 0.25rem;
+    font-size: 0.72rem;
+  }
+
+  .sale-step-panel .form-control,
+  .sale-step-panel .form-select,
+  .sale-step-panel textarea.form-control {
+    min-height: 42px;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.84rem;
+    border-radius: 14px;
+  }
+
+  .sale-step-panel textarea.form-control {
+    min-height: 88px;
+  }
+
+  .products-mobile-note {
+    margin-bottom: 8px;
+    font-size: 0.7rem;
+    line-height: 1.25;
+  }
+
+  .products-table-wrap {
+    margin-inline: -2px;
+  }
+
+  .product-row td {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .product-actions-cell {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .product-actions-cell .btn {
+    min-height: 34px;
+    padding: 0 10px;
+    font-size: 0.72rem;
+  }
+
+  .input-group > .btn {
+    min-width: 48px;
+  }
+
+  .sale-confirm-grid > div {
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .sale-confirm-grid > div span {
+    font-size: 0.7rem;
+  }
+
+  .sale-confirm-grid > div strong {
+    font-size: 0.82rem;
   }
 
   .sale-confirm-grid,
