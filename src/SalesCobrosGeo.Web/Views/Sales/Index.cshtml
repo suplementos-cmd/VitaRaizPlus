@@ -9,25 +9,15 @@
 }
 
 <div class="ventas-mobile">
-    <section class="sales-app-header">
-        <div class="sales-app-header-main">
-            <button type="button" class="sales-app-iconbtn" data-bs-toggle="offcanvas" data-bs-target="#mobileMoreMenu" aria-label="Abrir menu">
-                <span aria-hidden="true">&#9776;</span>
-            </button>
-            <div class="sales-app-brand">
-                <span class="sales-app-brand-mark">VE</span>
-                <div>
-                    <strong>Ventas</strong>
-                    <small>Modo app movil</small>
-                </div>
-            </div>
+    <div class="ventas-toolbar">
+        <div>
+            <div class="ventas-title">Perfil ventas</div>
+            <div class="ventas-subtitle">Ventas agrupadas por semana y dia</div>
         </div>
-        <div class="sales-app-header-actions">
-            <button type="button" class="sales-app-iconbtn" data-sales-search-toggle="true" aria-label="Buscar ventas">
-                <span aria-hidden="true">&#8981;</span>
-            </button>
-        </div>
-    </section>
+        <button type="button" class="sales-toolbar-searchbtn" data-sales-search-toggle="true" aria-label="Buscar ventas">
+            <span aria-hidden="true">&#8981;</span>
+        </button>
+    </div>
 
     <section class="sales-app-search" data-sales-search-shell="true" hidden>
         <div class="sales-app-search-box">
@@ -35,13 +25,6 @@
             <input id="salesAppSearch" type="search" placeholder="Buscar cliente, zona, producto o vendedora" autocomplete="off" />
         </div>
     </section>
-
-    <div class="ventas-toolbar">
-        <div>
-            <div class="ventas-title">Perfil ventas</div>
-            <div class="ventas-subtitle">Ventas agrupadas por semana y dia</div>
-        </div>
-    </div>
 
     @if (TempData["SalesMessage"] is string msg)
     {
