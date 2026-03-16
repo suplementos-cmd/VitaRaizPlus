@@ -1,0 +1,72 @@
+@using SalesCobrosGeo.Web.Models.Collections
+@using SalesCobrosGeo.Web.Models.Shared
+@model CollectorHomeViewModel
+@{
+    ViewData["Title"] = "Cobros";
+    ViewData["MobileContextBar"] = new MobileContextBarModel("Cobros", "Inicio operativo");
+}
+
+<section class="collector-home-shell">
+    <header class="collector-role-header collector-role-header-compact">
+        <div>
+            <h1>Cobranza en campo</h1>
+            <p>@Model.DisplayName · @Model.RouteLabel</p>
+        </div>
+        <div class="collector-role-actions">
+            <a class="btn btn-primary" asp-action="CollectorQueue" asp-route-profile="@Model.Profile">Pendientes de hoy</a>
+            <a class="btn btn-outline-primary" asp-action="CollectorRoute" asp-route-profile="@Model.Profile">Mi ruta</a>
+        </div>
+    </header>
+
+    <section class="collector-home-cards">
+        @foreach (var card in Model.Cards)
+        {
+            <a class="collector-home-card @card.Accent" asp-action="@card.TargetAction" asp-route-profile="@Model.Profile" asp-route-filter="@(card.Title.Contains("Promesas") ? "promise" : card.Title.Contains("Reagend") ? "followup" : card.Title.Contains("Atras") ? "overdue" : "today")" asp-route-groupBy="day">
+                <span class="collector-home-card-title">@card.Title</span>
+                <strong>@card.Count</strong>
+                <small>@card.Subtitle</small>
+            </a>
+        }
+    </section>
+
+    <section class="collector-inline-section">
+        <div class="collector-section-head">
+            <div>
+                <strong>Clientes por visitar</strong>
+                <span>Solo informacion operativa para trabajar rapido.</span>
+            </div>
+            <a asp-action="CollectorQueue" asp-route-profile="@Model.Profile" asp-route-groupBy="status" asp-route-filter="today">Ver bandeja</a>
+        </div>
+
+        <div class="collector-client-stack">
+            @foreach (var item in Model.TodayClients)
+            {
+                var mapLink = string.IsNullOrWhiteSpace(item.Coordinates) ? "#" : $"https://maps.google.com/?q={Uri.EscapeDataString(item.Coordinates)}";
+                <article class="collector-client-card" data-search="@(item.Name.ToLowerInvariant()) @(item.Zone.ToLowerInvariant()) @(item.ReferenceText.ToLowerInvariant()) @(item.NumVenta)">
+                    <a class="collector-client-main" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">
+                        <div class="collector-client-thumb">
+                            <img src="@(string.IsNullOrWhiteSpace(item.Thumbnail) ? "https://placehold.co/120x120?text=Cliente" : (item.Thumbnail!.StartsWith("/") ? item.Thumbnail : "/" + item.Thumbnail))" alt="@item.Name" loading="lazy" decoding="async" />
+                        </div>
+                        <div class="collector-client-copy">
+                            <div class="collector-client-topline">
+                                <strong>@item.Name</strong>
+                                <span class="collector-priority @item.Priority.ToLowerInvariant()">@item.Priority</span>
+                            </div>
+                            <div class="collector-client-meta">@item.Zone · @item.Route · Folio #@item.NumVenta</div>
+                            <div class="collector-client-meta">@item.ReferenceText</div>
+                            <div class="collector-next-action">@item.NextAction</div>
+                        </div>
+                    </a>
+                    <div class="collector-client-actions">
+                        @if (!string.IsNullOrWhiteSpace(item.Phone))
+                        {
+                            <a href="tel:@item.Phone" aria-label="Llamar">LL</a>
+                        }
+                        <a href="@mapLink" target="_blank" rel="noopener" class="@(mapLink == "#" ? "disabled" : string.Empty)" aria-label="Mapa">MP</a>
+                        <a asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile" aria-label="Registrar visita">RG</a>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+</section>

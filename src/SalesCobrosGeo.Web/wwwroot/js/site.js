@@ -121,6 +121,7 @@
     function bindCollectorFeatures(root) {
         const mobileSearchShell = root.querySelector('[data-cobros-search-shell="true"]');
         const mobileSearchInput = root.querySelector('#collectorMobileSearch');
+        const roleSearch = root.querySelector('#collectorRoleSearch');
 
         const bindSearch = (inputId, listId, rowSelector, countId, emptyId) => {
             const input = $(root).find(`#${inputId}`);
@@ -158,6 +159,18 @@
 
         bindSearch('collectorMobileSearch', 'collectorMobileSalesList', '.collector-mobile-sale-row', 'collectorMobileCount', 'collectorMobileEmptySearch');
         bindSearch('collectorDesktopSearch', 'collectorDesktopSalesList', '.collector-desktop-record', 'collectorDesktopCount', 'collectorDesktopEmptySearch');
+
+        if (roleSearch && roleSearch.dataset.bound !== 'true') {
+            roleSearch.dataset.bound = 'true';
+            const cards = Array.from(root.querySelectorAll('#collectorRoleSearchList .collector-group-card'));
+            roleSearch.addEventListener('input', () => {
+                const term = String(roleSearch.value || '').trim().toLowerCase();
+                cards.forEach((card) => {
+                    const haystack = String(card.getAttribute('data-search') || '').toLowerCase();
+                    card.hidden = term.length > 0 && !haystack.includes(term);
+                });
+            });
+        }
 
         if (mobileSearchShell && mobileSearchInput && mobileSearchShell.dataset.bound !== 'true') {
             mobileSearchShell.dataset.bound = 'true';
@@ -237,6 +250,12 @@
                 if (action === 'toggle-cobros-search') {
                     const shell = root.querySelector('[data-cobros-search-shell="true"]');
                     const input = root.querySelector('#collectorMobileSearch');
+                    const queueInput = root.querySelector('#collectorRoleSearch');
+                    if (!shell && queueInput) {
+                        queueInput.focus();
+                        queueInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return;
+                    }
                     if (!shell) {
                         return;
                     }
