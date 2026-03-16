@@ -10,9 +10,9 @@
             ? $"Ruta en {Model.SelectedZone}"
             : !string.IsNullOrWhiteSpace(Model.SelectedStatus)
                 ? $"{Model.SelectedStatus} en {Model.SelectedDay}"
-                : !string.IsNullOrWhiteSpace(Model.SelectedDay)
+            : !string.IsNullOrWhiteSpace(Model.SelectedDay)
                     ? $"Cobros del {Model.SelectedDay}"
-                    : "Vista operativa de cobros";
+                    : "Cobros operativos";
     var desktopSubtitle = Model.ShowAll
         ? "Cartera completa pendiente con acceso rapido a cada venta."
         : !string.IsNullOrWhiteSpace(Model.SelectedZone)
@@ -97,10 +97,6 @@
                 <div class="collector-mobile-brandmeta">@mobileContext</div>
             </div>
             <div class="collector-mobile-actions">
-                <a class="collector-mobile-chip @(Model.ShowAll ? "active" : string.Empty)"
-                   asp-action="Index"
-                   asp-route-profile="@Model.Profile"
-                   asp-route-all="true">Todo</a>
                 <a class="collector-mobile-iconbtn"
                    asp-action="Index"
                    asp-route-profile="@Model.Profile"
@@ -260,15 +256,6 @@
 
 <div class="collector-desktop-workbench">
     <aside class="collector-desktop-nav">
-        <div class="collector-desktop-navhead">
-            <div>
-                <div class="collector-desktop-overline">Cobros</div>
-                <h1 class="collector-desktop-title">Panel de ruta</h1>
-                <div class="collector-desktop-subtitle">Navega por dia y estado para entrar mas rapido a cada cartera.</div>
-            </div>
-            <a class="collector-desktop-alllink @(Model.ShowAll ? "active" : string.Empty)" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-all="true" data-ajax-link="true" data-ajax-target=".collector-desktop-workbench">Todo</a>
-        </div>
-
         <form method="get" class="collector-desktop-filterbox" data-ajaxify="true" data-ajax-target=".collector-desktop-workbench">
             <input type="hidden" name="day" value="@Model.SelectedDay" />
             <input type="hidden" name="status" value="@Model.SelectedStatus" />
@@ -358,14 +345,6 @@
                     <span class="collector-desktop-searchicon">@Html.Raw("&#8981;")</span>
                     <input id="collectorDesktopSearch" type="search" placeholder="Buscar cliente, zona o numero de venta" autocomplete="off" />
                 </div>
-                @if (Model.ShowAll)
-                {
-                    <a class="btn btn-outline-secondary" asp-action="Index" asp-route-profile="@Model.Profile" data-ajax-link="true" data-ajax-target=".collector-desktop-workbench">Agrupado</a>
-                }
-                else
-                {
-                    <a class="btn btn-outline-primary" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-all="true" data-ajax-link="true" data-ajax-target=".collector-desktop-workbench">Ver todo</a>
-                }
             </div>
         </header>
 

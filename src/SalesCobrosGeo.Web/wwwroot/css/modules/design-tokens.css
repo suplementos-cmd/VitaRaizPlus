@@ -30,14 +30,14 @@
 }
 
 [data-role-theme="root"] {
-  --vr-color-bg: #eef3ff;
+  --vr-color-bg: #f2f5f8;
   --vr-color-surface: rgba(255, 255, 255, 0.94);
-  --vr-color-surface-soft: #f5f8ff;
-  --vr-color-brand: #203a72;
-  --vr-color-brand-2: #5f8cff;
-  --vr-color-brand-3: #dce6ff;
-  --vr-color-border: #cfdbf5;
-  --vr-color-shell: rgba(237, 243, 255, 0.82);
+  --vr-color-surface-soft: #f8fafc;
+  --vr-color-brand: #516176;
+  --vr-color-brand-2: #95a6bc;
+  --vr-color-brand-3: #dfe6ed;
+  --vr-color-border: #d7dfe8;
+  --vr-color-shell: rgba(242, 245, 248, 0.84);
 }
 
 [data-role-theme="sales"] {
@@ -96,6 +96,89 @@ body {
     radial-gradient(circle at top left, color-mix(in srgb, var(--vr-color-brand-2) 14%, transparent) 0%, transparent 34%),
     linear-gradient(180deg, var(--vr-color-bg) 0%, color-mix(in srgb, var(--vr-color-surface-soft) 85%, #ffffff) 100%);
   background-color: var(--vr-color-bg);
+}
+
+h1, h2, h3, h4, h5, h6,
+.app-page-title,
+.app-page-eyebrow,
+.card-header,
+.table thead th,
+.form-label {
+  color: color-mix(in srgb, var(--vr-color-brand) 80%, var(--vr-color-text));
+}
+
+.card,
+.admin-panel,
+.collector-desktop-nav,
+.collector-desktop-record,
+.collector-mobile-row,
+.collector-mobile-sale-row,
+.sales-week-accordion,
+.dashboard-chart-panel,
+.maintenance-shell .card,
+.admin-console-panel {
+  border-color: color-mix(in srgb, var(--vr-color-border) 82%, #ffffff);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--vr-color-surface) 90%, #ffffff) 0%, color-mix(in srgb, var(--vr-color-surface-soft) 88%, #ffffff) 100%);
+  box-shadow: 0 16px 32px color-mix(in srgb, var(--vr-color-brand) 8%, transparent);
+}
+
+.form-control,
+.form-select,
+.input-group-text,
+textarea.form-control {
+  border-color: color-mix(in srgb, var(--vr-color-border) 88%, #ffffff);
+  background-color: color-mix(in srgb, var(--vr-color-surface) 92%, #ffffff);
+  color: var(--vr-color-text);
+}
+
+.form-control::placeholder,
+.form-select::placeholder,
+textarea.form-control::placeholder {
+  color: color-mix(in srgb, var(--vr-color-text-soft) 78%, #ffffff);
+}
+
+.form-control:focus,
+.form-select:focus,
+textarea.form-control:focus {
+  border-color: color-mix(in srgb, var(--vr-color-brand) 60%, #ffffff);
+  box-shadow: 0 0 0 0.22rem color-mix(in srgb, var(--vr-color-brand-2) 18%, transparent);
+}
+
+.field-validation-error,
+.input-validation-error,
+.validation-summary-errors,
+.text-danger {
+  color: var(--vr-color-danger) !important;
+}
+
+.input-validation-error,
+.form-control.input-validation-error,
+.form-select.input-validation-error {
+  border-color: color-mix(in srgb, var(--vr-color-danger) 72%, #ffffff);
+  box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--vr-color-danger) 16%, transparent);
+}
+
+.btn-success {
+  border-color: color-mix(in srgb, var(--vr-color-success) 78%, #ffffff);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--vr-color-success) 86%, var(--vr-color-brand)) 0%, color-mix(in srgb, var(--vr-color-success) 60%, var(--vr-color-brand-2)) 100%);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--vr-color-success) 20%, transparent);
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus {
+  color: #fff;
+  background: color-mix(in srgb, var(--vr-color-brand) 82%, #233149);
+  border-color: color-mix(in srgb, var(--vr-color-brand) 74%, #ffffff);
+}
+
+.badge,
+.app-badge-soft,
+.collector-desktop-chip,
+.sales-detail-pill,
+.collector-mobile-row-count,
+.collector-desktop-daycount,
+.collector-desktop-statuscount {
+  border: 1px solid color-mix(in srgb, var(--vr-color-border) 75%, #ffffff);
 }
 
 .app-toast-host {

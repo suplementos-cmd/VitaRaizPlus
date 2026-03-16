@@ -274,7 +274,7 @@ public sealed class AdministrationController : Controller
                 "Acceso total",
                 "Control completo del sistema, seguridad, mantenimiento, ventas, cobros y dashboards.",
                 new RoleTheme("Azul ejecutivo", "#203a72", "#5f8cff", "#eef3ff"),
-                ["Inicio", "Dashboard", "Ventas", "Cobros", "Mantenimiento", "Usuarios"],
+                ["Dashboard", "Ventas", "Cobros", "Mantenimiento", "Usuarios"],
                 [
                     new RolePermissionRow("Seguridad", "Full", "Usuarios, sesiones, bitacora, 2FA y configuracion sensible"),
                     new RolePermissionRow("Ventas", "Full", "Todos los campos de venta y sus catalogos"),
@@ -285,7 +285,7 @@ public sealed class AdministrationController : Controller
                 "Modulo ventas",
                 "Usuario comercial con acceso al registro, consulta y edicion operativa de ventas.",
                 new RoleTheme("Azul claro", "#2f7dff", "#8bc2ff", "#eff7ff"),
-                ["Inicio", "Dashboard", "Ventas"],
+                ["Ventas", "Dashboard"],
                 [
                     new RolePermissionRow("Ventas", "Ver/crear/editar", "Cliente, producto, fotos, zona, coordenadas y forma de pago"),
                     new RolePermissionRow("Cobros", "Sin acceso", "No registra cobros ni entra a cartera"),
@@ -296,7 +296,7 @@ public sealed class AdministrationController : Controller
                 "Modulo cobros",
                 "Usuario de ruta con acceso a cartera, detalle de venta y registro de cobros.",
                 new RoleTheme("Morado ejecutivo", "#6d4fd5", "#b39afc", "#f3efff"),
-                ["Inicio", "Dashboard", "Cobros"],
+                ["Cobros", "Dashboard"],
                 [
                     new RolePermissionRow("Cobros", "Ver/registrar", "Importe, observacion, coordenadas, historial y estatus"),
                     new RolePermissionRow("Ventas", "Consulta limitada", "Cliente, zona, dia de cobro, importe y fotos base"),

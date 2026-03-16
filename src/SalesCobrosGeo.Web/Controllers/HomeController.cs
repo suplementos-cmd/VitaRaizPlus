@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SalesCobrosGeo.Web.Models;
+using SalesCobrosGeo.Web.Security;
 
 namespace SalesCobrosGeo.Web.Controllers;
 
@@ -10,7 +11,27 @@ public class HomeController : Controller
 {
     public IActionResult Index()
     {
-        return View();
+        if (User.HasPermission(AppPermissions.AdministrationView))
+        {
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        if (User.HasPermission(AppPermissions.SalesView) && !User.HasPermission(AppPermissions.CollectionsView))
+        {
+            return RedirectToAction("Index", "Sales");
+        }
+
+        if (User.HasPermission(AppPermissions.CollectionsView) && !User.HasPermission(AppPermissions.SalesView))
+        {
+            return RedirectToAction("Index", "Cobros");
+        }
+
+        if (User.HasPermission(AppPermissions.DashboardView))
+        {
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        return RedirectToAction("Login", "Account");
     }
 
     public IActionResult Privacy()

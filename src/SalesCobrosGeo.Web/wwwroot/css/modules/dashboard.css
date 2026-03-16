@@ -33,6 +33,22 @@
   min-width: 0;
 }
 
+.dashboard-bar-tag.plain {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #223149;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.dashboard-bar-tag.plain.money {
+  color: color-mix(in srgb, var(--vr-color-success) 82%, var(--vr-color-text));
+}
+
 .compact-range-stack {
   grid-template-columns: 1fr;
 }

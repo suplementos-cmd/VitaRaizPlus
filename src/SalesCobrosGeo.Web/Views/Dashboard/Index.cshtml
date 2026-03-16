@@ -47,7 +47,7 @@
                             var pct = item.Count <= 0 ? 8m : Math.Max(10m, ((decimal)item.Count / salesDayPeak) * 100m);
                             <a class="dashboard-bar-item dashboard-bar-card" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-day="@item.Key">
                                 <div class="dashboard-bar-track">
-                                    <span class="dashboard-bar-tag">@item.Count</span>
+                                    <span class="dashboard-bar-tag plain">@item.Count</span>
                                     <div class="dashboard-bar-fill sales" style="height:@pct%"></div>
                                 </div>
                                 <div class="dashboard-bar-label">@item.Label</div>
@@ -72,7 +72,7 @@
                             var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / collectionDayPeak) * 100m);
                             <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="day" asp-route-day="@item.Key">
                                 <div class="dashboard-bar-track">
-                                    <span class="dashboard-bar-tag money">@item.Amount.ToString("0")</span>
+                                    <span class="dashboard-bar-tag plain money">@item.Amount.ToString("0")</span>
                                     <div class="dashboard-bar-fill collections" style="height:@pct%"></div>
                                 </div>
                                 <div class="dashboard-bar-label">@item.Label</div>
@@ -97,7 +97,7 @@
                             var pct = item.Count <= 0 ? 8m : Math.Max(10m, ((decimal)item.Count / salesZonePeak) * 100m);
                             <a class="dashboard-bar-item dashboard-bar-card" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-zone="@item.Key">
                                 <div class="dashboard-bar-track">
-                                    <span class="dashboard-bar-tag">@item.Count</span>
+                                    <span class="dashboard-bar-tag plain">@item.Count</span>
                                     <div class="dashboard-bar-fill sales" style="height:@pct%"></div>
                                 </div>
                                 <div class="dashboard-bar-label zone">@item.Label</div>
@@ -122,7 +122,7 @@
                             var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / collectionsZonePeak) * 100m);
                             <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="zone" asp-route-value="@item.Key">
                                 <div class="dashboard-bar-track">
-                                    <span class="dashboard-bar-tag money">@item.Amount.ToString("0")</span>
+                                    <span class="dashboard-bar-tag plain money">@item.Amount.ToString("0")</span>
                                     <div class="dashboard-bar-fill collections" style="height:@pct%"></div>
                                 </div>
                                 <div class="dashboard-bar-label zone">@item.Label</div>
@@ -147,7 +147,7 @@
                             var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / collectionsCollectorPeak) * 100m);
                             <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="collector" asp-route-value="@item.Key">
                                 <div class="dashboard-bar-track">
-                                    <span class="dashboard-bar-tag money">@item.Amount.ToString("0")</span>
+                                    <span class="dashboard-bar-tag plain money">@item.Amount.ToString("0")</span>
                                     <div class="dashboard-bar-fill collector" style="height:@pct%"></div>
                                 </div>
                                 <div class="dashboard-bar-label zone">@item.Label</div>
