@@ -1,0 +1,19 @@
+@using SalesCobrosGeo.Web.Models.Collections
+@model SupervisorCollectionsViewModel
+<div class="supervisor-mobile-shell compact-monitor-shell">
+    <div class="collector-mobile-links slim-groupby">
+        <a class="@(Model.GroupBy == "collector" ? "active" : string.Empty)" asp-action="SupervisorMonitor" asp-route-groupBy="collector">Cobrador</a>
+        <a class="@(Model.GroupBy == "zone" ? "active" : string.Empty)" asp-action="SupervisorMonitor" asp-route-groupBy="zone">Zona</a>
+        <a class="@(Model.GroupBy == "status" ? "active" : string.Empty)" asp-action="SupervisorMonitor" asp-route-groupBy="status">Estatus</a>
+        <a class="@(Model.GroupBy == "route" ? "active" : string.Empty)" asp-action="SupervisorMonitor" asp-route-groupBy="route">Ruta</a>
+    </div>
+    <div class="supervisor-mobile-list">
+        @foreach (var item in Model.Collectors)
+        {
+            <article class="supervisor-mobile-row">
+                <strong>@item.Collector</strong>
+                <span>@item.Zone · @item.PendingVisits pendientes · @item.Promises promesas</span>
+            </article>
+        }
+    </div>
+</div>

@@ -12,17 +12,6 @@ namespace SalesCobrosGeo.Web.Controllers;
 [Authorize(Policy = AppPolicies.CollectionsAccess)]
 public sealed class CobrosController : Controller
 {
-    private static readonly Dictionary<string, int> DayOrder = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["LUNES"] = 1,
-        ["MARTES"] = 2,
-        ["MIERCOLES"] = 3,
-        ["JUEVES"] = 4,
-        ["VIERNES"] = 5,
-        ["SABADO"] = 6,
-        ["DOMINGO"] = 7
-    };
-
     private readonly ISalesRepository _repository;
     private readonly IUserSessionTracker _sessionTracker;
 
@@ -44,8 +33,7 @@ public sealed class CobrosController : Controller
     {
         var activeProfile = ResolveCollectorProfile(profile);
         var clients = BuildCollectorClients(activeProfile);
-        var todayKey = GetTodayKey();
-        var todayClients = clients.Where(x => NormalizeKey(x.Route) == todayKey || NormalizeKey(x.Status) == todayKey).ToList();
+        var todayClients = ApplyCollectorFilter(clients, "today");
         if (todayClients.Count == 0)
         {
             todayClients = clients.Take(6).ToList();
@@ -73,7 +61,8 @@ public sealed class CobrosController : Controller
     public IActionResult CollectorQueue(string? profile = null, string groupBy = "day", string filter = "today")
     {
         var activeProfile = ResolveCollectorProfile(profile);
-        var clients = ApplyCollectorFilter(BuildCollectorClients(activeProfile), filter);
+        var baseClients = BuildCollectorClients(activeProfile);
+        var filteredClients = ApplyCollectorFilter(baseClients, filter);
 
         var model = new CollectorQueueViewModel
         {
@@ -81,8 +70,8 @@ public sealed class CobrosController : Controller
             GroupBy = string.IsNullOrWhiteSpace(groupBy) ? "day" : groupBy.ToLowerInvariant(),
             Filter = string.IsNullOrWhiteSpace(filter) ? "today" : filter.ToLowerInvariant(),
             SearchPlaceholder = "Buscar por nombre, direccion, telefono o folio",
-            QuickFilters = BuildQuickFilters(clients, filter),
-            Groups = BuildCollectorGroups(clients, groupBy)
+            QuickFilters = BuildQuickFilters(baseClients, filter),
+            Groups = BuildCollectorGroups(filteredClients, groupBy)
         };
 
         return View(model);
@@ -92,16 +81,20 @@ public sealed class CobrosController : Controller
     public IActionResult CollectorRoute(string? profile = null)
     {
         var activeProfile = ResolveCollectorProfile(profile);
-        var clients = BuildCollectorClients(activeProfile)
-            .OrderByDescending(x => PriorityRank(x.Priority))
-            .ThenBy(x => x.Zone)
-            .ThenBy(x => x.Name)
-            .ToArray();
+        var clients = OptimizeRoute(BuildCollectorClients(activeProfile));
+        for (var i = 0; i < clients.Count; i++)
+        {
+            clients[i].OrderIndex = i + 1;
+        }
 
+        var geoClients = clients.Where(x => TryParseCoordinates(x.Coordinates, out _, out _)).ToArray();
         var model = new CollectorRouteViewModel
         {
             Profile = activeProfile,
             ZoneLabel = clients.FirstOrDefault()?.Zone ?? "Ruta sugerida",
+            RouteUrl = BuildRouteUrl(geoClients),
+            GeoPoints = geoClients.Length,
+            TotalStops = clients.Count,
             Clients = clients
         };
 
@@ -258,7 +251,8 @@ public sealed class CobrosController : Controller
     {
         var portfolio = _repository.GetCollectorPortfolio(profile).Where(x => x.ImporteRestante > 0).ToList();
         var sales = _repository.GetAll().ToDictionary(x => x.IdV, StringComparer.OrdinalIgnoreCase);
-        var collections = _repository.GetCollections(profile).GroupBy(x => x.IdV, StringComparer.OrdinalIgnoreCase)
+        var collections = _repository.GetCollections(profile)
+            .GroupBy(x => x.IdV, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.FechaCobro).ToList(), StringComparer.OrdinalIgnoreCase);
 
         var list = new List<CollectorClientListItem>(portfolio.Count);
@@ -318,7 +312,7 @@ public sealed class CobrosController : Controller
             "promise" => clients.Where(x => x.HasPromise).ToList(),
             "unvisited" => clients.Where(x => !x.WasVisited).ToList(),
             "notlocated" => clients.Where(x => ContainsKeyword(x.LastNote, "NO LOCALIZ") || ContainsKeyword(x.LastNote, "NO ENCONTR")).ToList(),
-            "followup" => clients.Where(x => NormalizeKey(x.NextAction) == NormalizeKey("Seguimiento")).ToList(),
+            "followup" => clients.Where(x => NormalizeKey(x.NextAction) == NormalizeKey("Seguimiento") || ContainsKeyword(x.LastNote, "REAGEND")).ToList(),
             _ => clients.Where(x => NormalizeKey(x.Route) == GetTodayKey() || NormalizeKey(x.Status) == "ATRASADO").ToList()
         };
     }
@@ -333,7 +327,7 @@ public sealed class CobrosController : Controller
             "status" => clients.GroupBy(x => x.Status),
             "zone" => clients.GroupBy(x => x.Zone),
             "route" => clients.GroupBy(x => x.Zone),
-            "collector" => clients.GroupBy(x => x.ReferenceText),
+            "collector" => clients.GroupBy(x => x.Zone),
             _ => clients.GroupBy(x => x.Route)
         };
 
@@ -382,6 +376,50 @@ public sealed class CobrosController : Controller
             .ToArray();
     }
 
+    private List<CollectorClientListItem> OptimizeRoute(List<CollectorClientListItem> clients)
+    {
+        var grouped = clients
+            .GroupBy(x => string.IsNullOrWhiteSpace(x.Zone) ? "Sin zona" : x.Zone)
+            .OrderByDescending(g => g.Count())
+            .ThenBy(g => g.Key);
+
+        var ordered = new List<CollectorClientListItem>(clients.Count);
+        foreach (var zoneGroup in grouped)
+        {
+            var withCoords = zoneGroup.Where(x => TryParseCoordinates(x.Coordinates, out _, out _)).ToList();
+            var withoutCoords = zoneGroup.Where(x => !TryParseCoordinates(x.Coordinates, out _, out _))
+                .OrderByDescending(x => PriorityRank(x.Priority))
+                .ThenBy(x => x.Name)
+                .ToList();
+
+            if (withCoords.Count > 0)
+            {
+                var start = withCoords.OrderByDescending(x => PriorityRank(x.Priority)).ThenBy(x => x.Name).First();
+                var route = new List<CollectorClientListItem> { start };
+                withCoords.Remove(start);
+
+                while (withCoords.Count > 0)
+                {
+                    var current = route[^1];
+                    var next = withCoords
+                        .OrderBy(x => DistanceBetween(current.Coordinates, x.Coordinates))
+                        .ThenByDescending(x => PriorityRank(x.Priority))
+                        .ThenBy(x => x.Name)
+                        .First();
+
+                    route.Add(next);
+                    withCoords.Remove(next);
+                }
+
+                ordered.AddRange(route);
+            }
+
+            ordered.AddRange(withoutCoords);
+        }
+
+        return ordered;
+    }
+
     private static string ComputePriority(string status, bool hasPromise, bool notLocated)
     {
         if (NormalizeKey(status) == "ATRASADO" || notLocated)
@@ -428,6 +466,63 @@ public sealed class CobrosController : Controller
         "MEDIA" => 2,
         _ => 1
     };
+
+    private static bool TryParseCoordinates(string? value, out double lat, out double lng)
+    {
+        lat = 0;
+        lng = 0;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        var parts = value.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length == 2
+            && double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out lat)
+            && double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out lng);
+    }
+
+    private static double DistanceBetween(string? from, string? to)
+    {
+        if (!TryParseCoordinates(from, out var lat1, out var lng1) || !TryParseCoordinates(to, out var lat2, out var lng2))
+        {
+            return double.MaxValue;
+        }
+
+        const double earthRadiusKm = 6371.0;
+        var dLat = DegreesToRadians(lat2 - lat1);
+        var dLng = DegreesToRadians(lng2 - lng1);
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
+                + Math.Cos(DegreesToRadians(lat1)) * Math.Cos(DegreesToRadians(lat2))
+                * Math.Sin(dLng / 2) * Math.Sin(dLng / 2);
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        return earthRadiusKm * c;
+    }
+
+    private static double DegreesToRadians(double value) => value * Math.PI / 180d;
+
+    private static string BuildRouteUrl(IReadOnlyList<CollectorClientListItem> clients)
+    {
+        var points = clients
+            .Where(x => TryParseCoordinates(x.Coordinates, out _, out _))
+            .Select(x => x.Coordinates!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(10)
+            .ToArray();
+
+        if (points.Length < 2)
+        {
+            return string.Empty;
+        }
+
+        var origin = Uri.EscapeDataString(points[0]);
+        var destination = Uri.EscapeDataString(points[^1]);
+        var waypoints = points.Length > 2
+            ? "&waypoints=" + string.Join("%7C", points.Skip(1).Take(points.Length - 2).Select(Uri.EscapeDataString))
+            : string.Empty;
+
+        return $"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}{waypoints}&travelmode=driving";
+    }
 
     private static bool ContainsKeyword(string? source, string keyword) => NormalizeKey(source).Contains(NormalizeKey(keyword), StringComparison.OrdinalIgnoreCase);
 

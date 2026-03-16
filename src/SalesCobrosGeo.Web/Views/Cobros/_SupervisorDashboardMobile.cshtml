@@ -1,0 +1,22 @@
+@using SalesCobrosGeo.Web.Models.Collections
+@model SupervisorCollectionsViewModel
+<div class="supervisor-mobile-shell compact-dashboard">
+    <div class="supervisor-mobile-kpis">
+        @foreach (var metric in Model.Metrics.Take(4))
+        {
+            <article class="supervisor-mobile-kpi @metric.Tone">
+                <strong>@metric.Value</strong>
+                <span>@metric.Title</span>
+            </article>
+        }
+    </div>
+    <div class="supervisor-mobile-list">
+        @foreach (var item in Model.Collectors)
+        {
+            <article class="supervisor-mobile-row">
+                <strong>@item.Collector</strong>
+                <span>@item.Zone · @item.PendingVisits pendientes · @item.RecoveredAmount.ToString("0.00")</span>
+            </article>
+        }
+    </div>
+</div>

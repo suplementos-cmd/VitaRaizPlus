@@ -1,0 +1,30 @@
+@using SalesCobrosGeo.Web.Models.Collections
+@model CollectorHomeViewModel
+<div class="collector-mobile-shell compact-home">
+    <div class="collector-mobile-links">
+        @foreach (var card in Model.Cards)
+        {
+            <a class="collector-mobile-linkrow" asp-action="@card.TargetAction" asp-route-profile="@Model.Profile" asp-route-filter="@(card.Title.Contains("Promesas") ? "promise" : card.Title.Contains("Reagend") ? "followup" : card.Title.Contains("Atras") ? "overdue" : "today")" asp-route-groupBy="day">
+                <strong>@card.Title</strong>
+                <span>@card.Count</span>
+            </a>
+        }
+    </div>
+    <div class="collector-mobile-compactlist">
+        @foreach (var item in Model.TodayClients)
+        {
+            var mapLink = string.IsNullOrWhiteSpace(item.Coordinates) ? "#" : $"https://maps.google.com/?q={Uri.EscapeDataString(item.Coordinates)}";
+            <article class="collector-mobile-clientrow">
+                <a class="collector-mobile-clientmain" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">
+                    <strong>@item.Name</strong>
+                    <span>@item.Zone · @item.NextAction</span>
+                </a>
+                <div class="collector-mobile-clientactions">
+                    @if (!string.IsNullOrWhiteSpace(item.Phone)) { <a href="tel:@item.Phone">LL</a> }
+                    <a href="@mapLink" target="_blank" rel="noopener" class="@(mapLink == "#" ? "disabled" : string.Empty)">MP</a>
+                    <a asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">RG</a>
+                </div>
+            </article>
+        }
+    </div>
+</div>
