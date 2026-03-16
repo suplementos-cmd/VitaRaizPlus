@@ -1,0 +1,101 @@
+@model SalesCobrosGeo.Web.Models.Sales.SalesListViewModel
+@{
+    string ResolveImage(string? path, string fallback) =>
+        string.IsNullOrWhiteSpace(path) ? fallback :
+        (path.StartsWith("http", StringComparison.OrdinalIgnoreCase) || path.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/")
+            ? path
+            : "/" + path);
+}
+
+<section class="sales-desktop-shell">
+    <header class="sales-desktop-toolbar">
+        <div class="sales-desktop-copy">
+            <h1>Ventas</h1>
+            <p>Panel de trabajo para escritorio con semanas, dias y acceso rapido al detalle.</p>
+        </div>
+        <div class="sales-desktop-actions">
+            <div class="sales-desktop-searchbox">
+                <span aria-hidden="true">&#8981;</span>
+                <input id="salesDesktopSearch" type="search" placeholder="Buscar cliente, zona, producto o vendedora" autocomplete="off" />
+            </div>
+            <a class="btn btn-primary" asp-controller="Sales" asp-action="Create">Agregar venta</a>
+        </div>
+    </header>
+
+    @if (TempData["SalesMessage"] is string msg)
+    {
+        <div class="alert alert-success mt-2">@msg</div>
+    }
+
+    @if (Model.Weeks.Count == 0)
+    {
+        <div class="app-empty-state compact mt-3">
+            <strong>No hay ventas registradas.</strong>
+            <span>Cuando captures una venta nueva aparecera aqui agrupada por semana.</span>
+        </div>
+    }
+    else
+    {
+        foreach (var week in Model.Weeks)
+        {
+            <section class="sales-desktop-week">
+                <header class="sales-desktop-weekhead">
+                    <div>
+                        <strong>Semana @week.WeekStart.ToString("dd/MM") - @week.WeekEnd.ToString("dd/MM")</strong>
+                        <span>@week.Days.Sum(x => x.Sales.Count) ventas</span>
+                    </div>
+                    @if (week.IsCurrentWeek)
+                    {
+                        <span class="sales-desktop-weekbadge">Semana actual</span>
+                    }
+                </header>
+
+                <div class="sales-desktop-days">
+                    @foreach (var group in week.Days)
+                    {
+                        <section class="sales-desktop-dayblock">
+                            <header class="sales-desktop-dayhead">
+                                <strong>@group.Day.ToString("ddd dd/MM")</strong>
+                                <span>@group.Sales.Count registros</span>
+                            </header>
+
+                            <div class="sales-desktop-grid">
+                                @foreach (var sale in group.Sales)
+                                {
+                                    var firstProduct = sale.Productos.FirstOrDefault()?.ProductCode ?? sale.Producto;
+                                    var saleSearch = $"{sale.NombreCliente} {sale.Zona} {sale.DiaCobro} {sale.Vendedor} {firstProduct}".ToLowerInvariant();
+                                    var mapsUrl = $"https://maps.google.com/?q={sale.Coordenadas}";
+                                    <article class="sales-desktop-card" data-sales-search="@saleSearch">
+                                        <a class="sales-desktop-cardlink" asp-controller="Sales" asp-action="Details" asp-route-id="@sale.IdV">
+                                            <img class="sales-desktop-cardphoto image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoFachada, "https://placehold.co/120x120?text=Venta")" alt="Fachada" loading="lazy" decoding="async" />
+                                            <div class="sales-desktop-cardbody">
+                                                <div class="sales-desktop-cardtop">
+                                                    <strong>@sale.NombreCliente</strong>
+                                                    <span>@sale.ImporteTotal.ToString("0,0")</span>
+                                                </div>
+                                                <div class="sales-desktop-cardmeta">@sale.Zona &bull; @sale.DiaCobro &bull; @sale.FormaPago</div>
+                                                <div class="sales-desktop-cardmeta">Vendedora: @sale.Vendedor</div>
+                                                <div class="sales-desktop-cardproduct">@firstProduct</div>
+                                            </div>
+                                        </a>
+                                        <div class="sales-desktop-cardactions">
+                                            @if (!string.IsNullOrWhiteSpace(sale.Coordenadas))
+                                            {
+                                                <a class="sales-desktop-actionbtn" href="@mapsUrl" target="_blank" rel="noopener noreferrer">Mapa</a>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(sale.Celular))
+                                            {
+                                                <a class="sales-desktop-actionbtn" href="tel:@sale.Celular">Llamar</a>
+                                            }
+                                            <a class="sales-desktop-actionbtn primary" asp-controller="Sales" asp-action="Details" asp-route-id="@sale.IdV">Ver detalle</a>
+                                        </div>
+                                    </article>
+                                }
+                            </div>
+                        </section>
+                    }
+                </div>
+            </section>
+        }
+    }
+</section>

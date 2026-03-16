@@ -1,0 +1,95 @@
+@model SalesCobrosGeo.Web.Models.Sales.CollectorPortfolioViewModel
+@{
+    var totalRestante = Model.Sales.Sum(x => x.ImporteRestante);
+    var showMobileSearch = Model.ShowAll || !string.IsNullOrWhiteSpace(Model.SelectedZone);
+
+    string StatusAccent(string status) => status.ToUpperInvariant() switch
+    {
+        "AL CORRIENTE" => "green",
+        "ATRASADO" => "red",
+        "PASAR MANANA" => "orange",
+        "PROXIMA SEMANA" => "pink",
+        _ => string.Empty
+    };
+}
+
+<div class="collector-mobile-app">
+    <header class="collector-mobile-header">
+        <div class="collector-mobile-overview">
+            <div class="collector-mobile-metricchip">
+                <span class="collector-mobile-metriclabel">Cuentas</span>
+                <strong id="collectorMobileCount">@Model.Sales.Count</strong>
+            </div>
+            <div class="collector-mobile-metricchip money">
+                <span class="collector-mobile-metriclabel">Restante</span>
+                <strong>@totalRestante.ToString("0.00")</strong>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.SelectedStatus))
+            {
+                <div class="collector-mobile-metricchip subtle">
+                    <span class="collector-mobile-metriclabel">Estado</span>
+                    <strong>@Model.SelectedStatus</strong>
+                </div>
+            }
+        </div>
+
+        @if (showMobileSearch)
+        {
+            <div class="collector-mobile-searchbar" data-cobros-search-shell="true" hidden>
+                <span class="collector-mobile-searchicon">&#8981;</span>
+                <input id="collectorMobileSearch" type="search" class="collector-mobile-searchinput" placeholder="Buscar cliente, zona o venta" autocomplete="off" />
+            </div>
+        }
+    </header>
+
+    @if (Model.ShowAll)
+    {
+        <partial name="_MobileSalesList" model="Model" />
+    }
+    else if (string.IsNullOrWhiteSpace(Model.SelectedDay))
+    {
+        <div class="collector-mobile-list">
+            @foreach (var item in Model.Days)
+            {
+                <a class="collector-mobile-row day" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@item.Day">
+                    <span class="collector-mobile-row-icon day">D</span>
+                    <span class="collector-mobile-row-label">@item.Day</span>
+                    <span class="collector-mobile-row-count">@item.Count</span>
+                    <span class="collector-mobile-row-arrow">&rsaquo;</span>
+                </a>
+            }
+        </div>
+    }
+    else if (string.IsNullOrWhiteSpace(Model.SelectedStatus))
+    {
+        <div class="collector-mobile-list">
+            @foreach (var item in Model.Statuses)
+            {
+                <a class="collector-mobile-row status @StatusAccent(item.Status)" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@item.Status">
+                    <span class="collector-mobile-row-icon status">E</span>
+                    <span class="collector-mobile-row-label">@item.Status</span>
+                    <span class="collector-mobile-row-count">@item.Count</span>
+                    <span class="collector-mobile-row-arrow">&rsaquo;</span>
+                </a>
+            }
+        </div>
+    }
+    else if (string.IsNullOrWhiteSpace(Model.SelectedZone))
+    {
+        <div class="collector-mobile-list">
+            @foreach (var item in Model.Zones)
+            {
+                <a class="collector-mobile-row zone" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@item.Zone">
+                    <span class="collector-mobile-row-icon zone">Z</span>
+                    <span class="collector-mobile-row-label">@item.Zone</span>
+                    <span class="collector-mobile-row-count">@item.Count</span>
+                    <span class="collector-mobile-row-arrow">&rsaquo;</span>
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <partial name="_MobileSalesList" model="Model" />
+    }
+</div>
