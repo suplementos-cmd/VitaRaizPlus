@@ -1,13 +1,13 @@
 @using SalesCobrosGeo.Web.Models.Collections
 @model CollectorQueueViewModel
 <div class="collector-mobile-shell compact-queue">
-    <div class="collector-mobile-filterstrip">
+    <div class="collector-mobile-filtergrid">
         @foreach (var filter in Model.QuickFilters)
         {
             <a class="collector-mobile-filterchip @(filter.IsActive ? "active" : string.Empty)" asp-action="CollectorQueue" asp-route-profile="@Model.Profile" asp-route-groupBy="@Model.GroupBy" asp-route-filter="@filter.Code">@filter.Label <strong>@filter.Count</strong></a>
         }
     </div>
-    <div class="collector-mobile-links slim-groupby">
+    <div class="collector-mobile-groupgrid slim-groupby">
         <a class="@(Model.GroupBy == "day" ? "active" : string.Empty)" asp-action="CollectorQueue" asp-route-profile="@Model.Profile" asp-route-groupBy="day" asp-route-filter="@Model.Filter">Dia</a>
         <a class="@(Model.GroupBy == "status" ? "active" : string.Empty)" asp-action="CollectorQueue" asp-route-profile="@Model.Profile" asp-route-groupBy="status" asp-route-filter="@Model.Filter">Estatus</a>
         <a class="@(Model.GroupBy == "zone" ? "active" : string.Empty)" asp-action="CollectorQueue" asp-route-profile="@Model.Profile" asp-route-groupBy="zone" asp-route-filter="@Model.Filter">Zona</a>
