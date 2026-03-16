@@ -31,7 +31,9 @@ public class HomeController : Controller
             return RedirectToAction("Index", "Dashboard");
         }
 
-        return RedirectToAction("Login", "Account");
+        TempData["AppToastMessage"] = "Tu cuenta no tiene un modulo asignado para entrar.";
+        TempData["AppToastTone"] = "warning";
+        return RedirectToAction("AccessDenied", "Account");
     }
 
     public IActionResult Privacy()

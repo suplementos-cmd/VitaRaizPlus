@@ -20,11 +20,20 @@ public sealed class AccountController : Controller
 
     [AllowAnonymous]
     [HttpGet]
-    public IActionResult Login(string? returnUrl = null)
+    public async Task<IActionResult> Login(string? returnUrl = null)
     {
         if (User.Identity?.IsAuthenticated == true)
         {
-            return RedirectToLanding(User);
+            var landing = GetLandingRoute(User);
+            if (landing is not null)
+            {
+                return RedirectToAction(landing.Value.Action, landing.Value.Controller);
+            }
+
+            _sessionTracker.SignOut(User);
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            TempData["AppToastMessage"] = "Tu sesion no tiene un modulo valido asignado. Vuelve a ingresar.";
+            TempData["AppToastTone"] = "warning";
         }
 
         return View(new LoginViewModel
@@ -68,12 +77,21 @@ public sealed class AccountController : Controller
                 ExpiresUtc = DateTimeOffset.UtcNow.AddHours(input.RememberMe ? 12 : 8)
             });
 
+        var landingRoute = GetLandingRoute(sessionPrincipal);
+        if (landingRoute is null)
+        {
+            _sessionTracker.SignOut(sessionPrincipal);
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            ModelState.AddModelError(string.Empty, "Tu usuario no tiene un modulo asignado para entrar al sistema.");
+            return View(input);
+        }
+
         if (!string.IsNullOrWhiteSpace(input.ReturnUrl) && Url.IsLocalUrl(input.ReturnUrl))
         {
             return Redirect(input.ReturnUrl);
         }
 
-        return RedirectToLanding(sessionPrincipal);
+        return RedirectToAction(landingRoute.Value.Action, landingRoute.Value.Controller);
     }
 
     [Authorize]
@@ -101,28 +119,28 @@ public sealed class AccountController : Controller
         return View();
     }
 
-    private IActionResult RedirectToLanding(System.Security.Claims.ClaimsPrincipal principal)
+    private static (string Controller, string Action)? GetLandingRoute(System.Security.Claims.ClaimsPrincipal principal)
     {
-        if (principal.HasPermission(AppPermissions.AdministrationView) || principal.HasPermission(AppPermissions.DashboardView))
+        if (principal.HasPermission(AppPermissions.AdministrationView))
         {
-            if (principal.HasPermission(AppPermissions.AdministrationView))
-            {
-                return RedirectToAction("Index", "Dashboard");
-            }
-
-            if (principal.HasPermission(AppPermissions.SalesView) && !principal.HasPermission(AppPermissions.CollectionsView))
-            {
-                return RedirectToAction("Index", "Sales");
-            }
-
-            if (principal.HasPermission(AppPermissions.CollectionsView) && !principal.HasPermission(AppPermissions.SalesView))
-            {
-                return RedirectToAction("Index", "Cobros");
-            }
-
-            return RedirectToAction("Index", "Dashboard");
+            return ("Dashboard", "Index");
         }
 
-        return RedirectToAction(nameof(Login));
+        if (principal.HasPermission(AppPermissions.SalesView) && !principal.HasPermission(AppPermissions.CollectionsView))
+        {
+            return ("Sales", "Index");
+        }
+
+        if (principal.HasPermission(AppPermissions.CollectionsView) && !principal.HasPermission(AppPermissions.SalesView))
+        {
+            return ("Cobros", "Index");
+        }
+
+        if (principal.HasPermission(AppPermissions.DashboardView))
+        {
+            return ("Dashboard", "Index");
+        }
+
+        return null;
     }
 }
