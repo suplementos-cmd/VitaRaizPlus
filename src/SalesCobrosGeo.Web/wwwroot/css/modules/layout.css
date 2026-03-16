@@ -272,10 +272,31 @@
 
   .app-mobile-masterbar {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 12px;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    gap: 10px;
     align-items: center;
     width: 100%;
+  }
+
+  .app-mobile-backbtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08));
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #fff;
+    text-decoration: none;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 18px rgba(11, 21, 39, 0.12);
+    backdrop-filter: blur(10px);
+  }
+
+  .app-mobile-backbtn svg {
+    width: 18px;
+    height: 18px;
+    display: block;
   }
 
   .app-mobile-brand {
@@ -337,6 +358,7 @@
     display: inline-flex;
     align-items: center;
     gap: 7px;
+    justify-self: end;
   }
 
   .app-mobile-headerbtn {

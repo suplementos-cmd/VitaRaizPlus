@@ -76,6 +76,14 @@
                     @if (isAuthenticated)
                     {
                         <div class="app-mobile-masterbar d-lg-none">
+                            @if (!string.IsNullOrWhiteSpace(mobileContextBar?.BackUrl))
+                            {
+                                <a class="app-mobile-backbtn" href="@mobileContextBar.BackUrl" aria-label="Volver">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M15 18l-6-6 6-6"></path>
+                                    </svg>
+                                </a>
+                            }
                             <a class="app-mobile-brand" asp-area="" asp-controller="@landingController" asp-action="@landingAction">
                                 <span class="app-mobile-brandmark" aria-hidden="true">VR</span>
                                 <span class="app-mobile-brandtext">VitaRaiz</span>
