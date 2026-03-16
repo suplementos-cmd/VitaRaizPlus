@@ -157,7 +157,19 @@
                             <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Sales"><span class="nav-icon" aria-hidden="true">RV</span><span class="nav-label">Resumen ventas</span></a>
                             <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Collections"><span class="nav-icon" aria-hidden="true">RC</span><span class="nav-label">Resumen cobros</span></a>
                         }
-                        <a class="mobile-more-link" asp-controller="Home" asp-action="Privacy"><span class="nav-icon" aria-hidden="true">PR</span><span class="nav-label">Privacidad</span></a>
+                    </div>
+                    <div class="mobile-more-footer">
+                        <div class="mobile-more-userchip">
+                            <strong>@displayName</strong>
+                            <small>@displayRole</small>
+                        </div>
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="mobile-more-logout-form">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="mobile-more-logout">
+                                <span class="nav-icon" aria-hidden="true">SL</span>
+                                <span class="nav-label">Salir</span>
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
