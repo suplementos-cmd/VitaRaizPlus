@@ -559,3 +559,21 @@
     display: none !important;
   }
 }
+
+.app-viewport-mobile {
+  display: none;
+}
+
+.app-viewport-desktop {
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .app-viewport-mobile {
+    display: block;
+  }
+
+  .app-viewport-desktop {
+    display: none;
+  }
+}

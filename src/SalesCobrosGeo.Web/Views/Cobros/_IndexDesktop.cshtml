@@ -1,0 +1,210 @@
+@model SalesCobrosGeo.Web.Models.Sales.CollectorPortfolioViewModel
+@{
+    var totalRestante = Model.Sales.Sum(x => x.ImporteRestante);
+    var desktopSubtitle = Model.ShowAll
+        ? "Cartera completa pendiente con acceso rapido a cada venta."
+        : !string.IsNullOrWhiteSpace(Model.SelectedZone)
+            ? "Lista compacta para revisar y registrar cobros de la zona activa."
+            : !string.IsNullOrWhiteSpace(Model.SelectedStatus)
+                ? "Filtrado por estado para que priorices las cuentas mas urgentes."
+                : !string.IsNullOrWhiteSpace(Model.SelectedDay)
+                    ? "Selecciona una zona o trabaja directamente las cuentas del dia."
+                    : "Usa el arbol lateral para navegar por dia, estado y zona.";
+
+    string ResolveImage(string? path, string fallback) =>
+        string.IsNullOrWhiteSpace(path) ? fallback :
+        (path.StartsWith("http", StringComparison.OrdinalIgnoreCase) || path.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/", StringComparison.OrdinalIgnoreCase)
+            ? path
+            : "/" + path);
+
+    string StatusIcon(string status) => status.ToUpperInvariant() switch
+    {
+        "POR INICIAR" => "PI",
+        "AL CORRIENTE" => "AC",
+        "ATRASADO" => "AT",
+        "LIQUIDADO" => "OK",
+        _ => "ES"
+    };
+
+    string StatusAccent(string status) => status.ToUpperInvariant() switch
+    {
+        "AL CORRIENTE" => "green",
+        "ATRASADO" => "red",
+        "PASAR MANANA" => "orange",
+        "PROXIMA SEMANA" => "pink",
+        _ => string.Empty
+    };
+
+    string CleanPhone(string? phone) => string.IsNullOrWhiteSpace(phone) ? string.Empty : new string(phone.Where(char.IsDigit).ToArray());
+}
+
+<div class="collector-desktop-workbench">
+    <aside class="collector-desktop-nav">
+        <form method="get" class="collector-desktop-filterbox" data-ajaxify="true" data-ajax-target=".collector-desktop-workbench">
+            <input type="hidden" name="day" value="@Model.SelectedDay" />
+            <input type="hidden" name="status" value="@Model.SelectedStatus" />
+            <input type="hidden" name="zone" value="@Model.SelectedZone" />
+            <input type="hidden" name="all" value="@(Model.ShowAll ? "true" : "false")" />
+            <label class="collector-desktop-filterlabel" for="collectorProfile">Cobrador</label>
+            <div class="collector-desktop-filterrow">
+                <select id="collectorProfile" class="form-select" name="profile">
+                    <option value="">Todos</option>
+                    @foreach (var p in Model.Profiles)
+                    {
+                        if (string.Equals(Model.Profile, p.Code, StringComparison.OrdinalIgnoreCase))
+                        {
+                            <option value="@p.Code" selected>@p.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@p.Code">@p.Name</option>
+                        }
+                    }
+                </select>
+                <button class="btn btn-primary" type="submit">Aplicar</button>
+            </div>
+        </form>
+
+        <div class="collector-desktop-summarygrid">
+            <div class="collector-desktop-summarycard">
+                <span>Cuentas</span>
+                <strong id="collectorDesktopCount">@Model.Sales.Count</strong>
+            </div>
+            <div class="collector-desktop-summarycard money">
+                <span>Restante</span>
+                <strong>@totalRestante.ToString("0.00")</strong>
+            </div>
+        </div>
+
+        <nav class="collector-desktop-tree" aria-label="Arbol de cobros">
+            @foreach (var dayGroup in Model.DayTree)
+            {
+                var dayKey = dayGroup.Day?.Trim() ?? string.Empty;
+                var isDaySelected = string.Equals(dayKey, Model.SelectedDay, StringComparison.OrdinalIgnoreCase);
+                var isOpen = isDaySelected || string.IsNullOrWhiteSpace(Model.SelectedDay);
+                <section class="collector-desktop-treegroup @(isDaySelected ? "active" : string.Empty) @(isOpen ? "is-open" : string.Empty)">
+                    <div class="collector-desktop-dayrow">
+                        <button type="button" class="collector-desktop-toggle @(isOpen ? "open" : string.Empty)" data-tree-toggle aria-expanded="@(isOpen ? "true" : "false")" aria-label="Mostrar u ocultar estados de @dayGroup.Day">
+                            <span class="collector-desktop-toggleicon">&rsaquo;</span>
+                        </button>
+                        <a class="collector-desktop-daylink" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@dayGroup.Day" data-ajax-link="true" data-ajax-target=".collector-desktop-workbench">
+                            <span class="collector-desktop-daylabel">@dayGroup.Day</span>
+                            <span class="collector-desktop-daycount">@dayGroup.Count</span>
+                        </a>
+                    </div>
+                    <div class="collector-desktop-statuslist" @(isOpen ? null : "hidden")>
+                        @foreach (var statusItem in dayGroup.Statuses)
+                        {
+                            var isStatusSelected = isDaySelected && string.Equals(statusItem.Status?.Trim(), Model.SelectedStatus, StringComparison.OrdinalIgnoreCase);
+                            <a class="collector-desktop-statuslink @(isStatusSelected ? "active" : string.Empty) @StatusAccent(statusItem.Status ?? string.Empty)" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@dayGroup.Day" asp-route-status="@statusItem.Status" data-ajax-link="true" data-ajax-target=".collector-desktop-workbench">
+                                <span class="collector-desktop-statusdot">@StatusIcon(statusItem.Status ?? string.Empty)</span>
+                                <span class="collector-desktop-statuslabel">@statusItem.Status</span>
+                                <span class="collector-desktop-statuscount">@statusItem.Count</span>
+                            </a>
+                        }
+                    </div>
+                </section>
+            }
+        </nav>
+    </aside>
+
+    <section class="collector-desktop-stage">
+        <div class="collector-desktop-toolstrip">
+            <div class="collector-desktop-searchbox">
+                <span class="collector-desktop-searchicon">&#8981;</span>
+                <input id="collectorDesktopSearch" type="search" placeholder="Buscar cliente, zona o numero de venta" autocomplete="off" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(desktopSubtitle))
+            {
+                <div class="collector-desktop-stagecopy">@desktopSubtitle</div>
+            }
+        </div>
+
+        <div class="collector-desktop-contextchips">
+            @if (Model.ShowAll)
+            {
+                <span class="collector-desktop-chip">Todas</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.SelectedDay))
+            {
+                <span class="collector-desktop-chip">@Model.SelectedDay</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.SelectedStatus))
+            {
+                <span class="collector-desktop-chip">@Model.SelectedStatus</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.SelectedZone))
+            {
+                <span class="collector-desktop-chip">@Model.SelectedZone</span>
+            }
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.SelectedStatus) && string.IsNullOrWhiteSpace(Model.SelectedZone) && Model.Zones.Count > 0)
+        {
+            <div class="collector-desktop-zonestrip">
+                @foreach (var zoneItem in Model.Zones)
+                {
+                    <a class="collector-desktop-zonepill" asp-action="Index" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@zoneItem.Zone" data-ajax-link="true" data-ajax-target=".collector-desktop-workbench">
+                        <span>@zoneItem.Zone</span>
+                        <strong>@zoneItem.Count</strong>
+                    </a>
+                }
+            </div>
+        }
+
+        <div class="collector-desktop-list" id="collectorDesktopSalesList">
+            @if (Model.Sales.Count == 0)
+            {
+                <div class="app-empty-state compact collector-desktop-empty">
+                    <strong>No hay cuentas pendientes para esta seleccion.</strong>
+                    <span>Prueba con otro dia, estado o cobrador para seguir filtrando.</span>
+                </div>
+            }
+            else
+            {
+                @foreach (var item in Model.Sales)
+                {
+                    var photo = string.IsNullOrWhiteSpace(item.FotoCliente)
+                        ? ResolveImage(item.FotoFachada, "https://placehold.co/160x120?text=Venta")
+                        : ResolveImage(item.FotoCliente, "https://placehold.co/160x120?text=Venta");
+                    var cleanPhone = CleanPhone(item.Celular);
+                    var mapLink = string.IsNullOrWhiteSpace(item.Coordenadas) ? "#" : $"https://maps.google.com/?q={Uri.EscapeDataString(item.Coordenadas)}";
+                    var whatsappLink = string.IsNullOrWhiteSpace(cleanPhone) ? "#" : $"https://wa.me/{cleanPhone}";
+                    var searchText = $"{item.NombreCliente} {item.Zona} {item.NumVenta} {item.DiaCobroPrevisto} {item.Estatus} {item.Cobrador}".ToLowerInvariant();
+                    <article class="collector-desktop-record" data-search="@searchText">
+                        <a class="collector-desktop-recordmain" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@Model.SelectedZone">
+                            <img class="collector-desktop-recordphoto" src="@photo" alt="@item.NombreCliente" loading="lazy" decoding="async" />
+                            <div class="collector-desktop-recordbody">
+                                <div class="collector-desktop-recordhead">
+                                    <strong class="collector-desktop-recordname">@item.NombreCliente</strong>
+                                    <span class="collector-desktop-recordstatus @StatusAccent(item.Estatus)">@item.Estatus</span>
+                                </div>
+                                <div class="collector-desktop-recordmeta">Venta #@item.NumVenta &bull; @item.Zona &bull; @item.DiaCobroPrevisto</div>
+                                <div class="collector-desktop-recordmeta">Cobrador: @item.Cobrador</div>
+                            </div>
+                            <div class="collector-desktop-recordamounts">
+                                <span>Total</span>
+                                <strong>@item.ImporteTotal.ToString("0.00")</strong>
+                                <small>Restante @item.ImporteRestante.ToString("0.00")</small>
+                            </div>
+                        </a>
+                        <div class="collector-desktop-recordactions">
+                            @if (!string.IsNullOrWhiteSpace(cleanPhone))
+                            {
+                                <a class="collector-desktop-actionbtn" href="tel:@cleanPhone">Llamar</a>
+                                <a class="collector-desktop-actionbtn success" href="@whatsappLink" target="_blank" rel="noopener">WhatsApp</a>
+                            }
+                            <a class="collector-desktop-actionbtn @(mapLink == "#" ? "disabled" : string.Empty)" href="@mapLink" target="_blank" rel="noopener">Mapa</a>
+                            <a class="collector-desktop-actionbtn primary" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@Model.SelectedZone">Cobrar</a>
+                        </div>
+                    </article>
+                }
+            }
+        </div>
+
+        <div class="collector-desktop-emptysearch" id="collectorDesktopEmptySearch" hidden>
+            <strong>No hay coincidencias para esta busqueda.</strong>
+            <span>Prueba con otro cliente, zona o numero de venta.</span>
+        </div>
+    </section>
+</div>

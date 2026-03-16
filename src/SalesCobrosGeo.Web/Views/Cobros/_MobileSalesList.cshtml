@@ -1,0 +1,56 @@
+@model SalesCobrosGeo.Web.Models.Sales.CollectorPortfolioViewModel
+@{
+    string ResolveImage(string? path, string fallback) =>
+        string.IsNullOrWhiteSpace(path) ? fallback :
+        (path.StartsWith("http", StringComparison.OrdinalIgnoreCase) || path.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/", StringComparison.OrdinalIgnoreCase)
+            ? path
+            : "/" + path);
+
+    string StatusAccent(string status) => status.ToUpperInvariant() switch
+    {
+        "AL CORRIENTE" => "green",
+        "ATRASADO" => "red",
+        "PASAR MANANA" => "orange",
+        "PROXIMA SEMANA" => "pink",
+        _ => string.Empty
+    };
+
+    string CleanPhone(string? phone) => string.IsNullOrWhiteSpace(phone) ? string.Empty : new string(phone.Where(char.IsDigit).ToArray());
+}
+
+<div class="collector-mobile-list collector-mobile-sales" id="collectorMobileSalesList">
+    @foreach (var item in Model.Sales)
+    {
+        var photo = string.IsNullOrWhiteSpace(item.FotoCliente)
+            ? ResolveImage(item.FotoFachada, "https://placehold.co/160x120?text=Venta")
+            : ResolveImage(item.FotoCliente, "https://placehold.co/160x120?text=Venta");
+        var cleanPhone = CleanPhone(item.Celular);
+        var mapLink = string.IsNullOrWhiteSpace(item.Coordenadas) ? "#" : $"https://maps.google.com/?q={Uri.EscapeDataString(item.Coordenadas)}";
+        var searchText = $"{item.NombreCliente} {item.Zona} {item.NumVenta} {item.DiaCobroPrevisto} {item.Estatus}".ToLowerInvariant();
+        <article class="collector-mobile-sale-row" data-search="@searchText">
+            <a class="collector-mobile-sale-link" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@Model.SelectedZone">
+                <img class="collector-mobile-thumb" src="@photo" alt="@item.NombreCliente" loading="lazy" decoding="async" />
+                <div class="collector-mobile-sale-main">
+                    <div class="collector-mobile-sale-head">
+                        <div class="collector-mobile-sale-name">@item.NombreCliente</div>
+                        <span class="collector-mobile-chevron">&rsaquo;</span>
+                    </div>
+                    <div class="collector-mobile-sale-zone">@item.Zona</div>
+                    <div class="collector-mobile-sale-meta">#@item.NumVenta &bull; @item.DiaCobroPrevisto &bull; @item.ImporteRestante.ToString("0.00")</div>
+                    <div class="collector-mobile-sale-state @StatusAccent(item.Estatus)">@item.Estatus</div>
+                </div>
+            </a>
+            <div class="collector-mobile-mini-actions">
+                @if (!string.IsNullOrWhiteSpace(cleanPhone))
+                {
+                    <a href="tel:@cleanPhone" aria-label="Llamar">TEL</a>
+                }
+                <a href="@mapLink" target="_blank" rel="noopener" class="@(mapLink == "#" ? "disabled" : string.Empty)" aria-label="Abrir mapa">MAP</a>
+            </div>
+        </article>
+    }
+</div>
+<div class="collector-mobile-emptysearch" id="collectorMobileEmptySearch" hidden>
+    <strong>No encontramos coincidencias.</strong>
+    <span>Prueba con otro nombre, zona o numero de venta.</span>
+</div>
