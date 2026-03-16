@@ -27,7 +27,7 @@
         <button type="button" class="sale-step-chip" data-step-target="5"><span>5</span><small>Guardar</small></button>
     </div>
 
-    <form method="post" class="sale-form" id="saleForm">
+    <form method="post" class="sale-form" id="saleForm" novalidate>
         @Html.AntiForgeryToken()
         <input asp-for="Input.IdV" type="hidden" />
         <input asp-for="Input.NumVenta" type="hidden" />
@@ -38,11 +38,11 @@
                 <div class="card-body row g-3">
                     <div class="col-md-4">
                         <label asp-for="Input.FechaVenta" class="form-label">Fecha de venta <span class="sale-required-dot">*</span></label>
-                        <input asp-for="Input.FechaVenta" type="date" class="form-control" required data-date-picker="true" />
+                        <input asp-for="Input.FechaVenta" type="date" class="form-control" data-sale-required="true" data-date-picker="true" />
                     </div>
                     <div class="col-md-8">
                         <label asp-for="Input.NombreCliente" class="form-label">Nombre cliente <span class="sale-required-dot">*</span></label>
-                        <input asp-for="Input.NombreCliente" class="form-control" required placeholder="Obligatorio" />
+                        <input asp-for="Input.NombreCliente" class="form-control" data-sale-required="true" placeholder="Obligatorio" />
                     </div>
                     <div class="col-md-6">
                         <label asp-for="Input.Celular" class="form-label">Celular</label>
@@ -54,19 +54,19 @@
                     </div>
                     <div class="col-md-4">
                         <label asp-for="Input.Zona" class="form-label">Zona <span class="sale-required-dot">*</span></label>
-                        <select asp-for="Input.Zona" class="form-select" required asp-items="@(new SelectList(Model.Catalogs.Zones, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                        <select asp-for="Input.Zona" class="form-select" data-sale-required="true" asp-items="@(new SelectList(Model.Catalogs.Zones, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
                             <option value="">Seleccione *</option>
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label asp-for="Input.FormaPago" class="form-label">Forma de pago <span class="sale-required-dot">*</span></label>
-                        <select asp-for="Input.FormaPago" class="form-select" required asp-items="@(new SelectList(Model.Catalogs.PaymentMethods, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                        <select asp-for="Input.FormaPago" class="form-select" data-sale-required="true" asp-items="@(new SelectList(Model.Catalogs.PaymentMethods, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
                             <option value="">Seleccione *</option>
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label asp-for="Input.DiaCobro" class="form-label">Dia de cobro <span class="sale-required-dot">*</span></label>
-                        <select asp-for="Input.DiaCobro" class="form-select" required asp-items="@(new SelectList(Model.Catalogs.CollectionDays, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                        <select asp-for="Input.DiaCobro" class="form-select" data-sale-required="true" asp-items="@(new SelectList(Model.Catalogs.CollectionDays, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
                             <option value="">Seleccione *</option>
                         </select>
                     </div>
@@ -172,13 +172,13 @@
                         <div class="card-body row g-3">
                             <div class="col-12">
                                 <label asp-for="Input.Vendedor" class="form-label">Vendedor <span class="sale-required-dot">*</span></label>
-                                <select asp-for="Input.Vendedor" class="form-select" required asp-items="@(new SelectList(Model.Catalogs.Sellers, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                                <select asp-for="Input.Vendedor" class="form-select" data-sale-required="true" asp-items="@(new SelectList(Model.Catalogs.Sellers, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
                                     <option value="">Seleccione *</option>
                                 </select>
                             </div>
                             <div class="col-12">
                                 <label asp-for="Input.Cobrador" class="form-label">Cobrador <span class="sale-required-dot">*</span></label>
-                                <select asp-for="Input.Cobrador" class="form-select" required asp-items="@(new SelectList(Model.Catalogs.Collectors, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                                <select asp-for="Input.Cobrador" class="form-select" data-sale-required="true" asp-items="@(new SelectList(Model.Catalogs.Collectors, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
                                     <option value="">Seleccione *</option>
                                 </select>
                             </div>
@@ -343,6 +343,44 @@
         });
     }
 
+    function findFirstInvalidStep() {
+        if (!isStepComplete(1)) {
+            return 1;
+        }
+
+        if (!isStepComplete(2)) {
+            return 2;
+        }
+
+        if (!isStepComplete(3)) {
+            return 3;
+        }
+
+        if (!isStepComplete(4)) {
+            return 4;
+        }
+
+        return 0;
+    }
+
+    function focusFirstFieldForStep(step) {
+        const selectors = {
+            1: ['#Input_FechaVenta', '#Input_NombreCliente', '#Input_Zona', '#Input_FormaPago', '#Input_DiaCobro'],
+            2: ['.product-select', '.qty-input', '.price-input'],
+            3: ['#Input_FotoCliente_file', '#Input_FotoFachada_file', '#Input_FotoContrato_file'],
+            4: ['#Input_Vendedor', '#Input_Cobrador', '#btnGpsLocate']
+        };
+
+        const targets = selectors[step] || [];
+        for (const selector of targets) {
+            const element = document.querySelector(selector);
+            if (element) {
+                window.setTimeout(() => element.focus(), 120);
+                break;
+            }
+        }
+    }
+
     function updateConfirm() {
         document.getElementById('confirmClient').textContent = document.getElementById('Input_NombreCliente')?.value || '-';
         document.getElementById('confirmZone').textContent = document.getElementById('Input_Zona')?.value || '-';
@@ -447,7 +485,7 @@
         row.innerHTML = `
             <td>
                 <label class="mobile-field-label">Producto <span class="sale-required-dot">*</span></label>
-                <select name="Input.Productos[${i}].ProductCode" class="form-select product-select" required>${options}</select>
+                <select name="Input.Productos[${i}].ProductCode" class="form-select product-select" data-sale-required="true">${options}</select>
             </td>
             <td class="product-detail-cell">
                 <label class="mobile-field-label">Cantidad</label>
@@ -491,6 +529,16 @@
         el.addEventListener('input', updateConfirm);
         el.addEventListener('change', updateConfirm);
     });
+
+    document.getElementById('saleForm')?.addEventListener('submit', (event) => {
+        const invalidStep = findFirstInvalidStep();
+        if (invalidStep > 0) {
+            event.preventDefault();
+            setStep(invalidStep);
+            focusFirstFieldForStep(invalidStep);
+        }
+    });
+
     setStep(1);
 })();
 
