@@ -942,36 +942,23 @@
   min-width: 0;
 }
 
-.collector-desktop-stagehead {
+.collector-desktop-toolstrip {
   display: flex;
   justify-content: space-between;
   gap: 14px;
-  align-items: flex-start;
-  padding: 18px 20px;
-  border-radius: 24px;
-  background: linear-gradient(140deg, #173764 0%, #234f8b 58%, #447bd6 100%);
-  color: #fff;
-  box-shadow: 0 22px 36px rgba(24, 46, 88, 0.16);
-}
-
-.collector-desktop-stagetitle {
-  margin: 0;
-  font-size: 1.48rem;
-  font-weight: 800;
-}
-
-.collector-desktop-stagesubtitle {
-  margin-top: 5px;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 0.9rem;
-}
-
-.collector-desktop-toolbar {
-  display: flex;
   align-items: center;
-  gap: 10px;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(38, 84, 174, 0.08);
+  box-shadow: 0 12px 24px rgba(24, 46, 88, 0.06);
+}
+
+.collector-desktop-stagecopy {
+  color: #6b7d99;
+  font-size: 0.82rem;
+  line-height: 1.35;
 }
 
 .collector-desktop-searchbox {
@@ -983,12 +970,12 @@
   min-width: 300px;
   padding: 10px 12px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(38, 84, 174, 0.08);
 }
 
 .collector-desktop-searchicon {
-  color: rgba(255, 255, 255, 0.9);
+  color: #587198;
   font-size: 0.95rem;
 }
 
@@ -996,12 +983,12 @@
   border: 0;
   outline: none;
   background: transparent;
-  color: #fff;
+  color: #15386c;
   font-size: 0.88rem;
 }
 
 .collector-desktop-searchbox input::placeholder {
-  color: rgba(255, 255, 255, 0.66);
+  color: #7a8ba5;
 }
 
 .collector-desktop-contextchips {
@@ -1238,6 +1225,15 @@
   .collector-desktop-recordactions {
     justify-content: flex-start;
     min-width: 0;
+  }
+
+  .collector-desktop-toolstrip {
+    align-items: stretch;
+  }
+
+  .collector-desktop-searchbox {
+    min-width: 0;
+    width: 100%;
   }
 }
 
