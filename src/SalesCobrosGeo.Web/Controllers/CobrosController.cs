@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+ï»¿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SalesCobrosGeo.Web.Models.Collections;
 using SalesCobrosGeo.Web.Models.Sales;
@@ -14,11 +14,13 @@ public sealed class CobrosController : Controller
 {
     private readonly ISalesRepository _repository;
     private readonly IUserSessionTracker _sessionTracker;
+    private readonly IApplicationUserService _userService;
 
-    public CobrosController(ISalesRepository repository, IUserSessionTracker sessionTracker)
+    public CobrosController(ISalesRepository repository, IUserSessionTracker sessionTracker, IApplicationUserService userService)
     {
         _repository = repository;
         _sessionTracker = sessionTracker;
+        _userService = userService;
     }
 
     public IActionResult Index(string? profile = null)
@@ -109,7 +111,7 @@ public sealed class CobrosController : Controller
             return RedirectToAction(nameof(CollectorHome), new { profile = ResolveCollectorProfile(profile) });
         }
 
-        var portfolio = _repository.GetCollectorPortfolio(profile).Where(x => x.ImporteRestante > 0).ToList();
+        var portfolio = GetScopedPortfolio(profile);
         var collections = _repository.GetCollections(profile);
         var clients = BuildCollectorClients(profile);
 
@@ -141,7 +143,7 @@ public sealed class CobrosController : Controller
             return RedirectToAction(nameof(CollectorHome), new { profile = ResolveCollectorProfile(profile) });
         }
 
-        var portfolio = _repository.GetCollectorPortfolio(profile).Where(x => x.ImporteRestante > 0).ToList();
+        var portfolio = GetScopedPortfolio(profile);
         var collections = _repository.GetCollections(profile);
         var clients = BuildCollectorClients(profile);
 
@@ -166,7 +168,7 @@ public sealed class CobrosController : Controller
     [HttpGet]
     public IActionResult Register(string id, string? profile = null, string? day = null, string? status = null, string? zone = null)
     {
-        var item = _repository.GetPortfolioItem(id, profile);
+        var item = GetScopedPortfolioItem(id, profile);
         if (item is null)
         {
             return NotFound();
@@ -214,7 +216,7 @@ public sealed class CobrosController : Controller
             ModelState.AddModelError(string.Empty, ex.Message);
             var model = new CollectionRegisterViewModel
             {
-                PortfolioItem = _repository.GetPortfolioItem(input.IdV, profile ?? input.Usuario),
+                PortfolioItem = GetScopedPortfolioItem(input.IdV, profile ?? input.Usuario),
                 Sale = _repository.GetById(input.IdV),
                 Input = input,
                 Historial = _repository.GetCollections(idV: input.IdV),
@@ -247,11 +249,91 @@ public sealed class CobrosController : Controller
         return string.Empty;
     }
 
+    private List<CollectorPortfolioItem> GetScopedPortfolio(string? profile, bool includeLiquidated = false)
+    {
+        if (IsSupervisor())
+        {
+            var supervisorPortfolio = _repository.GetCollectorPortfolio(profile).ToList();
+            return includeLiquidated
+                ? supervisorPortfolio
+                : supervisorPortfolio.Where(x => x.ImporteRestante > 0).ToList();
+        }
+
+        var allPortfolio = _repository.GetCollectorPortfolio(null).ToList();
+        var matchedProfile = ResolveCollectorAssignmentProfile(allPortfolio, profile);
+        IEnumerable<CollectorPortfolioItem> scopedPortfolio = allPortfolio;
+
+        if (!string.IsNullOrWhiteSpace(matchedProfile))
+        {
+            scopedPortfolio = scopedPortfolio.Where(x => string.Equals(x.Cobrador, matchedProfile, StringComparison.OrdinalIgnoreCase));
+        }
+        else
+        {
+            var userZone = GetCurrentUserZone();
+            if (!string.IsNullOrWhiteSpace(userZone) && !string.Equals(userZone, "Global", StringComparison.OrdinalIgnoreCase))
+            {
+                scopedPortfolio = scopedPortfolio.Where(x => string.Equals(x.Zona, userZone, StringComparison.OrdinalIgnoreCase));
+            }
+            else
+            {
+                scopedPortfolio = Enumerable.Empty<CollectorPortfolioItem>();
+            }
+        }
+
+        var result = scopedPortfolio.ToList();
+        return includeLiquidated
+            ? result
+            : result.Where(x => x.ImporteRestante > 0).ToList();
+    }
+
+    private CollectorPortfolioItem? GetScopedPortfolioItem(string id, string? profile)
+    {
+        return GetScopedPortfolio(profile, includeLiquidated: true)
+            .FirstOrDefault(x => string.Equals(x.IdV, id, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private string? ResolveCollectorAssignmentProfile(IEnumerable<CollectorPortfolioItem> portfolio, string? requestedProfile)
+    {
+        var candidates = new[]
+        {
+            requestedProfile,
+            User.Identity?.Name,
+            User.GetDisplayName()
+        }
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .Select(x => x!.Trim())
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
+        foreach (var candidate in candidates)
+        {
+            if (portfolio.Any(x => string.Equals(x.Cobrador, candidate, StringComparison.OrdinalIgnoreCase)))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private string GetCurrentUserZone()
+    {
+        var username = User.Identity?.Name;
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            return string.Empty;
+        }
+
+        return _userService.GetUser(username)?.Zone?.Trim() ?? string.Empty;
+    }
+
     private List<CollectorClientListItem> BuildCollectorClients(string? profile)
     {
-        var portfolio = _repository.GetCollectorPortfolio(profile).Where(x => x.ImporteRestante > 0).ToList();
+        var portfolio = GetScopedPortfolio(profile);
         var sales = _repository.GetAll().ToDictionary(x => x.IdV, StringComparer.OrdinalIgnoreCase);
-        var collections = _repository.GetCollections(profile)
+        var allowedIds = portfolio.Select(x => x.IdV).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var collections = _repository.GetCollections(idV: null)
+            .Where(x => allowedIds.Contains(x.IdV))
             .GroupBy(x => x.IdV, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.FechaCobro).ToList(), StringComparer.OrdinalIgnoreCase);
 
@@ -343,7 +425,7 @@ public sealed class CobrosController : Controller
                 PromiseCount = g.Count(x => x.HasPromise),
                 Priority = g.Any(x => NormalizeKey(x.Priority) == "ALTA") ? "Alta" : g.Any(x => NormalizeKey(x.Priority) == "MEDIA") ? "Media" : "Normal",
                 SuggestedAction = g.Any(x => NormalizeKey(x.Status) == "ATRASADO") ? "Visitar urgente" : g.Any(x => x.HasPromise) ? "Confirmar promesas" : "Gestion operativa",
-                Subtitle = $"{g.Count()} cuentas · {g.Count(x => NormalizeKey(x.Priority) == "ALTA")} visitas urgentes · {g.Count(x => x.HasPromise)} promesas",
+                Subtitle = $"{g.Count()} cuentas Â· {g.Count(x => NormalizeKey(x.Priority) == "ALTA")} visitas urgentes Â· {g.Count(x => x.HasPromise)} promesas",
                 Clients = g.OrderByDescending(x => PriorityRank(x.Priority)).ThenBy(x => x.Name).ToArray()
             })
             .ToArray();
@@ -561,3 +643,4 @@ public sealed class CobrosController : Controller
         return builder.ToString().Normalize(NormalizationForm.FormC);
     }
 }
+
