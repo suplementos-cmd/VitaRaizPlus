@@ -1,7 +1,16 @@
-﻿@model SalesCobrosGeo.Web.Models.Sales.SaleDetailViewModel
+@using SalesCobrosGeo.Web.Models.Shared
+@model SalesCobrosGeo.Web.Models.Sales.SaleDetailViewModel
 @{
     ViewData["Title"] = "Detalle venta";
     var sale = Model.Sale;
+    ViewData["MobileContextBar"] = new MobileContextBarModel(
+        sale.NombreCliente,
+        $"Venta #{sale.NumVenta}",
+        Url.Action("Index", "Sales"),
+        new[]
+        {
+            new MobileContextAction("Editar", "edit", Url: Url.Action("Edit", "Sales", new { id = sale.IdV }), AriaLabel: "Editar venta", CssClass: "is-primary")
+        });
     string ResolveImage(string? path, string fallback) =>
         string.IsNullOrWhiteSpace(path) ? fallback :
         (path.StartsWith("http", StringComparison.OrdinalIgnoreCase) || path.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/")
@@ -38,7 +47,6 @@
         {
             <a class="sales-detail-actionbtn" href="https://maps.google.com/?q=@sale.Coordenadas" target="_blank" rel="noopener noreferrer">GPS</a>
         }
-        <a class="sales-detail-actionbtn primary" asp-controller="Sales" asp-action="Edit" asp-route-id="@sale.IdV">Editar</a>
     </div>
 
     <div class="sales-detail-panel mt-3">
@@ -92,3 +100,6 @@
         </div>
     </div>
 </div>
+
+
+

@@ -1,6 +1,8 @@
+@using SalesCobrosGeo.Web.Models.Shared
 @model SalesCobrosGeo.Web.Models.Administration.AuditListPageViewModel
 @{
     ViewData["Title"] = "Bitacora de auditoria";
+    ViewData["MobileContextBar"] = new MobileContextBarModel("Bitacora", "Eventos del sistema", Url.Action("Users", "Administration"));
 }
 
 <div class="admin-console-page admin-audit-page">
@@ -63,3 +65,5 @@
         }
     </section>
 </div>
+
+

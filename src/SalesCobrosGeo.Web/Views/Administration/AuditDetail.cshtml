@@ -1,6 +1,8 @@
-﻿@model SalesCobrosGeo.Web.Models.Administration.AuditDetailViewModel
+@using SalesCobrosGeo.Web.Models.Shared
+@model SalesCobrosGeo.Web.Models.Administration.AuditDetailViewModel
 @{
     ViewData["Title"] = "Detalle auditoria";
+    ViewData["MobileContextBar"] = new MobileContextBarModel(Model.EventType, "Detalle del evento", Url.Action("Audit", "Administration"));
 }
 
 <div class="admin-console-page admin-audit-page">
@@ -44,3 +46,5 @@
         <div class="admin-audit-detail-body secondary">@Model.Metadata</div>
     </section>
 </div>
+
+

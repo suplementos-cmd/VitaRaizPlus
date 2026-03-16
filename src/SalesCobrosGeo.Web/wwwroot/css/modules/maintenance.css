@@ -106,6 +106,13 @@
   color: #6b7b8e;
 }
 
+@media (max-width: 640px) {
+  .maintenance-titlebar,
+  .maintenance-section-strip {
+    display: none;
+  }
+}
+
 .maintenance-rows-layout {
   display: grid;
   grid-template-columns: 1fr;

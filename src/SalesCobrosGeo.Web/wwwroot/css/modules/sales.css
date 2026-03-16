@@ -493,6 +493,13 @@
     padding-bottom: 128px;
   }
 
+  .ventas-toolbar-copy,
+  .sales-toolbar-searchbtn,
+  .sale-form-topbar-app,
+  .sales-detail-appbar {
+    display: none;
+  }
+
   .sales-app-search.is-open,
   .sales-app-search[data-open="true"] {
     display: block;
@@ -521,11 +528,8 @@
   }
 
   .ventas-toolbar {
-    margin-top: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    margin-top: 6px;
+    display: none;
   }
 
   .ventas-title {

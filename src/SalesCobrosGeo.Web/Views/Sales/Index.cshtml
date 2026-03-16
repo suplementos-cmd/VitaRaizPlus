@@ -1,6 +1,15 @@
-﻿@model SalesCobrosGeo.Web.Models.Sales.SalesListViewModel
+@model SalesCobrosGeo.Web.Models.Sales.SalesListViewModel
+@using SalesCobrosGeo.Web.Models.Shared
 @{
     ViewData["Title"] = "Perfil ventas";
+    ViewData["MobileContextBar"] = new MobileContextBarModel(
+        "Ventas",
+        "Semana actual",
+        null,
+        new[]
+        {
+            new MobileContextAction("Buscar", "search", DataAction: "toggle-sales-search", AriaLabel: "Buscar ventas")
+        });
     string ResolveImage(string? path, string fallback) =>
         string.IsNullOrWhiteSpace(path) ? fallback :
         (path.StartsWith("http", StringComparison.OrdinalIgnoreCase) || path.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/")
@@ -10,7 +19,7 @@
 
 <div class="ventas-mobile">
     <div class="ventas-toolbar">
-        <div>
+        <div class="ventas-toolbar-copy">
             <div class="ventas-title">Perfil ventas</div>
             <div class="ventas-subtitle">Ventas agrupadas por semana y dia</div>
         </div>
@@ -102,3 +111,5 @@
 
     <a class="sales-app-fab" asp-controller="Sales" asp-action="Create" aria-label="Agregar venta">+</a>
 </div>
+
+

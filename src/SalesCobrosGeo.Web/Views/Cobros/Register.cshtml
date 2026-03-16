@@ -1,5 +1,6 @@
 @model SalesCobrosGeo.Web.Models.Sales.CollectionRegisterViewModel
 @using Microsoft.AspNetCore.Mvc.Rendering
+@using SalesCobrosGeo.Web.Models.Shared
 @{
     ViewData["Title"] = "Registrar Cobro";
     var sale = Model.Sale;
@@ -23,6 +24,10 @@
         "LIQUIDADO" => "status-chip status-done",
         _ => "status-chip"
     };
+    ViewData["MobileContextBar"] = new MobileContextBarModel(
+        "Registrar cobro",
+        Model.PortfolioItem is null ? "Captura de abono" : Model.PortfolioItem.NombreCliente,
+        Url.Action("Index", "Cobros", new { profile = Model.ReturnProfile, day = Model.ReturnDay, status = Model.ReturnStatus, zone = Model.ReturnZone }));
 }
 
 <div class="collector-register-page collector-register-page-tight">
@@ -215,3 +220,5 @@
 })();
 </script>
 }
+
+

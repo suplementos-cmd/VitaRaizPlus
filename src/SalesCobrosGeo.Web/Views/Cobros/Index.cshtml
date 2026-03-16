@@ -1,3 +1,4 @@
+@using SalesCobrosGeo.Web.Models.Shared
 @model SalesCobrosGeo.Web.Models.Sales.CollectorPortfolioViewModel
 @{
     ViewData["Title"] = "Perfil Cobrador";
@@ -77,38 +78,19 @@
                 : Model.ShowAll
                     ? "Todas las cuentas"
                     : "Todo";
+    ViewData["MobileContextBar"] = new MobileContextBarModel(
+        "Cobros",
+        mobileContext,
+        hasBack ? Url.Action("Index", "Cobros", new { profile = Model.Profile, day = backDay, status = backStatus, zone = backZone, all = backAll }) : null,
+        new[]
+        {
+            new MobileContextAction("Buscar", "search", DataAction: "toggle-cobros-search", AriaLabel: "Buscar cobros"),
+            new MobileContextAction("Recargar", "refresh", Url: Url.Action("Index", "Cobros", new { profile = Model.Profile, day = Model.SelectedDay, status = Model.SelectedStatus, zone = Model.SelectedZone, all = Model.ShowAll ? (bool?)true : null }), AriaLabel: "Recargar")
+        });
 }
 
 <div class="collector-mobile-app">
-    <header class="collector-mobile-header">
-        <div class="collector-mobile-topbar">
-            <a class="collector-mobile-navbtn @(hasBack ? string.Empty : "is-menu")"
-               asp-action="Index"
-               asp-route-profile="@Model.Profile"
-               asp-route-day="@backDay"
-               asp-route-status="@backStatus"
-               asp-route-zone="@backZone"
-               asp-route-all="@backAll"
-               aria-label="@(hasBack ? "Volver" : "Menu")">
-                @(hasBack ? Html.Raw("&larr;") : Html.Raw("&equiv;"))
-            </a>
-            <div class="collector-mobile-brandwrap">
-                <div class="collector-mobile-brandtitle">COBROS</div>
-                <div class="collector-mobile-brandmeta">@mobileContext</div>
-            </div>
-            <div class="collector-mobile-actions">
-                <a class="collector-mobile-iconbtn"
-                   asp-action="Index"
-                   asp-route-profile="@Model.Profile"
-                   asp-route-day="@Model.SelectedDay"
-                   asp-route-status="@Model.SelectedStatus"
-                   asp-route-zone="@Model.SelectedZone"
-                   asp-route-all="@(Model.ShowAll ? true : null)"
-                   aria-label="Recargar">@Html.Raw("&#8635;")</a>
-            </div>
-        </div>
-
-        <div class="collector-mobile-summarybar">
+    <header class="collector-mobile-header"><div class="collector-mobile-summarybar">
             <div class="collector-mobile-summaryitem">
                 <span class="collector-mobile-summarylabel">Cuentas</span>
                 <strong id="collectorMobileCount">@Model.Sales.Count</strong>
@@ -121,7 +103,7 @@
 
         @if (showMobileSearch)
         {
-            <div class="collector-mobile-searchbar">
+            <div class="collector-mobile-searchbar" data-cobros-search-shell="true" hidden>
                 <span class="collector-mobile-searchicon">@Html.Raw("&#8981;")</span>
                 <input id="collectorMobileSearch"
                        type="search"
@@ -434,3 +416,8 @@
         </div>
     </section>
 </div>
+
+
+
+
+

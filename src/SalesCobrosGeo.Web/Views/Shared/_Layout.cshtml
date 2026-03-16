@@ -1,3 +1,4 @@
+@using SalesCobrosGeo.Web.Models.Shared
 @using SalesCobrosGeo.Web.Security
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
@@ -33,6 +34,7 @@
     var landingController = canAdministration ? "Dashboard" : canSales && !canCollections ? "Sales" : canCollections && !canSales ? "Cobros" : canDashboard ? "Dashboard" : "Account";
     var landingAction = "Index";
     var antiForgeryToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
+    var mobileContextBar = ViewData["MobileContextBar"] as MobileContextBarModel;
     var toastMessage = TempData["AppToastMessage"] as string
         ?? TempData["SalesMessage"] as string
         ?? TempData["CobroMessage"] as string
@@ -133,6 +135,11 @@
                     </div>
                 </div>
             </nav>
+
+            @if (mobileContextBar is not null)
+            {
+                @await Html.PartialAsync("_MobileContextBar", mobileContextBar)
+            }
         </header>
 
         @if (isAuthenticated)
