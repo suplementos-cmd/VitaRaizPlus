@@ -335,18 +335,16 @@
     </aside>
 
     <section class="collector-desktop-stage">
-        <header class="collector-desktop-stagehead">
-            <div>
-                <h2 class="collector-desktop-stagetitle">@desktopHeading</h2>
-                <div class="collector-desktop-stagesubtitle">@desktopSubtitle</div>
+        <div class="collector-desktop-toolstrip">
+            <div class="collector-desktop-searchbox">
+                <span class="collector-desktop-searchicon">@Html.Raw("&#8981;")</span>
+                <input id="collectorDesktopSearch" type="search" placeholder="Buscar cliente, zona o numero de venta" autocomplete="off" />
             </div>
-            <div class="collector-desktop-toolbar">
-                <div class="collector-desktop-searchbox">
-                    <span class="collector-desktop-searchicon">@Html.Raw("&#8981;")</span>
-                    <input id="collectorDesktopSearch" type="search" placeholder="Buscar cliente, zona o numero de venta" autocomplete="off" />
-                </div>
-            </div>
-        </header>
+            @if (!string.IsNullOrWhiteSpace(desktopSubtitle))
+            {
+                <div class="collector-desktop-stagecopy">@desktopSubtitle</div>
+            }
+        </div>
 
         <div class="collector-desktop-contextchips">
             @if (Model.ShowAll)
