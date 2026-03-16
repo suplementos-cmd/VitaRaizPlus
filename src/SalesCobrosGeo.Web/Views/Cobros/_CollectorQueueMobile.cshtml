@@ -1,0 +1,46 @@
+@using SalesCobrosGeo.Web.Models.Collections
+@model CollectorQueueViewModel
+<div class="collector-mobile-shell compact-queue">
+    <div class="collector-mobile-filterstrip">
+        @foreach (var filter in Model.QuickFilters)
+        {
+            <a class="collector-mobile-filterchip @(filter.IsActive ? "active" : string.Empty)" asp-action="CollectorQueue" asp-route-profile="@Model.Profile" asp-route-groupBy="@Model.GroupBy" asp-route-filter="@filter.Code">@filter.Label <strong>@filter.Count</strong></a>
+        }
+    </div>
+    <div class="collector-mobile-links slim-groupby">
+        <a class="@(Model.GroupBy == "day" ? "active" : string.Empty)" asp-action="CollectorQueue" asp-route-profile="@Model.Profile" asp-route-groupBy="day" asp-route-filter="@Model.Filter">Dia</a>
+        <a class="@(Model.GroupBy == "status" ? "active" : string.Empty)" asp-action="CollectorQueue" asp-route-profile="@Model.Profile" asp-route-groupBy="status" asp-route-filter="@Model.Filter">Estatus</a>
+        <a class="@(Model.GroupBy == "zone" ? "active" : string.Empty)" asp-action="CollectorQueue" asp-route-profile="@Model.Profile" asp-route-groupBy="zone" asp-route-filter="@Model.Filter">Zona</a>
+        <a class="@(Model.GroupBy == "route" ? "active" : string.Empty)" asp-action="CollectorQueue" asp-route-profile="@Model.Profile" asp-route-groupBy="route" asp-route-filter="@Model.Filter">Ruta</a>
+    </div>
+    <div class="collector-mobile-searchbar" data-cobros-search-shell="true" hidden>
+        <span class="collector-mobile-searchicon">&#8981;</span>
+        <input id="collectorRoleSearch" type="search" class="collector-mobile-searchinput" placeholder="@Model.SearchPlaceholder" autocomplete="off" />
+    </div>
+    <div class="collector-mobile-groupstack" id="collectorRoleSearchList">
+        @foreach (var group in Model.Groups)
+        {
+            <section class="collector-mobile-group" data-search="@(group.Title.ToLowerInvariant()) @(group.Subtitle.ToLowerInvariant())">
+                <div class="collector-mobile-grouphead">
+                    <strong>@group.Title</strong>
+                    <span>@group.Accounts</span>
+                </div>
+                <small>@group.SuggestedAction</small>
+                @foreach (var item in group.Clients.Take(5))
+                {
+                    var mapLink = string.IsNullOrWhiteSpace(item.Coordinates) ? "#" : $"https://maps.google.com/?q={Uri.EscapeDataString(item.Coordinates)}";
+                    <article class="collector-mobile-clientrow compact">
+                        <a class="collector-mobile-clientmain" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">
+                            <strong>@item.Name</strong>
+                            <span>@item.Zone · @item.NextAction</span>
+                        </a>
+                        <div class="collector-mobile-clientactions">
+                            @if (!string.IsNullOrWhiteSpace(item.Phone)) { <a href="tel:@item.Phone">LL</a> }
+                            <a href="@mapLink" target="_blank" rel="noopener" class="@(mapLink == "#" ? "disabled" : string.Empty)">MP</a>
+                        </div>
+                    </article>
+                }
+            </section>
+        }
+    </div>
+</div>

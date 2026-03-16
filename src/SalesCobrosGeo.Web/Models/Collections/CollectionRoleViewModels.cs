@@ -20,6 +20,7 @@ public sealed class CollectorOperationalCard
 
 public sealed class CollectorClientListItem
 {
+    public int OrderIndex { get; set; }
     public string IdV { get; set; } = string.Empty;
     public int NumVenta { get; set; }
     public string Name { get; set; } = string.Empty;
@@ -74,6 +75,9 @@ public sealed class CollectorRouteViewModel
 {
     public string Profile { get; set; } = string.Empty;
     public string ZoneLabel { get; set; } = string.Empty;
+    public string RouteUrl { get; set; } = string.Empty;
+    public int GeoPoints { get; set; }
+    public int TotalStops { get; set; }
     public IReadOnlyList<CollectorClientListItem> Clients { get; set; } = [];
 }
 

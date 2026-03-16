@@ -1,0 +1,55 @@
+@using SalesCobrosGeo.Web.Models.Collections
+@model SupervisorCollectionsViewModel
+<section class="supervisor-shell">
+    <header class="collector-role-header">
+        <div>
+            <h1>Dashboard ejecutivo de cobranza</h1>
+            <p>Visibilidad global por cobrador, zona y operacion.</p>
+        </div>
+        <div class="collector-role-actions">
+            <a class="btn btn-outline-primary" asp-action="SupervisorMonitor" asp-route-profile="@Model.SelectedCollector" asp-route-groupBy="zone">Monitoreo</a>
+        </div>
+    </header>
+    <section class="supervisor-metrics-grid">
+        @foreach (var metric in Model.Metrics)
+        {
+            <article class="supervisor-metric-card @metric.Tone">
+                <span>@metric.Title</span>
+                <strong>@metric.Value</strong>
+                <small>@metric.Subtitle</small>
+            </article>
+        }
+    </section>
+    <section class="supervisor-panel-grid">
+        <div class="supervisor-panel card card-body">
+            <div class="collector-section-head"><div><strong>Monitoreo de cobradores</strong><span>Actividad, pendientes y recuperacion por responsable.</span></div></div>
+            <div class="supervisor-monitor-list">
+                @foreach (var item in Model.Collectors)
+                {
+                    <article class="supervisor-monitor-row">
+                        <div><strong>@item.Collector</strong><span>@item.Zone · @item.Status</span></div>
+                        <div><strong>@item.Accounts</strong><span>Cuentas</span></div>
+                        <div><strong>@item.PendingVisits</strong><span>Pendientes</span></div>
+                        <div><strong>@item.RecoveredAmount.ToString("0.00")</strong><span>Recuperado</span></div>
+                        <div><strong>@item.LastActivity</strong><span>Ultima actividad</span></div>
+                    </article>
+                }
+            </div>
+        </div>
+        <div class="supervisor-panel card card-body">
+            <div class="collector-section-head"><div><strong>Vista agregada</strong><span>Drilldown inicial por @Model.GroupBy.</span></div></div>
+            <div class="collector-group-list compact-supervisor">
+                @foreach (var group in Model.Groups.Take(6))
+                {
+                    <article class="collector-group-card">
+                        <header class="collector-group-head">
+                            <div><strong>@group.Title</strong><span>@group.Subtitle</span></div>
+                            <div class="collector-group-badges"><span>@group.Accounts</span></div>
+                        </header>
+                        <div class="collector-group-hint">@group.SuggestedAction</div>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+</section>
