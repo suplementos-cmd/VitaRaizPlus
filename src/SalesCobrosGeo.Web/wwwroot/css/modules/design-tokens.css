@@ -135,7 +135,8 @@ body {
   background: linear-gradient(135deg, #9b324d 0%, #d65c78 100%);
 }
 
-.app-toast[data-hiding="true"] {
+.app-toast[data-hiding="true"],
+.app-toast-inline[data-hiding="true"] {
   opacity: 0;
   transform: translateY(-8px);
   transition: opacity var(--vr-speed-base) ease, transform var(--vr-speed-base) ease;

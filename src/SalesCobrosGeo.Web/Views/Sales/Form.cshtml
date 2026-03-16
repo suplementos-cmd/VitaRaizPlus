@@ -16,7 +16,7 @@
 
     @if (!ViewData.ModelState.IsValid)
     {
-        <div class="app-toast-inline danger">Revisa los campos obligatorios antes de continuar.</div>
+        <div class="app-toast-inline danger sale-form-toast" data-auto-toast="true" data-toast-delay="5000">Revisa los campos obligatorios antes de continuar.</div>
     }
 
     <div class="sale-wizard-steps" id="saleWizardSteps">
@@ -37,12 +37,12 @@
                 <div class="card-header">Cliente y venta</div>
                 <div class="card-body row g-3">
                     <div class="col-md-4">
-                        <label asp-for="Input.FechaVenta" class="form-label">Fecha de venta</label>
-                        <input asp-for="Input.FechaVenta" type="date" class="form-control" />
+                        <label asp-for="Input.FechaVenta" class="form-label">Fecha de venta <span class="sale-required-dot">*</span></label>
+                        <input asp-for="Input.FechaVenta" type="date" class="form-control" required data-date-picker="true" />
                     </div>
                     <div class="col-md-8">
-                        <label asp-for="Input.NombreCliente" class="form-label">Nombre cliente</label>
-                        <input asp-for="Input.NombreCliente" class="form-control" />
+                        <label asp-for="Input.NombreCliente" class="form-label">Nombre cliente <span class="sale-required-dot">*</span></label>
+                        <input asp-for="Input.NombreCliente" class="form-control" required placeholder="Obligatorio" />
                     </div>
                     <div class="col-md-6">
                         <label asp-for="Input.Celular" class="form-label">Celular</label>
@@ -53,21 +53,21 @@
                         <input asp-for="Input.Telefono" class="form-control" />
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="Input.Zona" class="form-label">Zona</label>
-                        <select asp-for="Input.Zona" class="form-select" asp-items="@(new SelectList(Model.Catalogs.Zones, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
-                            <option value="">Seleccione</option>
+                        <label asp-for="Input.Zona" class="form-label">Zona <span class="sale-required-dot">*</span></label>
+                        <select asp-for="Input.Zona" class="form-select" required asp-items="@(new SelectList(Model.Catalogs.Zones, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                            <option value="">Seleccione *</option>
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="Input.FormaPago" class="form-label">Forma de pago</label>
-                        <select asp-for="Input.FormaPago" class="form-select" asp-items="@(new SelectList(Model.Catalogs.PaymentMethods, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
-                            <option value="">Seleccione</option>
+                        <label asp-for="Input.FormaPago" class="form-label">Forma de pago <span class="sale-required-dot">*</span></label>
+                        <select asp-for="Input.FormaPago" class="form-select" required asp-items="@(new SelectList(Model.Catalogs.PaymentMethods, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                            <option value="">Seleccione *</option>
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="Input.DiaCobro" class="form-label">Dia de cobro</label>
-                        <select asp-for="Input.DiaCobro" class="form-select" asp-items="@(new SelectList(Model.Catalogs.CollectionDays, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
-                            <option value="">Seleccione</option>
+                        <label asp-for="Input.DiaCobro" class="form-label">Dia de cobro <span class="sale-required-dot">*</span></label>
+                        <select asp-for="Input.DiaCobro" class="form-select" required asp-items="@(new SelectList(Model.Catalogs.CollectionDays, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                            <option value="">Seleccione *</option>
                         </select>
                     </div>
                     <div class="col-12">
@@ -102,9 +102,9 @@
                             {
                                 <tr class="product-row">
                                     <td>
-                                        <label class="mobile-field-label">Producto</label>
+                                        <label class="mobile-field-label">Producto <span class="sale-required-dot">*</span></label>
                                         <select name="Input.Productos[@i].ProductCode" class="form-select product-select">
-                                            <option value="">Seleccione</option>
+                                            <option value="">Seleccione *</option>
                                             @foreach (var p in Model.Catalogs.Products)
                                             {
                                                 if (p.Code == Model.Input.Productos[i].ProductCode)
@@ -171,15 +171,15 @@
                         <div class="card-header">Asignaciones</div>
                         <div class="card-body row g-3">
                             <div class="col-12">
-                                <label asp-for="Input.Vendedor" class="form-label">Vendedor</label>
-                                <select asp-for="Input.Vendedor" class="form-select" asp-items="@(new SelectList(Model.Catalogs.Sellers, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
-                                    <option value="">Seleccione</option>
+                                <label asp-for="Input.Vendedor" class="form-label">Vendedor <span class="sale-required-dot">*</span></label>
+                                <select asp-for="Input.Vendedor" class="form-select" required asp-items="@(new SelectList(Model.Catalogs.Sellers, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                                    <option value="">Seleccione *</option>
                                 </select>
                             </div>
                             <div class="col-12">
-                                <label asp-for="Input.Cobrador" class="form-label">Cobrador</label>
-                                <select asp-for="Input.Cobrador" class="form-select" asp-items="@(new SelectList(Model.Catalogs.Collectors, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
-                                    <option value="">Seleccione</option>
+                                <label asp-for="Input.Cobrador" class="form-label">Cobrador <span class="sale-required-dot">*</span></label>
+                                <select asp-for="Input.Cobrador" class="form-select" required asp-items="@(new SelectList(Model.Catalogs.Collectors, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                                    <option value="">Seleccione *</option>
                                 </select>
                             </div>
                             <div class="col-12">
@@ -228,7 +228,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label asp-for="Input.FechaPrimerCobro" class="form-label">Fecha primer cobro</label>
-                                <input asp-for="Input.FechaPrimerCobro" type="date" class="form-control" />
+                                <input asp-for="Input.FechaPrimerCobro" type="date" class="form-control" data-date-picker="true" />
                             </div>
                         </div>
                     </div>
@@ -411,7 +411,7 @@
         row.innerHTML = `
             <td>
                 <label class="mobile-field-label">Producto</label>
-                <select name="Input.Productos[${i}].ProductCode" class="form-select product-select">${options}</select>
+                <select name="Input.Productos[${i}].ProductCode" class="form-select product-select" required>${options}</select>
             </td>
             <td class="product-detail-cell">
                 <label class="mobile-field-label">Cantidad</label>
@@ -436,6 +436,17 @@
 
     [...tableBody.children].forEach(bindRow);
     reindexRows();
+
+    document.querySelectorAll('[data-date-picker="true"]').forEach((input) => {
+        const openPicker = () => {
+            if (typeof input.showPicker === 'function') {
+                try { input.showPicker(); } catch {}
+            }
+        };
+
+        input.addEventListener('focus', openPicker);
+        input.addEventListener('click', openPicker);
+    });
 
     stepButtons.forEach((button) => {
         button.addEventListener('click', () => setStep(parseInt(button.dataset.stepTarget || '1', 10)));

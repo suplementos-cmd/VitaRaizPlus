@@ -355,6 +355,20 @@
   max-width: 42rem;
 }
 
+.sale-required-dot {
+  color: #d05a76;
+  font-weight: 900;
+}
+
+.sale-form-toast {
+  position: fixed;
+  top: 86px;
+  left: 50%;
+  z-index: 2400;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
 .sale-wizard-steps {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -409,7 +423,7 @@
   bottom: 72px;
   z-index: 20;
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: 56px minmax(0, 1fr) 56px 120px;
   gap: 10px;
   align-items: center;
   padding: 12px;
@@ -423,6 +437,7 @@
   text-align: center;
   font-weight: 800;
   color: #42536a;
+  min-width: 0;
 }
 
 .sale-wizard-iconbtn {
@@ -583,6 +598,12 @@
     line-height: 1.2;
   }
 
+  .sale-form-toast {
+    top: 74px;
+    width: calc(100vw - 18px);
+    max-width: 420px;
+  }
+
   .sale-wizard-steps {
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 6px;
@@ -617,13 +638,17 @@
     gap: 8px;
     padding: 10px;
     border-radius: 16px;
-    grid-template-columns: 52px 1fr 52px 72px;
+    grid-template-columns: 48px minmax(0, 1fr) 48px 64px;
+    width: 100%;
   }
 
   .sale-wizard-progress {
     grid-column: auto;
     order: 0;
     font-size: 0.76rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .sale-wizard-footer .btn {
@@ -727,5 +752,18 @@
   .sale-confirm-grid,
   .sales-detail-row {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 380px) {
+  .sale-wizard-footer {
+    grid-template-columns: 46px minmax(0, 1fr) 46px 58px;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .sale-form-toast {
+    width: calc(100vw - 12px);
+    top: 70px;
   }
 }
