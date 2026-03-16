@@ -35,6 +35,10 @@
     var landingAction = "Index";
     var antiForgeryToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
     var mobileContextBar = ViewData["MobileContextBar"] as MobileContextBarModel;
+    var mobileViewTitle = mobileContextBar?.Title ?? ViewData["Title"]?.ToString() ?? "VitaRaiz";
+    var mobileSearchAction = mobileContextBar?.Actions?.FirstOrDefault(x => string.Equals(x.DataAction, "toggle-sales-search", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(x.DataAction, "toggle-cobros-search", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(x.Icon, "search", StringComparison.OrdinalIgnoreCase));
     var toastMessage = TempData["AppToastMessage"] as string
         ?? TempData["SalesMessage"] as string
         ?? TempData["CobroMessage"] as string
@@ -69,6 +73,48 @@
         <header class="app-header-shell">
             <nav class="navbar navbar-expand-lg navbar-dark app-topbar">
                 <div class="container-fluid app-topbar-inner">
+                    @if (isAuthenticated)
+                    {
+                        <div class="app-mobile-masterbar d-lg-none">
+                            <a class="app-mobile-brand" asp-area="" asp-controller="@landingController" asp-action="@landingAction">
+                                <span class="app-mobile-brandmark" aria-hidden="true">VR</span>
+                                <span class="app-mobile-brandtext">VitaRaiz</span>
+                            </a>
+                            <div class="app-mobile-viewtitle">@mobileViewTitle</div>
+                            <div class="app-mobile-headeractions">
+                                @if (mobileSearchAction is not null)
+                                {
+                                    if (!string.IsNullOrWhiteSpace(mobileSearchAction.Url))
+                                    {
+                                        <a class="app-mobile-headerbtn" href="@mobileSearchAction.Url" aria-label="@(mobileSearchAction.AriaLabel ?? mobileSearchAction.Label)">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <circle cx="11" cy="11" r="7"></circle>
+                                                <path d="m20 20-3.5-3.5"></path>
+                                            </svg>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="app-mobile-headerbtn" data-context-action="@mobileSearchAction.DataAction" aria-label="@(mobileSearchAction.AriaLabel ?? mobileSearchAction.Label)">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <circle cx="11" cy="11" r="7"></circle>
+                                                <path d="m20 20-3.5-3.5"></path>
+                                            </svg>
+                                        </button>
+                                    }
+                                }
+
+                                <button class="app-mobile-headerbtn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMoreMenu" aria-controls="mobileMoreMenu" aria-label="Abrir menu">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M4 7h16"></path>
+                                        <path d="M4 12h16"></path>
+                                        <path d="M4 17h16"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    }
+
                     <a class="navbar-brand" asp-area="" asp-controller="@landingController" asp-action="@landingAction">VitaRaizPlus</a>
 
                     @if (isAuthenticated)
