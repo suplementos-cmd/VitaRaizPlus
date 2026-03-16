@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SalesCobrosGeo.Web.Models.Collections;
 using SalesCobrosGeo.Web.Models.Sales;
 using SalesCobrosGeo.Web.Security;
 using SalesCobrosGeo.Web.Services.Sales;
@@ -22,14 +23,6 @@ public sealed class CobrosController : Controller
         ["DOMINGO"] = 7
     };
 
-    private static readonly Dictionary<string, int> StatusOrder = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["POR INICIAR"] = 1,
-        ["AL CORRIENTE"] = 2,
-        ["ATRASADO"] = 3,
-        ["LIQUIDADO"] = 4
-    };
-
     private readonly ISalesRepository _repository;
     private readonly IUserSessionTracker _sessionTracker;
 
@@ -39,89 +32,139 @@ public sealed class CobrosController : Controller
         _sessionTracker = sessionTracker;
     }
 
-    public IActionResult Index(string? profile = null, string? day = null, string? status = null, string? zone = null, bool all = false)
+    public IActionResult Index(string? profile = null)
     {
-        var portfolio = _repository.GetCollectorPortfolio(profile)
-            .Where(x => x.ImporteRestante > 0)
-            .ToList();
+        return IsSupervisor()
+            ? RedirectToAction(nameof(SupervisorDashboard), new { profile })
+            : RedirectToAction(nameof(CollectorHome), new { profile = ResolveCollectorProfile(profile) });
+    }
 
-        var selectedDay = NormalizeKey(day);
-        var selectedStatus = NormalizeKey(status);
-        var selectedZone = NormalizeKey(zone);
-
-        var byDay = string.IsNullOrWhiteSpace(selectedDay)
-            ? portfolio
-            : portfolio.Where(x => NormalizeKey(x.DiaCobroPrevisto) == selectedDay).ToList();
-
-        var byStatus = string.IsNullOrWhiteSpace(selectedStatus)
-            ? byDay
-            : byDay.Where(x => NormalizeKey(x.Estatus) == selectedStatus).ToList();
-
-        var byZone = string.IsNullOrWhiteSpace(selectedZone)
-            ? byStatus
-            : byStatus.Where(x => NormalizeKey(x.Zona) == selectedZone).ToList();
-
-        var model = new CollectorPortfolioViewModel
+    [HttpGet]
+    public IActionResult CollectorHome(string? profile = null)
+    {
+        var activeProfile = ResolveCollectorProfile(profile);
+        var clients = BuildCollectorClients(activeProfile);
+        var todayKey = GetTodayKey();
+        var todayClients = clients.Where(x => NormalizeKey(x.Route) == todayKey || NormalizeKey(x.Status) == todayKey).ToList();
+        if (todayClients.Count == 0)
         {
-            Profile = profile,
-            SelectedDay = selectedDay,
-            SelectedStatus = selectedStatus,
-            SelectedZone = selectedZone,
-            ShowAll = all,
-            Profiles = _repository.GetCollectorProfiles(),
-            Days = portfolio
-                .GroupBy(x => NormalizeKey(x.DiaCobroPrevisto))
-                .Where(g => !string.IsNullOrWhiteSpace(g.Key))
-                .OrderBy(g => DayOrder.TryGetValue(g.Key, out var order) ? order : 99)
-                .Select(g => new CollectorDaySummary
-                {
-                    Day = g.First().DiaCobroPrevisto,
-                    Count = g.Count()
-                })
-                .ToArray(),
-            DayTree = portfolio
-                .GroupBy(x => NormalizeKey(x.DiaCobroPrevisto))
-                .Where(g => !string.IsNullOrWhiteSpace(g.Key))
-                .OrderBy(g => DayOrder.TryGetValue(g.Key, out var order) ? order : 99)
-                .Select(g => new CollectorDayTreeSummary
-                {
-                    Day = g.First().DiaCobroPrevisto,
-                    Count = g.Count(),
-                    Statuses = g
-                        .GroupBy(x => NormalizeKey(x.Estatus))
-                        .Where(statusGroup => !string.IsNullOrWhiteSpace(statusGroup.Key))
-                        .OrderBy(statusGroup => StatusOrder.TryGetValue(statusGroup.Key, out var order) ? order : 99)
-                        .Select(statusGroup => new CollectorStatusSummary
-                        {
-                            Status = statusGroup.First().Estatus,
-                            Count = statusGroup.Count()
-                        })
-                        .ToArray()
-                })
-                .ToArray(),
-            Statuses = byDay
-                .GroupBy(x => NormalizeKey(x.Estatus))
-                .Where(g => !string.IsNullOrWhiteSpace(g.Key))
-                .OrderBy(g => StatusOrder.TryGetValue(g.Key, out var order) ? order : 99)
-                .Select(g => new CollectorStatusSummary
-                {
-                    Status = g.First().Estatus,
-                    Count = g.Count()
-                })
-                .ToArray(),
-            Zones = byStatus
-                .GroupBy(x => NormalizeKey(x.Zona))
-                .Where(g => !string.IsNullOrWhiteSpace(g.Key))
-                .OrderBy(g => g.First().Zona)
-                .Select(g => new CollectorZoneSummary
-                {
-                    Zone = g.First().Zona,
-                    Count = g.Count()
-                })
-                .ToArray(),
-            Sales = (all ? portfolio : byZone)
-                .OrderBy(x => x.NumVenta)
-                .ToArray()
+            todayClients = clients.Take(6).ToList();
+        }
+
+        var model = new CollectorHomeViewModel
+        {
+            Profile = activeProfile,
+            DisplayName = User.GetDisplayName(),
+            RouteLabel = string.IsNullOrWhiteSpace(activeProfile) ? "Ruta asignada" : activeProfile,
+            Cards =
+            [
+                new CollectorOperationalCard { Title = "Pendientes de hoy", Subtitle = "Visitas para arrancar la jornada", Count = CountByFilter(clients, "today"), Accent = "primary", TargetAction = nameof(CollectorQueue) },
+                new CollectorOperationalCard { Title = "Promesas para hoy", Subtitle = "Seguimiento y confirmacion", Count = CountByFilter(clients, "promise"), Accent = "warning", TargetAction = nameof(CollectorQueue) },
+                new CollectorOperationalCard { Title = "Reagendados", Subtitle = "Clientes con nueva visita", Count = CountByFilter(clients, "followup"), Accent = "info", TargetAction = nameof(CollectorQueue) },
+                new CollectorOperationalCard { Title = "Atrasados", Subtitle = "Gestion prioritaria del dia", Count = CountByFilter(clients, "overdue"), Accent = "danger", TargetAction = nameof(CollectorQueue) }
+            ],
+            TodayClients = todayClients
+        };
+
+        return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult CollectorQueue(string? profile = null, string groupBy = "day", string filter = "today")
+    {
+        var activeProfile = ResolveCollectorProfile(profile);
+        var clients = ApplyCollectorFilter(BuildCollectorClients(activeProfile), filter);
+
+        var model = new CollectorQueueViewModel
+        {
+            Profile = activeProfile,
+            GroupBy = string.IsNullOrWhiteSpace(groupBy) ? "day" : groupBy.ToLowerInvariant(),
+            Filter = string.IsNullOrWhiteSpace(filter) ? "today" : filter.ToLowerInvariant(),
+            SearchPlaceholder = "Buscar por nombre, direccion, telefono o folio",
+            QuickFilters = BuildQuickFilters(clients, filter),
+            Groups = BuildCollectorGroups(clients, groupBy)
+        };
+
+        return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult CollectorRoute(string? profile = null)
+    {
+        var activeProfile = ResolveCollectorProfile(profile);
+        var clients = BuildCollectorClients(activeProfile)
+            .OrderByDescending(x => PriorityRank(x.Priority))
+            .ThenBy(x => x.Zone)
+            .ThenBy(x => x.Name)
+            .ToArray();
+
+        var model = new CollectorRouteViewModel
+        {
+            Profile = activeProfile,
+            ZoneLabel = clients.FirstOrDefault()?.Zone ?? "Ruta sugerida",
+            Clients = clients
+        };
+
+        return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult SupervisorDashboard(string? profile = null, string groupBy = "collector")
+    {
+        if (!IsSupervisor())
+        {
+            return RedirectToAction(nameof(CollectorHome), new { profile = ResolveCollectorProfile(profile) });
+        }
+
+        var portfolio = _repository.GetCollectorPortfolio(profile).Where(x => x.ImporteRestante > 0).ToList();
+        var collections = _repository.GetCollections(profile);
+        var clients = BuildCollectorClients(profile);
+
+        var model = new SupervisorCollectionsViewModel
+        {
+            GroupBy = string.IsNullOrWhiteSpace(groupBy) ? "collector" : groupBy.ToLowerInvariant(),
+            SelectedCollector = profile,
+            Metrics =
+            [
+                new SupervisorMetricCard { Title = "Cuentas activas", Value = portfolio.Count.ToString("0"), Subtitle = "Asignadas y con saldo pendiente", Tone = "neutral" },
+                new SupervisorMetricCard { Title = "Cuentas vencidas", Value = portfolio.Count(x => NormalizeKey(x.Estatus) == "ATRASADO").ToString("0"), Subtitle = "Requieren accion inmediata", Tone = "danger" },
+                new SupervisorMetricCard { Title = "Recuperado", Value = collections.Sum(x => x.ImporteCobro).ToString("0.00"), Subtitle = "Cobros registrados", Tone = "success" },
+                new SupervisorMetricCard { Title = "Pendiente", Value = portfolio.Sum(x => x.ImporteRestante).ToString("0.00"), Subtitle = "Saldo vivo de la cartera", Tone = "warning" },
+                new SupervisorMetricCard { Title = "Promesas", Value = clients.Count(x => x.HasPromise).ToString("0"), Subtitle = "Casos con seguimiento comprometido", Tone = "info" },
+                new SupervisorMetricCard { Title = "Sin visita", Value = clients.Count(x => !x.WasVisited).ToString("0"), Subtitle = "Clientes aun sin gestion", Tone = "neutral" }
+            ],
+            Collectors = BuildSupervisorCollectorMonitor(portfolio, collections),
+            Groups = BuildCollectorGroups(clients, groupBy)
+        };
+
+        return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult SupervisorMonitor(string? profile = null, string groupBy = "zone")
+    {
+        if (!IsSupervisor())
+        {
+            return RedirectToAction(nameof(CollectorHome), new { profile = ResolveCollectorProfile(profile) });
+        }
+
+        var portfolio = _repository.GetCollectorPortfolio(profile).Where(x => x.ImporteRestante > 0).ToList();
+        var collections = _repository.GetCollections(profile);
+        var clients = BuildCollectorClients(profile);
+
+        var model = new SupervisorCollectionsViewModel
+        {
+            GroupBy = string.IsNullOrWhiteSpace(groupBy) ? "zone" : groupBy.ToLowerInvariant(),
+            SelectedCollector = profile,
+            Metrics =
+            [
+                new SupervisorMetricCard { Title = "Visitas realizadas", Value = clients.Count(x => x.WasVisited).ToString("0"), Subtitle = "Clientes con gestion previa", Tone = "success" },
+                new SupervisorMetricCard { Title = "Pendientes", Value = clients.Count(x => !x.WasVisited).ToString("0"), Subtitle = "Cuentas aun no abordadas", Tone = "warning" },
+                new SupervisorMetricCard { Title = "Promesas vencidas", Value = clients.Count(x => x.HasPromise && NormalizeKey(x.Status) == "ATRASADO").ToString("0"), Subtitle = "Seguir y validar", Tone = "danger" },
+                new SupervisorMetricCard { Title = "Cobros capturados", Value = collections.Count.ToString("0"), Subtitle = "Movimientos acumulados", Tone = "info" }
+            ],
+            Collectors = BuildSupervisorCollectorMonitor(portfolio, collections),
+            Groups = BuildCollectorGroups(clients, groupBy)
         };
 
         return View(model);
@@ -156,6 +199,7 @@ public sealed class CobrosController : Controller
             ReturnZone = zone
         };
 
+        ViewData["CollectionsRoleView"] = IsSupervisor() ? "supervisor" : "collector";
         return View(model);
     }
 
@@ -168,7 +212,9 @@ public sealed class CobrosController : Controller
             _repository.RegisterCollection(input);
             _sessionTracker.UpdateCoordinates(User.Identity?.Name ?? string.Empty, input.CoordenadasCobro, "Cobro registrado");
             TempData["CobroMessage"] = "Cobro registrado correctamente.";
-            return RedirectToAction(nameof(Index), new { profile, day, status, zone });
+            return IsSupervisor()
+                ? RedirectToAction(nameof(SupervisorMonitor), new { profile, groupBy = "zone" })
+                : RedirectToAction(nameof(CollectorQueue), new { profile = ResolveCollectorProfile(profile), groupBy = "day", filter = "today" });
         }
         catch (InvalidOperationException ex)
         {
@@ -186,8 +232,218 @@ public sealed class CobrosController : Controller
                 ReturnZone = zone
             };
 
+            ViewData["CollectionsRoleView"] = IsSupervisor() ? "supervisor" : "collector";
             return View(model);
         }
+    }
+
+    private bool IsSupervisor() => User.IsInRole(AppRoles.Full) || User.HasPermission(AppPermissions.AdministrationView);
+
+    private string ResolveCollectorProfile(string? profile)
+    {
+        if (!string.IsNullOrWhiteSpace(profile))
+        {
+            return profile;
+        }
+
+        if (!IsSupervisor())
+        {
+            return User.Identity?.Name ?? string.Empty;
+        }
+
+        return string.Empty;
+    }
+
+    private List<CollectorClientListItem> BuildCollectorClients(string? profile)
+    {
+        var portfolio = _repository.GetCollectorPortfolio(profile).Where(x => x.ImporteRestante > 0).ToList();
+        var sales = _repository.GetAll().ToDictionary(x => x.IdV, StringComparer.OrdinalIgnoreCase);
+        var collections = _repository.GetCollections(profile).GroupBy(x => x.IdV, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.FechaCobro).ToList(), StringComparer.OrdinalIgnoreCase);
+
+        var list = new List<CollectorClientListItem>(portfolio.Count);
+        foreach (var item in portfolio)
+        {
+            sales.TryGetValue(item.IdV, out var sale);
+            collections.TryGetValue(item.IdV, out var history);
+            var last = history?.FirstOrDefault();
+            var note = last?.ObservacionCobro ?? sale?.ObservacionVenta ?? string.Empty;
+            var hasPromise = ContainsKeyword(note, "PROMESA");
+            var notLocated = ContainsKeyword(note, "NO LOCALIZ") || ContainsKeyword(note, "NO ENCONTR");
+            var wasVisited = history is { Count: > 0 } || !string.IsNullOrWhiteSpace(note);
+
+            list.Add(new CollectorClientListItem
+            {
+                IdV = item.IdV,
+                NumVenta = item.NumVenta,
+                Name = item.NombreCliente,
+                Zone = item.Zona,
+                Route = item.DiaCobroPrevisto,
+                Status = item.Estatus,
+                Priority = ComputePriority(item.Estatus, hasPromise, notLocated),
+                NextAction = ComputeNextAction(item.Estatus, hasPromise, notLocated, wasVisited),
+                ReferenceText = string.IsNullOrWhiteSpace(sale?.ObservacionVenta) ? $"Zona {item.Zona}" : sale.ObservacionVenta!,
+                Phone = item.Celular,
+                Coordinates = item.Coordenadas,
+                Thumbnail = string.IsNullOrWhiteSpace(item.FotoCliente) ? item.FotoFachada : item.FotoCliente,
+                LastPaymentDate = last?.FechaCobro,
+                LastNote = string.IsNullOrWhiteSpace(note) ? "Sin gestion reciente" : note,
+                HasPromise = hasPromise,
+                WasVisited = wasVisited
+            });
+        }
+
+        return list;
+    }
+
+    private IReadOnlyList<CollectorQuickFilter> BuildQuickFilters(IReadOnlyList<CollectorClientListItem> clients, string activeFilter)
+    {
+        return
+        [
+            new CollectorQuickFilter { Code = "today", Label = "Hoy", Count = CountByFilter(clients, "today"), IsActive = activeFilter.Equals("today", StringComparison.OrdinalIgnoreCase) },
+            new CollectorQuickFilter { Code = "overdue", Label = "Atrasados", Count = CountByFilter(clients, "overdue"), IsActive = activeFilter.Equals("overdue", StringComparison.OrdinalIgnoreCase) },
+            new CollectorQuickFilter { Code = "promise", Label = "Promesa", Count = CountByFilter(clients, "promise"), IsActive = activeFilter.Equals("promise", StringComparison.OrdinalIgnoreCase) },
+            new CollectorQuickFilter { Code = "unvisited", Label = "No visitados", Count = CountByFilter(clients, "unvisited"), IsActive = activeFilter.Equals("unvisited", StringComparison.OrdinalIgnoreCase) },
+            new CollectorQuickFilter { Code = "notlocated", Label = "No localizado", Count = CountByFilter(clients, "notlocated"), IsActive = activeFilter.Equals("notlocated", StringComparison.OrdinalIgnoreCase) },
+            new CollectorQuickFilter { Code = "followup", Label = "Seguimiento", Count = CountByFilter(clients, "followup"), IsActive = activeFilter.Equals("followup", StringComparison.OrdinalIgnoreCase) }
+        ];
+    }
+
+    private List<CollectorClientListItem> ApplyCollectorFilter(List<CollectorClientListItem> clients, string filter)
+    {
+        var normalized = filter?.Trim().ToLowerInvariant() ?? "today";
+        return normalized switch
+        {
+            "overdue" => clients.Where(x => NormalizeKey(x.Status) == "ATRASADO").ToList(),
+            "promise" => clients.Where(x => x.HasPromise).ToList(),
+            "unvisited" => clients.Where(x => !x.WasVisited).ToList(),
+            "notlocated" => clients.Where(x => ContainsKeyword(x.LastNote, "NO LOCALIZ") || ContainsKeyword(x.LastNote, "NO ENCONTR")).ToList(),
+            "followup" => clients.Where(x => NormalizeKey(x.NextAction) == NormalizeKey("Seguimiento")).ToList(),
+            _ => clients.Where(x => NormalizeKey(x.Route) == GetTodayKey() || NormalizeKey(x.Status) == "ATRASADO").ToList()
+        };
+    }
+
+    private int CountByFilter(IReadOnlyList<CollectorClientListItem> clients, string filter) => ApplyCollectorFilter(clients.ToList(), filter).Count;
+
+    private IReadOnlyList<CollectorQueueGroupViewModel> BuildCollectorGroups(IReadOnlyList<CollectorClientListItem> clients, string? groupBy)
+    {
+        var mode = string.IsNullOrWhiteSpace(groupBy) ? "day" : groupBy.ToLowerInvariant();
+        IEnumerable<IGrouping<string, CollectorClientListItem>> groups = mode switch
+        {
+            "status" => clients.GroupBy(x => x.Status),
+            "zone" => clients.GroupBy(x => x.Zone),
+            "route" => clients.GroupBy(x => x.Zone),
+            "collector" => clients.GroupBy(x => x.ReferenceText),
+            _ => clients.GroupBy(x => x.Route)
+        };
+
+        return groups
+            .Where(x => !string.IsNullOrWhiteSpace(x.Key))
+            .OrderByDescending(x => x.Count())
+            .Select(g => new CollectorQueueGroupViewModel
+            {
+                Key = g.Key,
+                Title = g.Key,
+                Accounts = g.Count(),
+                UrgentCount = g.Count(x => NormalizeKey(x.Priority) == "ALTA"),
+                PromiseCount = g.Count(x => x.HasPromise),
+                Priority = g.Any(x => NormalizeKey(x.Priority) == "ALTA") ? "Alta" : g.Any(x => NormalizeKey(x.Priority) == "MEDIA") ? "Media" : "Normal",
+                SuggestedAction = g.Any(x => NormalizeKey(x.Status) == "ATRASADO") ? "Visitar urgente" : g.Any(x => x.HasPromise) ? "Confirmar promesas" : "Gestion operativa",
+                Subtitle = $"{g.Count()} cuentas · {g.Count(x => NormalizeKey(x.Priority) == "ALTA")} visitas urgentes · {g.Count(x => x.HasPromise)} promesas",
+                Clients = g.OrderByDescending(x => PriorityRank(x.Priority)).ThenBy(x => x.Name).ToArray()
+            })
+            .ToArray();
+    }
+
+    private IReadOnlyList<SupervisorCollectorMonitorItem> BuildSupervisorCollectorMonitor(IReadOnlyList<CollectorPortfolioItem> portfolio, IReadOnlyList<CollectionRecord> collections)
+    {
+        return portfolio
+            .GroupBy(x => string.IsNullOrWhiteSpace(x.Cobrador) ? "Sin asignar" : x.Cobrador)
+            .OrderBy(x => x.Key)
+            .Select(g =>
+            {
+                var collectorMoves = collections.Where(x => string.Equals(x.Usuario, g.Key, StringComparison.OrdinalIgnoreCase)).OrderByDescending(x => x.FechaCobro).ToList();
+                var lastMove = collectorMoves.FirstOrDefault();
+                return new SupervisorCollectorMonitorItem
+                {
+                    Collector = g.Key,
+                    Zone = g.Select(x => x.Zona).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().FirstOrDefault() ?? "Sin zona",
+                    Status = g.Any(x => NormalizeKey(x.Estatus) == "ATRASADO") ? "Con alertas" : "Operando",
+                    Accounts = g.Count(),
+                    VisitsDone = collectorMoves.Count,
+                    PendingVisits = g.Count(x => NormalizeKey(x.Estatus) == "POR INICIAR"),
+                    Promises = collectorMoves.Count(x => ContainsKeyword(x.ObservacionCobro, "PROMESA")),
+                    Overdue = g.Count(x => NormalizeKey(x.Estatus) == "ATRASADO"),
+                    RecoveredAmount = collectorMoves.Sum(x => x.ImporteCobro),
+                    LastActivity = lastMove is null ? "Sin actividad registrada" : lastMove.FechaCobro.ToString("dd/MM HH:mm"),
+                    LastCoordinates = lastMove?.CoordenadasCobro ?? string.Empty
+                };
+            })
+            .ToArray();
+    }
+
+    private static string ComputePriority(string status, bool hasPromise, bool notLocated)
+    {
+        if (NormalizeKey(status) == "ATRASADO" || notLocated)
+        {
+            return "Alta";
+        }
+
+        if (hasPromise || NormalizeKey(status) == "POR INICIAR")
+        {
+            return "Media";
+        }
+
+        return "Normal";
+    }
+
+    private static string ComputeNextAction(string status, bool hasPromise, bool notLocated, bool wasVisited)
+    {
+        if (notLocated)
+        {
+            return "Revisar referencia";
+        }
+
+        if (hasPromise)
+        {
+            return "Confirmar promesa";
+        }
+
+        if (NormalizeKey(status) == "ATRASADO")
+        {
+            return "Registrar visita";
+        }
+
+        if (!wasVisited)
+        {
+            return "Primera visita";
+        }
+
+        return "Seguimiento";
+    }
+
+    private static int PriorityRank(string priority) => NormalizeKey(priority) switch
+    {
+        "ALTA" => 3,
+        "MEDIA" => 2,
+        _ => 1
+    };
+
+    private static bool ContainsKeyword(string? source, string keyword) => NormalizeKey(source).Contains(NormalizeKey(keyword), StringComparison.OrdinalIgnoreCase);
+
+    private static string GetTodayKey()
+    {
+        var today = DateTime.Today.DayOfWeek;
+        return today switch
+        {
+            DayOfWeek.Monday => "LUNES",
+            DayOfWeek.Tuesday => "MARTES",
+            DayOfWeek.Wednesday => "MIERCOLES",
+            DayOfWeek.Thursday => "JUEVES",
+            DayOfWeek.Friday => "VIERNES",
+            DayOfWeek.Saturday => "SABADO",
+            _ => "DOMINGO"
+        };
     }
 
     private static string NormalizeKey(string? value)

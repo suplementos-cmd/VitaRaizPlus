@@ -4,6 +4,8 @@
 @{
     ViewData["Title"] = "Registrar Cobro";
     var sale = Model.Sale;
+    var roleView = (ViewData["CollectionsRoleView"] as string) ?? "collector";
+    var isSupervisorView = string.Equals(roleView, "supervisor", StringComparison.OrdinalIgnoreCase);
     string ResolveImage(string? path, string fallback) =>
         string.IsNullOrWhiteSpace(path) ? fallback :
         (path.StartsWith("http", StringComparison.OrdinalIgnoreCase) || path.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/")
@@ -79,11 +81,21 @@
             </div>
 
             <div class="card card-body collector-register-summary-card">
-                <div class="collector-balance-grid">
-                    <div><span>Total</span><strong>@Model.PortfolioItem.ImporteTotal.ToString("0.00")</strong></div>
-                    <div><span>Abonado</span><strong>@Model.PortfolioItem.ImporteAbonado.ToString("0.00")</strong></div>
-                    <div class="collector-restante"><span>Restante</span><strong>@Model.PortfolioItem.ImporteRestante.ToString("0.00")</strong></div>
-                </div>
+                @if (isSupervisorView)
+                {
+                    <div class="collector-balance-grid">
+                        <div><span>Total</span><strong>@Model.PortfolioItem.ImporteTotal.ToString("0.00")</strong></div>
+                        <div><span>Abonado</span><strong>@Model.PortfolioItem.ImporteAbonado.ToString("0.00")</strong></div>
+                        <div class="collector-restante"><span>Restante</span><strong>@Model.PortfolioItem.ImporteRestante.ToString("0.00")</strong></div>
+                    </div>
+                }
+                else
+                {
+                    <div class="collector-balance-grid collector-balance-grid-operator">
+                        <div class="collector-restante"><span>Saldo operativo</span><strong>@Model.PortfolioItem.ImporteRestante.ToString("0.00")</strong></div>
+                        <div><span>Ultimo pago</span><strong>@(Model.Historial.FirstOrDefault()?.FechaCobro.ToString("dd/MM/yyyy") ?? "Sin registro")</strong></div>
+                    </div>
+                }
                 @if (!string.IsNullOrWhiteSpace(sale?.Coordenadas))
                 {
                     <div class="collector-register-coords">@sale.Coordenadas</div>
@@ -220,5 +232,7 @@
 })();
 </script>
 }
+
+
 
 

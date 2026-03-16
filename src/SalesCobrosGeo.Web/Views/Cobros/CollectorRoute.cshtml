@@ -1,0 +1,46 @@
+@using SalesCobrosGeo.Web.Models.Collections
+@using SalesCobrosGeo.Web.Models.Shared
+@model CollectorRouteViewModel
+@{
+    ViewData["Title"] = "Mi ruta";
+    ViewData["MobileContextBar"] = new MobileContextBarModel("Cobros", "Mi ruta", Url.Action("CollectorHome", "Cobros", new { profile = Model.Profile }));
+}
+
+<section class="collector-route-shell">
+    <header class="collector-role-header collector-role-header-compact">
+        <div>
+            <h1>Mi ruta</h1>
+            <p>Orden sugerido por prioridad para trabajar en campo.</p>
+        </div>
+        <a class="btn btn-outline-primary" asp-action="CollectorQueue" asp-route-profile="@Model.Profile" asp-route-groupBy="route" asp-route-filter="today">Abrir bandeja</a>
+    </header>
+
+    <div class="collector-route-map card card-body">
+        <strong>Mapa y ruta sugerida</strong>
+        <span>Base inicial lista para conectar un mapa real y ordenar por cercania cuando activemos geolocalizacion continua.</span>
+    </div>
+
+    <div class="collector-client-stack">
+        @foreach (var item in Model.Clients)
+        {
+            var mapLink = string.IsNullOrWhiteSpace(item.Coordinates) ? "#" : $"https://maps.google.com/?q={Uri.EscapeDataString(item.Coordinates)}";
+            <article class="collector-client-card route-card">
+                <a class="collector-client-main" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">
+                    <div class="collector-route-order">@((Model.Clients.ToList().IndexOf(item)) + 1)</div>
+                    <div class="collector-client-copy no-thumb">
+                        <div class="collector-client-topline">
+                            <strong>@item.Name</strong>
+                            <span class="collector-priority @item.Priority.ToLowerInvariant()">@item.Priority</span>
+                        </div>
+                        <div class="collector-client-meta">@item.Zone · @item.ReferenceText</div>
+                        <div class="collector-next-action">@item.NextAction</div>
+                    </div>
+                </a>
+                <div class="collector-client-actions">
+                    <a href="@mapLink" target="_blank" rel="noopener" class="@(mapLink == "#" ? "disabled" : string.Empty)">MP</a>
+                    <a asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">RG</a>
+                </div>
+            </article>
+        }
+    </div>
+</section>
