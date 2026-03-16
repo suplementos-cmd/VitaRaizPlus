@@ -110,10 +110,11 @@
             }
 
             toast.dataset.toastBound = 'true';
+            const delay = Number.parseInt(toast.dataset.toastDelay || '3200', 10);
             window.setTimeout(() => {
                 toast.setAttribute('data-hiding', 'true');
                 window.setTimeout(() => toast.remove(), 260);
-            }, 3200);
+            }, Number.isFinite(delay) ? delay : 3200);
         });
     }
 
