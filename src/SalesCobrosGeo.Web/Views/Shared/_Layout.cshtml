@@ -30,7 +30,7 @@
     var canCollections = isAuthenticated && User.HasPermission(AppPermissions.CollectionsView);
     var canMaintenance = isAuthenticated && User.HasPermission(AppPermissions.MaintenanceView);
     var canAdministration = isAuthenticated && User.HasPermission(AppPermissions.AdministrationView);
-    var landingController = canAdministration ? "Dashboard" : canSales && !canCollections ? "Sales" : canCollections && !canSales ? "Cobros" : canDashboard ? "Dashboard" : "Home";
+    var landingController = canAdministration ? "Dashboard" : canSales && !canCollections ? "Sales" : canCollections && !canSales ? "Cobros" : canDashboard ? "Dashboard" : "Account";
     var landingAction = "Index";
     var antiForgeryToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
     var toastMessage = TempData["AppToastMessage"] as string
