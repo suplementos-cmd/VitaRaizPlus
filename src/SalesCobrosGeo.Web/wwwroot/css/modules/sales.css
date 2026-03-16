@@ -409,6 +409,21 @@
   color: #173252;
 }
 
+.sale-step-chip.complete {
+  border-color: #b9e2cb;
+  background: linear-gradient(135deg, #ecfbf3 0%, #f6fffb 100%);
+  color: #177246;
+}
+
+.sale-step-chip.complete span {
+  background: #d7f3e2;
+  color: #177246;
+}
+
+.sale-step-chip.pending {
+  opacity: 0.82;
+}
+
 .sale-step-panel {
   display: none;
 }
@@ -418,33 +433,17 @@
   animation: page-enter 220ms ease-out;
 }
 
-.sale-wizard-footer {
-  position: sticky;
-  bottom: 72px;
-  z-index: 20;
-  display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) 56px 120px;
-  gap: 10px;
-  align-items: center;
-  padding: 12px;
-  border: 1px solid #dbe5f0;
-  border-radius: 18px;
-  background: rgba(255,255,255,0.96);
-  box-shadow: var(--vr-shadow-soft);
+.sale-submit-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
 }
 
-.sale-wizard-progress {
-  text-align: center;
+.sale-submit-btn {
+  min-width: 180px;
+  min-height: 46px;
+  border-radius: 14px;
   font-weight: 800;
-  color: #42536a;
-  min-width: 0;
-}
-
-.sale-wizard-iconbtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
 }
 
 .sale-confirm-grid {
@@ -633,39 +632,6 @@
     font-size: 0.65rem;
   }
 
-  .sale-wizard-footer {
-    bottom: 74px;
-    gap: 8px;
-    padding: 10px;
-    border-radius: 16px;
-    grid-template-columns: 48px minmax(0, 1fr) 48px 64px;
-    width: 100%;
-  }
-
-  .sale-wizard-progress {
-    grid-column: auto;
-    order: 0;
-    font-size: 0.76rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .sale-wizard-footer .btn {
-    width: 100%;
-    min-height: 46px;
-    padding-inline: 0;
-    border-radius: 14px;
-  }
-
-  .sale-wizard-iconbtn strong {
-    display: none;
-  }
-
-  .sale-wizard-iconbtn span {
-    font-size: 1rem;
-  }
-
   .sale-step-panel .card {
     margin-bottom: 0.75rem !important;
     border-radius: 18px;
@@ -749,6 +715,15 @@
     font-size: 0.82rem;
   }
 
+  .sale-submit-row {
+    margin-top: 12px;
+  }
+
+  .sale-submit-btn {
+    width: 100%;
+    min-width: 0;
+  }
+
   .sale-confirm-grid,
   .sales-detail-row {
     grid-template-columns: 1fr;
@@ -756,12 +731,6 @@
 }
 
 @media (max-width: 380px) {
-  .sale-wizard-footer {
-    grid-template-columns: 46px minmax(0, 1fr) 46px 58px;
-    gap: 6px;
-    padding: 8px;
-  }
-
   .sale-form-toast {
     width: calc(100vw - 12px);
     top: 70px;

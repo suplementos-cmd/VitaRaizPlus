@@ -24,7 +24,7 @@
         <button type="button" class="sale-step-chip" data-step-target="2"><span>2</span><small>Producto</small></button>
         <button type="button" class="sale-step-chip" data-step-target="3"><span>3</span><small>Fotos</small></button>
         <button type="button" class="sale-step-chip" data-step-target="4"><span>4</span><small>GPS</small></button>
-        <button type="button" class="sale-step-chip" data-step-target="5"><span>5</span><small>OK</small></button>
+        <button type="button" class="sale-step-chip" data-step-target="5"><span>5</span><small>Guardar</small></button>
     </div>
 
     <form method="post" class="sale-form" id="saleForm">
@@ -274,16 +274,12 @@
                             <strong id="confirmCoordinates">@Model.Input.Coordenadas</strong>
                         </div>
                     </div>
+                    <div class="sale-submit-row">
+                        <button type="submit" class="btn btn-success sale-submit-btn" id="btnSubmitSale">@(Model.IsEdit ? "Guardar cambios" : "Registrar venta")</button>
+                    </div>
                 </div>
             </div>
         </section>
-
-        <div class="sale-wizard-footer">
-            <button type="button" class="btn btn-outline-secondary sale-wizard-iconbtn" id="btnPrevStep" aria-label="Paso anterior"><span aria-hidden="true">&#8592;</span><strong>Atras</strong></button>
-            <div class="sale-wizard-progress"><span id="saleWizardLabel">Paso 1 de 5</span></div>
-            <button type="button" class="btn btn-primary sale-wizard-iconbtn" id="btnNextStep" aria-label="Paso siguiente"><strong>Sigue</strong><span aria-hidden="true">&#8594;</span></button>
-            <button type="submit" class="btn btn-success sale-wizard-iconbtn" id="btnSubmitSale"><span aria-hidden="true">&#10003;</span><strong>@(Model.IsEdit ? "Guardar" : "Registrar")</strong></button>
-        </div>
     </form>
 </div>
 
@@ -296,15 +292,56 @@
     const products = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Catalogs.Products));
     const steps = [...document.querySelectorAll('[data-sale-step]')];
     const stepButtons = [...document.querySelectorAll('[data-step-target]')];
-    const prevBtn = document.getElementById('btnPrevStep');
-    const nextBtn = document.getElementById('btnNextStep');
-    const submitBtn = document.getElementById('btnSubmitSale');
-    const wizardLabel = document.getElementById('saleWizardLabel');
     let currentStep = 1;
 
     function getProductCode(product) { return product.code ?? product.Code ?? ''; }
     function getProductName(product) { return product.name ?? product.Name ?? ''; }
     function getProductPrice(product) { return product.price ?? product.Price ?? ''; }
+
+    function isFilled(id) {
+        const el = document.getElementById(id);
+        return !!String(el?.value || '').trim();
+    }
+
+    function isStepComplete(step) {
+        if (step === 1) {
+            return ['Input_FechaVenta', 'Input_NombreCliente', 'Input_Zona', 'Input_FormaPago', 'Input_DiaCobro']
+                .every(isFilled);
+        }
+
+        if (step === 2) {
+            const productRows = [...tableBody.querySelectorAll('.product-row')];
+            return productRows.length > 0
+                && productRows.every((row) => !!String(row.querySelector('.product-select')?.value || '').trim())
+                && parseFloat(totalNode.textContent || '0') > 0;
+        }
+
+        if (step === 3) {
+            return ['Input_FotoCliente', 'Input_FotoFachada', 'Input_FotoContrato', 'Input_FotoAdd1', 'Input_FotoAdd2']
+                .some(isFilled);
+        }
+
+        if (step === 4) {
+            return ['Input_Vendedor', 'Input_Cobrador', 'gpsCoordinates'].every(isFilled);
+        }
+
+        if (step === 5) {
+            return [1, 2, 3, 4].every(isStepComplete);
+        }
+
+        return false;
+    }
+
+    function paintStepState() {
+        stepButtons.forEach((button, index) => {
+            const stepNumber = index + 1;
+            const complete = isStepComplete(stepNumber);
+            button.classList.toggle('active', stepNumber === currentStep);
+            button.classList.toggle('complete', complete);
+            button.classList.toggle('pending', !complete && stepNumber !== currentStep);
+            button.setAttribute('aria-current', stepNumber === currentStep ? 'step' : 'false');
+        });
+    }
 
     function updateConfirm() {
         document.getElementById('confirmClient').textContent = document.getElementById('Input_NombreCliente')?.value || '-';
@@ -315,16 +352,15 @@
         document.getElementById('confirmCollector').textContent = document.getElementById('Input_Cobrador')?.value || '-';
         document.getElementById('confirmTotal').textContent = totalNode.textContent || '0.00';
         document.getElementById('confirmCoordinates').textContent = document.getElementById('gpsCoordinates')?.value || '-';
+        paintStepState();
     }
+
+    document.addEventListener('saleWizardRefresh', updateConfirm);
 
     function setStep(step) {
         currentStep = Math.max(1, Math.min(5, step));
         steps.forEach((panel, index) => panel.classList.toggle('active', index + 1 === currentStep));
-        stepButtons.forEach((button, index) => button.classList.toggle('active', index + 1 === currentStep));
-        prevBtn.disabled = currentStep === 1;
-        nextBtn.style.display = currentStep === 5 ? 'none' : 'inline-flex';
-        submitBtn.style.display = currentStep === 5 ? 'inline-flex' : 'none';
-        wizardLabel.textContent = `Paso ${currentStep} de 5`;
+        paintStepState();
         updateConfirm();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -410,7 +446,7 @@
 
         row.innerHTML = `
             <td>
-                <label class="mobile-field-label">Producto</label>
+                <label class="mobile-field-label">Producto <span class="sale-required-dot">*</span></label>
                 <select name="Input.Productos[${i}].ProductCode" class="form-select product-select" required>${options}</select>
             </td>
             <td class="product-detail-cell">
@@ -451,8 +487,6 @@
     stepButtons.forEach((button) => {
         button.addEventListener('click', () => setStep(parseInt(button.dataset.stepTarget || '1', 10)));
     });
-    prevBtn.addEventListener('click', () => setStep(currentStep - 1));
-    nextBtn.addEventListener('click', () => setStep(currentStep + 1));
     document.querySelectorAll('#Input_NombreCliente, #Input_Zona, #Input_FormaPago, #Input_DiaCobro, #Input_Vendedor, #Input_Cobrador, #gpsCoordinates').forEach((el) => {
         el.addEventListener('input', updateConfirm);
         el.addEventListener('change', updateConfirm);
@@ -519,6 +553,7 @@
             remove.disabled = !hasValue;
             picker.classList.toggle('has-image', hasValue);
             picker.classList.remove('is-loading');
+            document.dispatchEvent(new CustomEvent('saleWizardRefresh'));
         }
 
         file.addEventListener('change', async (e) => {
@@ -566,6 +601,7 @@
         url.value = `https://maps.google.com/?q=${lat},${lng}`;
         status.textContent = 'Ubicacion detectada correctamente.';
         document.getElementById('confirmCoordinates').textContent = value;
+        document.dispatchEvent(new CustomEvent('saleWizardRefresh'));
     }
 
     function detect() {
