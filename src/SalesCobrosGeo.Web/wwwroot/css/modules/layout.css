@@ -42,6 +42,57 @@
   background: #fff;
 }
 
+.mobile-more-links {
+  display: grid;
+  gap: 10px;
+}
+
+.mobile-more-footer {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--vr-color-border) 72%, #ffffff);
+  display: grid;
+  gap: 10px;
+}
+
+.mobile-more-userchip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--vr-color-brand-3) 54%, #ffffff);
+  color: var(--vr-color-text);
+}
+
+.mobile-more-userchip strong {
+  font-size: 0.92rem;
+}
+
+.mobile-more-userchip small {
+  color: var(--vr-color-text-soft);
+  font-size: 0.74rem;
+}
+
+.mobile-more-logout-form {
+  margin: 0;
+}
+
+.mobile-more-logout {
+  width: 100%;
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--vr-color-brand) 88%, #15283f), color-mix(in srgb, var(--vr-color-brand-2) 74%, #24486d));
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 14px 24px color-mix(in srgb, var(--vr-color-brand) 18%, transparent);
+}
+
 @media (max-width: 991px) {
   .app-header-shell {
     position: sticky;
@@ -49,6 +100,10 @@
 
   .app-topbar-inner {
     min-height: 58px;
+  }
+
+  .app-user-panel {
+    display: none;
   }
 }
 
