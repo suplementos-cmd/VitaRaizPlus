@@ -90,15 +90,23 @@
 }
 
 <div class="collector-mobile-app">
-    <header class="collector-mobile-header"><div class="collector-mobile-summarybar">
-            <div class="collector-mobile-summaryitem">
-                <span class="collector-mobile-summarylabel">Cuentas</span>
+    <header class="collector-mobile-header">
+        <div class="collector-mobile-overview">
+            <div class="collector-mobile-metricchip">
+                <span class="collector-mobile-metriclabel">Cuentas</span>
                 <strong id="collectorMobileCount">@Model.Sales.Count</strong>
             </div>
-            <div class="collector-mobile-summaryitem money">
-                <span class="collector-mobile-summarylabel">Restante</span>
+            <div class="collector-mobile-metricchip money">
+                <span class="collector-mobile-metriclabel">Restante</span>
                 <strong>@totalRestante.ToString("0.00")</strong>
             </div>
+            @if (!string.IsNullOrWhiteSpace(Model.SelectedStatus))
+            {
+                <div class="collector-mobile-metricchip subtle">
+                    <span class="collector-mobile-metriclabel">Estado</span>
+                    <strong>@Model.SelectedStatus</strong>
+                </div>
+            }
         </div>
 
         @if (showMobileSearch)
