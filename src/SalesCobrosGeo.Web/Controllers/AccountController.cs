@@ -24,7 +24,7 @@ public sealed class AccountController : Controller
     {
         if (User.Identity?.IsAuthenticated == true)
         {
-            return RedirectToAction("Index", "Home");
+            return RedirectToLanding(User);
         }
 
         return View(new LoginViewModel
@@ -73,7 +73,7 @@ public sealed class AccountController : Controller
             return Redirect(input.ReturnUrl);
         }
 
-        return RedirectToAction("Index", "Home");
+        return RedirectToLanding(sessionPrincipal);
     }
 
     [Authorize]
@@ -99,5 +99,30 @@ public sealed class AccountController : Controller
     public IActionResult AccessDenied()
     {
         return View();
+    }
+
+    private IActionResult RedirectToLanding(System.Security.Claims.ClaimsPrincipal principal)
+    {
+        if (principal.HasPermission(AppPermissions.AdministrationView) || principal.HasPermission(AppPermissions.DashboardView))
+        {
+            if (principal.HasPermission(AppPermissions.AdministrationView))
+            {
+                return RedirectToAction("Index", "Dashboard");
+            }
+
+            if (principal.HasPermission(AppPermissions.SalesView) && !principal.HasPermission(AppPermissions.CollectionsView))
+            {
+                return RedirectToAction("Index", "Sales");
+            }
+
+            if (principal.HasPermission(AppPermissions.CollectionsView) && !principal.HasPermission(AppPermissions.SalesView))
+            {
+                return RedirectToAction("Index", "Cobros");
+            }
+
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        return RedirectToAction(nameof(Login));
     }
 }

@@ -4,7 +4,16 @@
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
     var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
-    var theme = isAuthenticated ? User.GetTheme() : "public";
+    var rawTheme = isAuthenticated ? User.GetTheme() : "public";
+    var theme = rawTheme == "root"
+        ? (isAuthenticated && User.HasPermission(AppPermissions.AdministrationView)
+            ? "graphite"
+            : isAuthenticated && User.HasPermission(AppPermissions.CollectionsView) && !User.HasPermission(AppPermissions.SalesView)
+                ? "collections"
+                : isAuthenticated && User.HasPermission(AppPermissions.SalesView) && !User.HasPermission(AppPermissions.CollectionsView)
+                    ? "sales"
+                    : "graphite")
+        : rawTheme;
     var themeColor = theme switch
     {
         "sales" => "#2f7dff",
@@ -21,6 +30,8 @@
     var canCollections = isAuthenticated && User.HasPermission(AppPermissions.CollectionsView);
     var canMaintenance = isAuthenticated && User.HasPermission(AppPermissions.MaintenanceView);
     var canAdministration = isAuthenticated && User.HasPermission(AppPermissions.AdministrationView);
+    var landingController = canAdministration ? "Dashboard" : canSales && !canCollections ? "Sales" : canCollections && !canSales ? "Cobros" : canDashboard ? "Dashboard" : "Home";
+    var landingAction = "Index";
     var antiForgeryToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
     var toastMessage = TempData["AppToastMessage"] as string
         ?? TempData["SalesMessage"] as string
@@ -56,7 +67,7 @@
         <header class="app-header-shell">
             <nav class="navbar navbar-expand-lg navbar-dark app-topbar">
                 <div class="container-fluid app-topbar-inner">
-                    <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">VitaRaizPlus</a>
+                    <a class="navbar-brand" asp-area="" asp-controller="@landingController" asp-action="@landingAction">VitaRaizPlus</a>
 
                     @if (isAuthenticated)
                     {
@@ -69,9 +80,6 @@
                         @if (isAuthenticated)
                         {
                             <ul class="navbar-nav app-main-nav">
-                                <li class="nav-item">
-                                    <a class="nav-link text-light @(currentController == "Home" && currentAction == "Index" ? "active" : string.Empty)" asp-area="" asp-controller="Home" asp-action="Index"><span class="nav-icon" aria-hidden="true">IN</span><span class="nav-label">Inicio</span></a>
-                                </li>
                                 @if (canDashboard)
                                 {
                                     <li class="nav-item">
@@ -171,10 +179,6 @@
         @if (isAuthenticated)
         {
             <nav class="mobile-bottom-nav" aria-label="Menu principal movil">
-                <a class="mobile-bottom-link @(currentController == "Home" && currentAction == "Index" ? "active" : string.Empty)" asp-controller="Home" asp-action="Index">
-                    <span class="mobile-bottom-icon" aria-hidden="true">IN</span>
-                    <span class="mobile-bottom-text">Inicio</span>
-                </a>
                 @if (canDashboard)
                 {
                     <a class="mobile-bottom-link @(currentController == "Dashboard" && currentAction == "Index" ? "active" : string.Empty)" asp-controller="Dashboard" asp-action="Index">
