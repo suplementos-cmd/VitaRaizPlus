@@ -1506,3 +1506,183 @@
   color: #687c97;
   font-size: 0.72rem;
 }
+
+.collector-mobile-tree,
+.collector-mobile-filtergrid,
+.collector-mobile-groupgrid {
+  display: grid;
+  gap: 8px;
+}
+
+.collector-mobile-treeitem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 58px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(50, 78, 128, 0.10);
+  background: rgba(255,255,255,0.98);
+  color: #16345d;
+  text-decoration: none;
+  box-shadow: var(--vr-shadow-soft);
+}
+
+.collector-mobile-treecopy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.collector-mobile-treecopy strong,
+.collector-mobile-treecopy span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collector-mobile-treecopy strong {
+  font-size: 0.88rem;
+}
+
+.collector-mobile-treecopy span {
+  color: #6b7f98;
+  font-size: 0.7rem;
+}
+
+.collector-mobile-treeaside {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.collector-mobile-treecount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: #edf3fd;
+  color: #2d5ba8;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.collector-mobile-treearrow {
+  color: #71839d;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+@media (max-width: 640px) {
+  .collector-mobile-filtergrid,
+  .collector-mobile-groupgrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .collector-mobile-filterchip,
+  .collector-mobile-groupgrid a {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.collector-mobile-treebranch {
+  border-radius: 16px;
+  background: rgba(255,255,255,0.98);
+  border: 1px solid rgba(50, 78, 128, 0.10);
+  box-shadow: var(--vr-shadow-soft);
+  overflow: clip;
+}
+
+.collector-mobile-treebranch summary {
+  list-style: none;
+}
+
+.collector-mobile-treebranch summary::-webkit-details-marker {
+  display: none;
+}
+
+.collector-mobile-treeitem {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 58px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.collector-mobile-treeicon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #edf3fd;
+  color: #2d5ba8;
+}
+
+.collector-mobile-treeicon svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.collector-mobile-treeicon.promise {
+  background: rgba(229, 148, 28, 0.14);
+  color: #b96b11;
+}
+
+.collector-mobile-treeicon.followup {
+  background: rgba(109, 79, 213, 0.14);
+  color: #5f44b6;
+}
+
+.collector-mobile-treeicon.overdue {
+  background: rgba(221, 59, 95, 0.14);
+  color: #bf2148;
+}
+
+.collector-mobile-treebody {
+  display: grid;
+  gap: 8px;
+  padding: 0 12px 12px 56px;
+  border-top: 1px solid rgba(50, 78, 128, 0.06);
+}
+
+.collector-mobile-treebody p {
+  margin: 0;
+  color: #687c97;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.collector-mobile-treecta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  width: fit-content;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--vr-color-brand), var(--vr-color-brand-2));
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.collector-mobile-treebranch[open] .collector-mobile-treearrow {
+  transform: rotate(90deg);
+}
+
+.collector-mobile-treearrow {
+  transition: transform 0.18s ease;
+}
