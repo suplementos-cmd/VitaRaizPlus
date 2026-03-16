@@ -127,6 +127,10 @@
   }
 
   .collector-register-topbar.compact {
+    display: none;
+  }
+
+  .collector-register-topbar.compact {
     grid-template-columns: 44px 1fr;
     margin-bottom: 6px;
   }
@@ -242,69 +246,18 @@
     display: none;
   }
 
+  .collector-register-topbar.compact {
+    display: none;
+  }
+
   .collector-mobile-header {
     position: sticky;
-    top: 58px;
+    top: 106px;
     z-index: 15;
     background: linear-gradient(180deg, rgba(247, 251, 255, 0.98), rgba(241, 247, 255, 0.96));
     backdrop-filter: blur(14px);
     border-bottom: 1px solid rgba(42, 88, 170, 0.12);
     box-shadow: 0 10px 26px rgba(24, 44, 88, 0.1);
-  }
-
-  .collector-mobile-topbar {
-    display: grid;
-    grid-template-columns: 42px minmax(0, 1fr) auto;
-    gap: 8px;
-    align-items: center;
-    padding: 10px 12px 8px;
-  }
-
-  .collector-mobile-navbtn,
-  .collector-mobile-iconbtn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    border: 1px solid rgba(34, 77, 154, 0.16);
-    background: rgba(255, 255, 255, 0.88);
-    color: #21427f;
-    text-decoration: none;
-    font-size: 1.2rem;
-    line-height: 1;
-    box-shadow: 0 10px 18px rgba(31, 55, 100, 0.08);
-  }
-
-  .collector-mobile-navbtn.is-menu {
-    font-size: 1rem;
-  }
-
-  .collector-mobile-brandwrap {
-    min-width: 0;
-  }
-
-  .collector-mobile-brandtitle {
-    color: #16386f;
-    font-size: 1.02rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-  }
-
-  .collector-mobile-brandmeta {
-    margin-top: 2px;
-    color: #5f7397;
-    font-size: 0.7rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .collector-mobile-actions {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
   }
 
   .collector-mobile-chip {
@@ -586,19 +539,6 @@
 }
 
 @media (max-width: 360px) {
-  .collector-mobile-topbar {
-    grid-template-columns: 38px minmax(0, 1fr) auto;
-    gap: 6px;
-    padding-inline: 9px;
-  }
-
-  .collector-mobile-navbtn,
-  .collector-mobile-iconbtn {
-    width: 36px;
-    height: 36px;
-    border-radius: 11px;
-  }
-
   .collector-mobile-chip {
     min-width: 42px;
     height: 30px;

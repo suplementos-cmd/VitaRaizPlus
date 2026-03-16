@@ -1,7 +1,12 @@
 @model SalesCobrosGeo.Web.Models.Sales.SaleFormViewModel
 @using Microsoft.AspNetCore.Mvc.Rendering
+@using SalesCobrosGeo.Web.Models.Shared
 @{
     ViewData["Title"] = Model.PageTitle;
+    ViewData["MobileContextBar"] = new MobileContextBarModel(
+        Model.PageTitle,
+        "Captura rapida",
+        Url.Action("Index", "Sales"));
 }
 
 <div class="sale-form-shell">
@@ -676,3 +681,5 @@
 })();
 </script>
 }
+
+

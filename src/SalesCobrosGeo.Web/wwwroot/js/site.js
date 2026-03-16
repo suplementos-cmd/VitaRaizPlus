@@ -119,6 +119,9 @@
     }
 
     function bindCollectorFeatures(root) {
+        const mobileSearchShell = root.querySelector('[data-cobros-search-shell="true"]');
+        const mobileSearchInput = root.querySelector('#collectorMobileSearch');
+
         const bindSearch = (inputId, listId, rowSelector, countId, emptyId) => {
             const input = $(root).find(`#${inputId}`);
             const list = $(root).find(`#${listId}`);
@@ -155,6 +158,13 @@
 
         bindSearch('collectorMobileSearch', 'collectorMobileSalesList', '.collector-mobile-sale-row', 'collectorMobileCount', 'collectorMobileEmptySearch');
         bindSearch('collectorDesktopSearch', 'collectorDesktopSalesList', '.collector-desktop-record', 'collectorDesktopCount', 'collectorDesktopEmptySearch');
+
+        if (mobileSearchShell && mobileSearchInput && mobileSearchShell.dataset.bound !== 'true') {
+            mobileSearchShell.dataset.bound = 'true';
+            if (mobileSearchInput.value) {
+                mobileSearchShell.hidden = false;
+            }
+        }
 
         root.querySelectorAll('[data-tree-toggle]').forEach((button) => {
             if (button.dataset.bound === 'true') {
@@ -208,6 +218,46 @@
 
             searchInput.addEventListener('input', applySalesFilter);
         }
+    }
+
+    function bindContextActions(root) {
+        root.querySelectorAll('[data-context-action]').forEach((button) => {
+            if (button.dataset.bound === 'true') {
+                return;
+            }
+
+            button.dataset.bound = 'true';
+            button.addEventListener('click', () => {
+                const action = button.dataset.contextAction;
+                if (action === 'toggle-sales-search') {
+                    const toggle = root.querySelector('[data-sales-search-toggle="true"]');
+                    toggle?.click();
+                }
+
+                if (action === 'toggle-cobros-search') {
+                    const shell = root.querySelector('[data-cobros-search-shell="true"]');
+                    const input = root.querySelector('#collectorMobileSearch');
+                    if (!shell) {
+                        return;
+                    }
+
+                    const isHidden = shell.hidden;
+                    shell.hidden = !isHidden;
+                    if (isHidden) {
+                        window.setTimeout(() => input?.focus(), 60);
+                    } else if (input) {
+                        input.value = '';
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+
+                if (action === 'focus-dashboard-filter') {
+                    const field = root.querySelector('#from');
+                    field?.focus();
+                    field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
     }
 
     function bindAdminUsers(root) {
@@ -499,6 +549,7 @@
         initToasts(root);
         bindCollectorFeatures(root);
         bindSalesFeatures(root);
+        bindContextActions(root);
         bindAdminUsers(root);
         bindInlineToggles(root);
     }

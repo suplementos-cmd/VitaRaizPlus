@@ -1,9 +1,13 @@
+@using SalesCobrosGeo.Web.Models.Shared
 @model SalesCobrosGeo.Web.Models.Maintenance.MaintenancePageViewModel
 @{
     ViewData["Title"] = "Mantenimiento";
     var current = Model.Sections.First(x => x.Key == Model.SelectedSection);
     var editableSection = new[] { "zonas", "dias-cobro", "formas-pago", "productos", "vendedores", "cobradores" }
         .Contains(Model.SelectedSection, StringComparer.OrdinalIgnoreCase);
+    ViewData["MobileContextBar"] = editableSection
+        ? new MobileContextBarModel("Mantenimiento", current.Title, null, new[] { new MobileContextAction("Agregar", "add", Url: Url.Action("Index", "Maintenance", new { section = Model.SelectedSection, create = true }), AriaLabel: "Agregar registro", CssClass: "is-primary") })
+        : new MobileContextBarModel("Mantenimiento", current.Title);
 
     string ToneClass(string tone) => tone switch
     {
@@ -180,3 +184,5 @@
         }
     </section>
 </div>
+
+

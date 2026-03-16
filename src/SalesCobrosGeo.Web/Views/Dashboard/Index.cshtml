@@ -1,6 +1,12 @@
+@using SalesCobrosGeo.Web.Models.Shared
 @model SalesCobrosGeo.Web.Models.Dashboard.DashboardPageViewModel
 @{
     ViewData["Title"] = "Dashboard";
+    ViewData["MobileContextBar"] = new MobileContextBarModel(
+        "Dashboard",
+        $"{Model.Period.Start:dd/MM} - {Model.Period.End:dd/MM}",
+        null,
+        new[] { new MobileContextAction("Filtros", "filter", DataAction: "focus-dashboard-filter", AriaLabel: "Ir a filtros") });
 
     var salesDayPeak = Math.Max(1m, Model.WeeklySales.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.DailySummary("", "", 0, 0m)).Max(x => (decimal)x.Count));
     var collectionDayPeak = Math.Max(1m, Model.WeeklyCollections.DefaultIfEmpty(new SalesCobrosGeo.Web.Models.Dashboard.DailySummary("", "", 0, 0m)).Max(x => x.Amount));
@@ -159,3 +165,5 @@
         </section>
     </div>
 </div>
+
+

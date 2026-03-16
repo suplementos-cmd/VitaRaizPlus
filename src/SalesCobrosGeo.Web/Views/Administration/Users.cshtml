@@ -1,7 +1,17 @@
-﻿@model SalesCobrosGeo.Web.Models.Administration.AdministrationPageViewModel
+@model SalesCobrosGeo.Web.Models.Administration.AdministrationPageViewModel
+@using SalesCobrosGeo.Web.Models.Shared
 @using SalesCobrosGeo.Web.Security
 @{
     ViewData["Title"] = "Administracion";
+    ViewData["MobileContextBar"] = new MobileContextBarModel(
+        "Usuarios",
+        "Permisos y seguridad activa",
+        null,
+        new[]
+        {
+            new MobileContextAction("Bitacora", "audit", Url: Url.Action("Audit", "Administration"), AriaLabel: "Ver bitacora"),
+            new MobileContextAction("Agregar", "add", Url: Url.Action("Users", "Administration", new { create = true }), AriaLabel: "Agregar usuario", CssClass: "is-primary")
+        });
     var editor = Model.Editor.Input;
     var themeCatalog = new[]
     {
@@ -149,7 +159,7 @@
                                     <div class="admin-session-rowtop">
                                         <div>
                                             <div class="admin-user-rowname">@session.DisplayName</div>
-                                            <div class="admin-user-rowusername">@session.Username · @session.RoleLabel</div>
+                                            <div class="admin-user-rowusername">@session.Username � @session.RoleLabel</div>
                                         </div>
                                         <span class="admin-session-badge @(session.IsConnected ? "connected" : session.IsActive ? "idle" : "inactive")">
                                             @(session.IsConnected ? "Conectado" : session.IsActive ? "Sin sesion" : "Inactivo")
@@ -293,3 +303,5 @@
         </div>
     }
 </div>
+
+
