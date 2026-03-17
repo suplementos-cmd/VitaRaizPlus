@@ -85,7 +85,9 @@
                                 </a>
                             }
                             <a class="app-mobile-brand" asp-area="" asp-controller="@landingController" asp-action="@landingAction">
-                                <span class="app-mobile-brandmark" aria-hidden="true">VR</span>
+                                <span class="app-mobile-brandmark" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 22V12"/><path d="M12 12C12 7 17 3 22 3c0 5-4 9-10 9z"/><path d="M12 12C12 7 7 3 2 3c0 5 4 9 10 9z"/></svg>
+                            </span>
                                 <span class="app-mobile-brandtext">VitaRaiz</span>
                             </a>
                             <div class="app-mobile-viewtitle">@mobileViewTitle</div>
@@ -123,7 +125,12 @@
                         </div>
                     }
 
-                    <a class="navbar-brand" asp-area="" asp-controller="@landingController" asp-action="@landingAction">VitaRaizPlus</a>
+            <a class="navbar-brand" asp-area="" asp-controller="@landingController" asp-action="@landingAction">
+                    <span class="navbar-brand-mark" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 22V12"/><path d="M12 12C12 7 17 3 22 3c0 5-4 9-10 9z"/><path d="M12 12C12 7 7 3 2 3c0 5 4 9 10 9z"/></svg>
+                    </span>
+                    <span class="navbar-brand-text">VitaRaizPlus</span>
+                </a>
 
                     @if (isAuthenticated)
                     {
@@ -139,31 +146,41 @@
                                 @if (canDashboard)
                                 {
                                     <li class="nav-item">
-                                        <a class="nav-link text-light @(currentController == "Dashboard" && currentAction == "Index" ? "active" : string.Empty)" asp-area="" asp-controller="Dashboard" asp-action="Index"><span class="nav-icon" aria-hidden="true">DA</span><span class="nav-label">Dashboard</span></a>
+                                        <a class="nav-link text-light @(currentController == "Dashboard" && currentAction == "Index" ? "active" : string.Empty)" asp-area="" asp-controller="Dashboard" asp-action="Index">
+                                        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                                        <span class="nav-label">Dashboard</span></a>
                                     </li>
                                 }
                                 @if (canSales)
                                 {
                                     <li class="nav-item">
-                                        <a class="nav-link text-light @(currentController == "Sales" ? "active" : string.Empty)" asp-area="" asp-controller="Sales" asp-action="Index"><span class="nav-icon" aria-hidden="true">VE</span><span class="nav-label">Ventas</span></a>
+                                        <a class="nav-link text-light @(currentController == "Sales" ? "active" : string.Empty)" asp-area="" asp-controller="Sales" asp-action="Index">
+                                        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2H4a1 1 0 00-1 1v18l3-2 3 2 3-2 3 2 3-2V3a1 1 0 00-1-1h-5"/><path d="M9 2v4a1 1 0 001 1h5"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
+                                        <span class="nav-label">Ventas</span></a>
                                     </li>
                                 }
                                 @if (canCollections)
                                 {
                                     <li class="nav-item">
-                                        <a class="nav-link text-light @(currentController == "Cobros" ? "active" : string.Empty)" asp-area="" asp-controller="Cobros" asp-action="Index"><span class="nav-icon" aria-hidden="true">CO</span><span class="nav-label">Cobros</span></a>
+                                        <a class="nav-link text-light @(currentController == "Cobros" ? "active" : string.Empty)" asp-area="" asp-controller="Cobros" asp-action="Index">
+                                        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6z"/><path d="M3 10h18"/><circle cx="16" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>
+                                        <span class="nav-label">Cobros</span></a>
                                     </li>
                                 }
                                 @if (canMaintenance)
                                 {
                                     <li class="nav-item">
-                                        <a class="nav-link text-light @(currentController == "Maintenance" ? "active" : string.Empty)" asp-area="" asp-controller="Maintenance" asp-action="Index"><span class="nav-icon" aria-hidden="true">MT</span><span class="nav-label">Mantenimiento</span></a>
+                                        <a class="nav-link text-light @(currentController == "Maintenance" ? "active" : string.Empty)" asp-area="" asp-controller="Maintenance" asp-action="Index">
+                                        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91A6 6 0 0114.7 6.3z"/></svg>
+                                        <span class="nav-label">Mantenimiento</span></a>
                                     </li>
                                 }
                                 @if (canAdministration)
                                 {
                                     <li class="nav-item">
-                                        <a class="nav-link text-light @(currentController == "Administration" ? "active" : string.Empty)" asp-area="" asp-controller="Administration" asp-action="Users"><span class="nav-icon" aria-hidden="true">US</span><span class="nav-label">Usuarios</span></a>
+                                        <a class="nav-link text-light @(currentController == "Administration" ? "active" : string.Empty)" asp-area="" asp-controller="Administration" asp-action="Users">
+                                        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                                        <span class="nav-label">Usuarios</span></a>
                                     </li>
                                 }
                             </ul>
@@ -178,7 +195,10 @@
                                 </div>
                                 <form asp-controller="Account" asp-action="Logout" method="post" class="app-logout-form">
                                     @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-light">Salir</button>
+                                    <button type="submit" class="btn btn-sm btn-light">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                        Salir
+                                    </button>
                                 </form>
                             }
                             else
@@ -207,16 +227,24 @@
                     <div class="mobile-more-links">
                         @if (canMaintenance)
                         {
-                            <a class="mobile-more-link" asp-controller="Maintenance" asp-action="Index"><span class="nav-icon" aria-hidden="true">MT</span><span class="nav-label">Mantenimiento</span></a>
+                        <a class="mobile-more-link" asp-controller="Maintenance" asp-action="Index">
+                            <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91A6 6 0 0114.7 6.3z"/></svg>
+                            <span class="nav-label">Mantenimiento</span></a>
                         }
                         @if (canAdministration)
                         {
-                            <a class="mobile-more-link" asp-controller="Administration" asp-action="Users"><span class="nav-icon" aria-hidden="true">US</span><span class="nav-label">Usuarios y permisos</span></a>
+                            <a class="mobile-more-link" asp-controller="Administration" asp-action="Users">
+                            <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                            <span class="nav-label">Usuarios y permisos</span></a>
                         }
                         @if (canDashboard)
                         {
-                            <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Sales"><span class="nav-icon" aria-hidden="true">RV</span><span class="nav-label">Resumen ventas</span></a>
-                            <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Collections"><span class="nav-icon" aria-hidden="true">RC</span><span class="nav-label">Resumen cobros</span></a>
+                            <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Sales">
+                            <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                            <span class="nav-label">Resumen ventas</span></a>
+                            <a class="mobile-more-link" asp-controller="Dashboard" asp-action="Collections">
+                            <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.21 15.89A10 10 0 118 2.83"/><path d="M22 12A10 10 0 0012 2v10z"/></svg>
+                            <span class="nav-label">Resumen cobros</span></a>
                         }
                     </div>
                     <div class="mobile-more-footer">
@@ -227,7 +255,7 @@
                         <form asp-controller="Account" asp-action="Logout" method="post" class="mobile-more-logout-form">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="mobile-more-logout">
-                                <span class="nav-icon" aria-hidden="true">SL</span>
+                                <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                                 <span class="nav-label">Salir</span>
                             </button>
                         </form>
@@ -255,21 +283,27 @@
                 @if (canDashboard)
                 {
                     <a class="mobile-bottom-link @(currentController == "Dashboard" && currentAction == "Index" ? "active" : string.Empty)" asp-controller="Dashboard" asp-action="Index">
-                        <span class="mobile-bottom-icon" aria-hidden="true">DA</span>
+                        <span class="mobile-bottom-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                        </span>
                         <span class="mobile-bottom-text">Panel</span>
                     </a>
                 }
                 @if (canSales)
                 {
                     <a class="mobile-bottom-link @(currentController == "Sales" ? "active" : string.Empty)" asp-controller="Sales" asp-action="Index">
-                        <span class="mobile-bottom-icon" aria-hidden="true">VE</span>
+                        <span class="mobile-bottom-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2H4a1 1 0 00-1 1v18l3-2 3 2 3-2 3 2 3-2V3a1 1 0 00-1-1h-5"/><path d="M9 2v4a1 1 0 001 1h5"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
+                        </span>
                         <span class="mobile-bottom-text">Ventas</span>
                     </a>
                 }
                 @if (canCollections)
                 {
                     <a class="mobile-bottom-link @(currentController == "Cobros" ? "active" : string.Empty)" asp-controller="Cobros" asp-action="Index">
-                        <span class="mobile-bottom-icon" aria-hidden="true">CO</span>
+                        <span class="mobile-bottom-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6z"/><path d="M3 10h18"/><circle cx="16" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>
+                        </span>
                         <span class="mobile-bottom-text">Cobros</span>
                     </a>
                 }

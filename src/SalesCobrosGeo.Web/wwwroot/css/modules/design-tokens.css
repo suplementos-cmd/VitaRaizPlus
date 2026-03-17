@@ -16,17 +16,17 @@
   --vr-color-backdrop: rgba(15, 29, 51, 0.38);
   --vr-shadow-soft: 0 10px 24px rgba(18, 35, 58, 0.08);
   --vr-shadow-strong: 0 18px 38px rgba(17, 31, 52, 0.16);
-  --vr-radius-sm: 12px;
-  --vr-radius-md: 16px;
-  --vr-radius-lg: 20px;
+  --vr-radius-sm: 14px;
+  --vr-radius-md: 18px;
+  --vr-radius-lg: 22px;
   --vr-space-1: 0.25rem;
   --vr-space-2: 0.5rem;
   --vr-space-3: 0.75rem;
   --vr-space-4: 1rem;
   --vr-space-5: 1.25rem;
   --vr-space-6: 1.5rem;
-  --vr-speed-fast: 160ms;
-  --vr-speed-base: 220ms;
+  --vr-speed-fast: 150ms;
+  --vr-speed-base: 210ms;
 }
 
 [data-role-theme="root"] {
@@ -129,6 +129,8 @@ textarea.form-control {
   border-color: color-mix(in srgb, var(--vr-color-border) 88%, #ffffff);
   background-color: color-mix(in srgb, var(--vr-color-surface) 92%, #ffffff);
   color: var(--vr-color-text);
+  border-radius: 12px;
+  transition: border-color var(--vr-speed-fast) ease, box-shadow var(--vr-speed-fast) ease;
 }
 
 .form-control::placeholder,
@@ -279,12 +281,21 @@ textarea.form-control:focus {
   border-color: var(--vr-color-brand);
   background: linear-gradient(135deg, var(--vr-color-brand) 0%, color-mix(in srgb, var(--vr-color-brand-2) 74%, var(--vr-color-brand)) 100%);
   box-shadow: 0 10px 24px color-mix(in srgb, var(--vr-color-brand) 22%, transparent);
+  border-radius: 12px;
+  font-weight: 700;
+  transition: filter var(--vr-speed-fast) ease, box-shadow var(--vr-speed-fast) ease, transform var(--vr-speed-fast) ease;
 }
 
 .btn-primary:hover,
 .btn-primary:focus {
   border-color: var(--vr-color-brand);
   background: linear-gradient(135deg, color-mix(in srgb, var(--vr-color-brand) 88%, #101b2c) 0%, var(--vr-color-brand-2) 100%);
+  box-shadow: 0 14px 28px color-mix(in srgb, var(--vr-color-brand) 28%, transparent);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale(0.99);
 }
 
 .btn-outline-primary {
