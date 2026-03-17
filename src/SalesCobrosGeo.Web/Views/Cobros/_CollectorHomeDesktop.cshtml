@@ -1,5 +1,18 @@
 ﻿@using SalesCobrosGeo.Web.Models.Collections
 @model CollectorHomeViewModel
+@functions {
+    string SaleTone(CollectorClientListItem item) => item.Status.ToUpperInvariant() switch
+    {
+        "ATRASADO" => "danger",
+        "CANCELADO" => "muted",
+        "LIQUIDADO" => "success",
+        "AL CORRIENTE" => "success",
+        "PARCIAL" => "warning",
+        "POR INICIAR" => "neutral",
+        _ when item.HasPromise => "info",
+        _ => "neutral"
+    };
+}
 <section class="collector-home-shell">
     <header class="collector-role-header collector-role-header-compact">
         <div>
@@ -36,7 +49,8 @@
             @foreach (var item in Model.TodayClients)
             {
                 var mapLink = string.IsNullOrWhiteSpace(item.Coordinates) ? "#" : $"https://maps.google.com/?q={Uri.EscapeDataString(item.Coordinates)}";
-                <article class="collector-client-card" data-search="@(item.Name.ToLowerInvariant()) @(item.Zone.ToLowerInvariant()) @(item.ReferenceText.ToLowerInvariant()) @(item.NumVenta)">
+                var tone = SaleTone(item);
+                <article class="collector-client-card status-@tone" data-search="@(item.Name.ToLowerInvariant()) @(item.Zone.ToLowerInvariant()) @(item.ReferenceText.ToLowerInvariant()) @(item.NumVenta)">
                     <a class="collector-client-main" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">
                         <div class="collector-client-thumb">
                             <img src="@(string.IsNullOrWhiteSpace(item.Thumbnail) ? "https://placehold.co/120x120?text=Cliente" : (item.Thumbnail!.StartsWith("/") ? item.Thumbnail : "/" + item.Thumbnail))" alt="@item.Name" loading="lazy" decoding="async" />
@@ -45,6 +59,7 @@
                             <div class="collector-client-topline">
                                 <strong>@item.Name</strong>
                                 <span class="collector-priority @item.Priority.ToLowerInvariant()">@item.Priority</span>
+                                <span class="collector-state-pill @tone">@item.Status</span>
                             </div>
                             <div class="collector-client-meta">@item.Zone · @item.Route · Folio #@item.NumVenta</div>
                             <div class="collector-client-meta">@item.ReferenceText</div>
@@ -64,4 +79,3 @@
         </div>
     </section>
 </section>
-

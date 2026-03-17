@@ -1,6 +1,28 @@
 ﻿@using SalesCobrosGeo.Web.Models.Collections
 @model CollectorQueueViewModel
 @functions {
+    string SaleTone(CollectorClientListItem item) => item.Status.ToUpperInvariant() switch
+    {
+        "ATRASADO" => "danger",
+        "CANCELADO" => "muted",
+        "LIQUIDADO" => "success",
+        "AL CORRIENTE" => "success",
+        "PARCIAL" => "warning",
+        "POR INICIAR" => "neutral",
+        _ when item.HasPromise => "info",
+        _ => "neutral"
+    };
+
+    string SaleFlag(string tone) => tone switch
+    {
+        "danger" => "Urgente",
+        "muted" => "Cancelada",
+        "success" => "Estable",
+        "warning" => "Seguimiento",
+        "info" => "Promesa",
+        _ => "Pendiente"
+    };
+
     string StatusIcon(string icon) => icon switch
     {
         "promise" => "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M8 7h8'/><path d='M8 12h8'/><path d='M8 17h5'/><path d='M5 4h14a1 1 0 0 1 1 1v14l-4-3-4 3-4-3-4 3V5a1 1 0 0 1 1-1z'/></svg>",
@@ -72,9 +94,10 @@
                 @foreach (var item in Model.MobileZoneClients)
                 {
                     var mapLink = string.IsNullOrWhiteSpace(item.Coordinates) ? "#" : $"https://maps.google.com/?q={Uri.EscapeDataString(item.Coordinates)}";
-                    <article class="collector-mobile-clientrow compact zone-child" data-search="@(item.Name.ToLowerInvariant()) @(item.Zone.ToLowerInvariant()) @(item.ReferenceText.ToLowerInvariant()) @(item.NumVenta)">
+                    var tone = SaleTone(item);
+                    <article class="collector-mobile-clientrow compact zone-child status-@tone" data-search="@(item.Name.ToLowerInvariant()) @(item.Zone.ToLowerInvariant()) @(item.ReferenceText.ToLowerInvariant()) @(item.NumVenta)">
                         <a class="collector-mobile-clientmain" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">
-                            <strong>@item.Name</strong>
+                            <strong>@item.Name <span class="collector-inline-flag @tone">@SaleFlag(tone)</span></strong>
                             <span>@item.Zone · @item.NextAction</span>
                         </a>
                         <div class="collector-mobile-clientactions">

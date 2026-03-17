@@ -1,5 +1,18 @@
-@using SalesCobrosGeo.Web.Models.Collections
+ï»¿@using SalesCobrosGeo.Web.Models.Collections
 @model CollectorRouteViewModel
+@functions {
+    string SaleTone(CollectorClientListItem item) => item.Status.ToUpperInvariant() switch
+    {
+        "ATRASADO" => "danger",
+        "CANCELADO" => "muted",
+        "LIQUIDADO" => "success",
+        "AL CORRIENTE" => "success",
+        "PARCIAL" => "warning",
+        "POR INICIAR" => "neutral",
+        _ when item.HasPromise => "info",
+        _ => "neutral"
+    };
+}
 <section class="collector-route-shell">
     <header class="collector-role-header collector-role-header-compact">
         <div>
@@ -16,21 +29,23 @@
     </header>
     <div class="collector-route-map card card-body">
         <strong>Ruta optimizada</strong>
-        <span>@Model.GeoPoints puntos con coordenadas · @Model.TotalStops paradas</span>
+        <span>@Model.GeoPoints puntos con coordenadas Â· @Model.TotalStops paradas</span>
     </div>
     <div class="collector-client-stack">
         @foreach (var item in Model.Clients)
         {
             var mapLink = string.IsNullOrWhiteSpace(item.Coordinates) ? "#" : $"https://maps.google.com/?q={Uri.EscapeDataString(item.Coordinates)}";
-            <article class="collector-client-card route-card">
+            var tone = SaleTone(item);
+            <article class="collector-client-card route-card status-@tone">
                 <a class="collector-client-main" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">
                     <div class="collector-route-order">@item.OrderIndex</div>
                     <div class="collector-client-copy no-thumb">
                         <div class="collector-client-topline">
                             <strong>@item.Name</strong>
                             <span class="collector-priority @item.Priority.ToLowerInvariant()">@item.Priority</span>
+                            <span class="collector-state-pill @tone">@item.Status</span>
                         </div>
-                        <div class="collector-client-meta">@item.Zone · @item.ReferenceText</div>
+                        <div class="collector-client-meta">@item.Zone Â· @item.ReferenceText</div>
                         <div class="collector-next-action">@item.NextAction</div>
                     </div>
                 </a>

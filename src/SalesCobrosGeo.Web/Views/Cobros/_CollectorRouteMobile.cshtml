@@ -1,6 +1,19 @@
-@using SalesCobrosGeo.Web.Models.Collections
+﻿@using SalesCobrosGeo.Web.Models.Collections
 @using SalesCobrosGeo.Web.Models.Shared
 @model CollectorRouteViewModel
+@functions {
+    string SaleTone(CollectorClientListItem item) => item.Status.ToUpperInvariant() switch
+    {
+        "ATRASADO" => "danger",
+        "CANCELADO" => "muted",
+        "LIQUIDADO" => "success",
+        "AL CORRIENTE" => "success",
+        "PARCIAL" => "warning",
+        "POR INICIAR" => "neutral",
+        _ when item.HasPromise => "info",
+        _ => "neutral"
+    };
+}
 <div class="collector-mobile-shell compact-route">
     <div class="collector-mobile-routebar">
         <strong>@Model.TotalStops paradas</strong>
@@ -14,11 +27,12 @@
         @foreach (var item in Model.Clients)
         {
             var mapLink = string.IsNullOrWhiteSpace(item.Coordinates) ? "#" : $"https://maps.google.com/?q={Uri.EscapeDataString(item.Coordinates)}";
-            <article class="collector-mobile-clientrow compact route-stop">
+            var tone = SaleTone(item);
+            <article class="collector-mobile-clientrow compact route-stop status-@tone">
                 <span class="collector-mobile-order">@item.OrderIndex</span>
                 <a class="collector-mobile-clientmain" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">
-                    <strong>@item.Name</strong>
-                    <span>@item.Zone � @item.NextAction</span>
+                    <strong>@item.Name <span class="collector-inline-dot @tone" aria-hidden="true"></span></strong>
+                    <span>@item.Zone · @item.NextAction</span>
                 </a>
                 <div class="collector-mobile-clientactions">
                     <a href="@mapLink" target="_blank" rel="noopener" class="@(mapLink == "#" ? "disabled" : string.Empty)">MP</a>
