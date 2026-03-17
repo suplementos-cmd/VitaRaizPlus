@@ -28,55 +28,63 @@
         <input id="collectorRoleSearch" type="search" class="collector-mobile-searchinput" placeholder="@Model.SearchPlaceholder" autocomplete="off" />
     </div>
 
-    <div class="collector-mobile-statusstack" id="collectorRoleSearchList">
-        @foreach (var status in Model.MobileStatusGroups)
+    <div id="collectorRoleSearchList">
+        @if (string.IsNullOrWhiteSpace(Model.SelectedStatus))
         {
-            <details class="collector-mobile-statusbranch" @(status.IsOpen ? "open" : null) data-search="@(status.Title.ToLowerInvariant()) @(string.Join(" ", status.Zones.Select(z => z.Zone.ToLowerInvariant())))">
-                <summary class="collector-mobile-statusitem @status.Tone">
-                    <span class="collector-mobile-statusicon @status.Tone">@Html.Raw(StatusIcon(status.Icon))</span>
-                    <div class="collector-mobile-statuscopy">
-                        <strong>@status.Title</strong>
-                        <span>@status.Count cuentas</span>
-                    </div>
-                    <div class="collector-mobile-statusaside">
-                        <span class="collector-mobile-treecount">@status.Count</span>
-                        <span class="collector-mobile-treearrow">&rsaquo;</span>
-                    </div>
-                </summary>
-                <div class="collector-mobile-statusbody">
-                    @if (status.Zones.Count == 0)
-                    {
-                        <div class="collector-mobile-emptymini">Sin cuentas en este estatus.</div>
-                    }
-                    else
-                    {
-                        @foreach (var zone in status.Zones)
-                        {
-                            <section class="collector-mobile-zonecluster">
-                                <div class="collector-mobile-zonehead">
-                                    <strong>@zone.Zone</strong>
-                                    <span>@zone.Accounts</span>
-                                </div>
-                                @foreach (var item in zone.Clients)
-                                {
-                                    var mapLink = string.IsNullOrWhiteSpace(item.Coordinates) ? "#" : $"https://maps.google.com/?q={Uri.EscapeDataString(item.Coordinates)}";
-                                    <article class="collector-mobile-clientrow compact zone-child">
-                                        <a class="collector-mobile-clientmain" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">
-                                            <strong>@item.Name</strong>
-                                            <span>@item.Zone · @item.NextAction</span>
-                                        </a>
-                                        <div class="collector-mobile-clientactions">
-                                            @if (!string.IsNullOrWhiteSpace(item.Phone)) { <a href="tel:@item.Phone">LL</a> }
-                                            <a href="@mapLink" target="_blank" rel="noopener" class="@(mapLink == "#" ? "disabled" : string.Empty)">MP</a>
-                                            <a asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">RG</a>
-                                        </div>
-                                    </article>
-                                }
-                            </section>
-                        }
-                    }
-                </div>
-            </details>
+            <div class="collector-mobile-statusstack">
+                @foreach (var status in Model.MobileStatusGroups)
+                {
+                    <a class="collector-mobile-statusitem @status.Tone collector-mobile-statuslink" asp-action="CollectorQueue" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@status.Key" asp-route-groupBy="status" asp-route-filter="all" data-search="@(status.Title.ToLowerInvariant())">
+                        <span class="collector-mobile-statusicon @status.Tone">@Html.Raw(StatusIcon(status.Icon))</span>
+                        <div class="collector-mobile-statuscopy">
+                            <strong>@status.Title</strong>
+                            <span>@status.Count cuentas</span>
+                        </div>
+                        <div class="collector-mobile-statusaside">
+                            <span class="collector-mobile-treecount">@status.Count</span>
+                            <span class="collector-mobile-treearrow">&rsaquo;</span>
+                        </div>
+                    </a>
+                }
+            </div>
+        }
+        else if (string.IsNullOrWhiteSpace(Model.SelectedZone))
+        {
+            <div class="collector-mobile-zonestack">
+                @foreach (var zone in Model.MobileZoneGroups)
+                {
+                    <a class="collector-mobile-zoneitem" asp-action="CollectorQueue" asp-route-profile="@Model.Profile" asp-route-day="@Model.SelectedDay" asp-route-status="@Model.SelectedStatus" asp-route-zone="@zone.Zone" asp-route-groupBy="status" asp-route-filter="all" data-search="@zone.Zone.ToLowerInvariant()">
+                        <div class="collector-mobile-zonecopy">
+                            <strong>@zone.Zone</strong>
+                            <span>@zone.Accounts ventas por cobrar</span>
+                        </div>
+                        <div class="collector-mobile-statusaside">
+                            <span class="collector-mobile-treecount">@zone.Accounts</span>
+                            <span class="collector-mobile-treearrow">&rsaquo;</span>
+                        </div>
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="collector-mobile-compactlist">
+                @foreach (var item in Model.MobileZoneClients)
+                {
+                    var mapLink = string.IsNullOrWhiteSpace(item.Coordinates) ? "#" : $"https://maps.google.com/?q={Uri.EscapeDataString(item.Coordinates)}";
+                    <article class="collector-mobile-clientrow compact zone-child" data-search="@(item.Name.ToLowerInvariant()) @(item.Zone.ToLowerInvariant()) @(item.ReferenceText.ToLowerInvariant()) @(item.NumVenta)">
+                        <a class="collector-mobile-clientmain" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">
+                            <strong>@item.Name</strong>
+                            <span>@item.Zone · @item.NextAction</span>
+                        </a>
+                        <div class="collector-mobile-clientactions">
+                            @if (!string.IsNullOrWhiteSpace(item.Phone)) { <a href="tel:@item.Phone">LL</a> }
+                            <a href="@mapLink" target="_blank" rel="noopener" class="@(mapLink == "#" ? "disabled" : string.Empty)">MP</a>
+                            <a asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">RG</a>
+                        </div>
+                    </article>
+                }
+            </div>
         }
     </div>
 </div>

@@ -3,10 +3,20 @@
 @model CollectorQueueViewModel
 @{
     ViewData["Title"] = "Bandeja operativa";
+    var backUrl = !string.IsNullOrWhiteSpace(Model.SelectedZone)
+        ? Url.Action("CollectorQueue", "Cobros", new { profile = Model.Profile, day = Model.SelectedDay, status = Model.SelectedStatus, filter = "all", groupBy = "status" })
+        : !string.IsNullOrWhiteSpace(Model.SelectedStatus)
+            ? Url.Action("CollectorQueue", "Cobros", new { profile = Model.Profile, day = Model.SelectedDay, filter = "all", groupBy = "status" })
+            : null;
+    var subtitle = !string.IsNullOrWhiteSpace(Model.SelectedZone)
+        ? $"{Model.SelectedDay} / {Model.SelectedStatus} / {Model.SelectedZone}"
+        : !string.IsNullOrWhiteSpace(Model.SelectedStatus)
+            ? $"{Model.SelectedDay} / {Model.SelectedStatus}"
+            : "Bandeja operativa";
     ViewData["MobileContextBar"] = new MobileContextBarModel(
         "Cobros",
-        "Bandeja operativa",
-        Url.Action("CollectorHome", "Cobros", new { profile = Model.Profile }),
+        subtitle,
+        backUrl,
         new[] { new MobileContextAction("Buscar", "search", DataAction: "toggle-cobros-search", AriaLabel: "Buscar cuentas") });
 }
 <div class="app-viewport-mobile"><partial name="_CollectorQueueMobile" model="Model" /></div>
