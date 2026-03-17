@@ -1,3 +1,5 @@
+using SalesCobrosGeo.Web.Models.Sales;
+
 namespace SalesCobrosGeo.Web.Models.Collections;
 
 public sealed class CollectorQuickFilter
@@ -89,6 +91,7 @@ public sealed class CollectorHomeViewModel
     public string Profile { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public string RouteLabel { get; set; } = string.Empty;
+    public IReadOnlyList<CollectionHistorySummaryCard> HistorySummaryCards { get; set; } = [];
     public IReadOnlyList<CollectorOperationalCard> Cards { get; set; } = [];
     public IReadOnlyList<CollectorClientListItem> TodayClients { get; set; } = [];
 }

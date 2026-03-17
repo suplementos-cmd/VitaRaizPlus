@@ -48,6 +48,19 @@
     };
 }
 <div class="collector-mobile-shell compact-home">
+    <div class="collector-mobile-historycards">
+        @foreach (var summary in Model.HistorySummaryCards)
+        {
+            var targetUrl = summary.Code == "pending"
+                ? Url.Action("CollectorQueue", "Cobros", new { profile = Model.Profile, groupBy = "status", filter = "all" })
+                : Url.Action("CollectionHistory", "Cobros", new { profile = Model.Profile, outcome = summary.Code });
+            <a class="collector-mobile-historycard @(summary.IsActive ? "active" : string.Empty)" href="@targetUrl">
+                <strong>@summary.Title</strong>
+                <span>@summary.Subtitle</span>
+                <b>@summary.Count</b>
+            </a>
+        }
+    </div>
     <div class="collector-mobile-tree">
         @foreach (var card in Model.Cards)
         {

@@ -203,16 +203,19 @@ public sealed class CollectorPortfolioViewModel
 
 public sealed class CollectionFormInput
 {
+    public string? IdCc { get; set; }
     public string IdV { get; set; } = string.Empty;
     public decimal ImporteCobro { get; set; }
     public DateTime FechaCobro { get; set; } = DateTime.Today;
     public string? ObservacionCobro { get; set; }
     public string Usuario { get; set; } = string.Empty;
     public string? CoordenadasCobro { get; set; }
+    public string ActionStatus { get; set; } = "AL CORRIENTE";
 }
 
 public sealed class CollectionRegisterViewModel
 {
+    public bool IsEdit { get; set; }
     public CollectorPortfolioItem? PortfolioItem { get; set; }
     public SaleRecord? Sale { get; set; }
     public CollectionFormInput Input { get; set; } = new();
@@ -222,4 +225,21 @@ public sealed class CollectionRegisterViewModel
     public string? ReturnDay { get; set; }
     public string? ReturnStatus { get; set; }
     public string? ReturnZone { get; set; }
+}
+
+public sealed class CollectionHistorySummaryCard
+{
+    public string Code { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Subtitle { get; set; } = string.Empty;
+    public int Count { get; set; }
+    public bool IsActive { get; set; }
+}
+
+public sealed class CollectionHistoryViewModel
+{
+    public string Profile { get; set; } = string.Empty;
+    public string Outcome { get; set; } = string.Empty;
+    public IReadOnlyList<CollectionHistorySummaryCard> SummaryCards { get; set; } = [];
+    public IReadOnlyList<CollectionRecord> Records { get; set; } = [];
 }

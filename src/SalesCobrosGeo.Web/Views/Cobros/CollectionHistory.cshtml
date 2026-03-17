@@ -1,0 +1,60 @@
+﻿@model SalesCobrosGeo.Web.Models.Sales.CollectionHistoryViewModel
+@using SalesCobrosGeo.Web.Models.Shared
+@{
+    ViewData["Title"] = "Historial de cobros";
+    ViewData["MobileContextBar"] = new MobileContextBarModel("Cobros", "Historial operativo", Url.Action("Index", "Cobros", new { profile = Model.Profile }));
+}
+
+<section class="collector-history-shell">
+    <div class="collector-history-summarygrid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            var targetUrl = card.Code == "pending"
+                ? Url.Action("CollectorQueue", "Cobros", new { profile = Model.Profile, groupBy = "status", filter = "all" })
+                : Url.Action("CollectionHistory", "Cobros", new { profile = Model.Profile, outcome = card.Code });
+            <a class="collector-history-summarycard @(card.IsActive ? "active" : string.Empty)" href="@targetUrl">
+                <span>@card.Title</span>
+                <strong>@card.Count</strong>
+                <small>@card.Subtitle</small>
+            </a>
+        }
+    </div>
+
+    <div class="collector-history-panel">
+        <div class="collector-history-panelhead">
+            <strong>Registros realizados</strong>
+            <span>@Model.Records.Count movimientos</span>
+        </div>
+
+        @if (Model.Records.Count == 0)
+        {
+            <div class="app-empty-state compact">
+                <strong>Sin registros</strong>
+                <span>No hay movimientos para este filtro.</span>
+            </div>
+        }
+        else
+        {
+            <div class="collector-history-records">
+                @foreach (var item in Model.Records)
+                {
+                    <article class="collector-history-record">
+                        <div class="collector-history-recordcopy">
+                            <strong>@item.NombreCliente</strong>
+                            <span>Venta #@item.NumVenta · @item.Zona · @item.FechaCobro.ToString("dd/MM/yyyy")</span>
+                            <small>@(string.IsNullOrWhiteSpace(item.ObservacionCobro) ? item.Estatus : item.ObservacionCobro)</small>
+                        </div>
+                        <div class="collector-history-recordmeta">
+                            <strong>@item.ImporteCobro.ToString("0.00")</strong>
+                            <span>@item.EstadoCc</span>
+                        </div>
+                        <div class="collector-history-recordactions">
+                            <a class="btn btn-sm btn-outline-primary" asp-action="EditCollection" asp-route-idCc="@item.IdCc" asp-route-profile="@Model.Profile">Editar</a>
+                            <a class="btn btn-sm btn-primary" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">Ver venta</a>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</section>

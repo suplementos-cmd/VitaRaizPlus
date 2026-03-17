@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SalesCobrosGeo.Web.Models.Collections;
 using SalesCobrosGeo.Web.Models.Sales;
+using SalesCobrosGeo.Web.Models.Shared;
 using SalesCobrosGeo.Web.Security;
 using SalesCobrosGeo.Web.Services.Sales;
 using System.Globalization;
@@ -46,10 +47,32 @@ public sealed class CobrosController : Controller
             Profile = activeProfile,
             DisplayName = User.GetDisplayName(),
             RouteLabel = string.IsNullOrWhiteSpace(activeProfile) ? "Ruta asignada" : activeProfile,
+            HistorySummaryCards = BuildHistorySummaryCards(activeProfile, GetScopedCollections(activeProfile), "pending"),
             Cards = BuildCollectorOperationalCards(clients),
             TodayClients = todayClients
         };
 
+        return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult CollectionHistory(string? profile = null, string outcome = "paid")
+    {
+        var activeProfile = ResolveCollectorProfile(profile);
+        var history = GetScopedCollections(activeProfile);
+        var filtered = FilterHistory(history, outcome);
+        var model = new CollectionHistoryViewModel
+        {
+            Profile = activeProfile,
+            Outcome = NormalizeHistoryOutcome(outcome),
+            SummaryCards = BuildHistorySummaryCards(activeProfile, history, NormalizeHistoryOutcome(outcome)),
+            Records = filtered
+        };
+
+        ViewData["MobileContextBar"] = new MobileContextBarModel(
+            "Cobros",
+            "Historial operativo",
+            Url.Action(nameof(Index), new { profile = activeProfile }));
         return View(model);
     }
 
@@ -191,6 +214,7 @@ public sealed class CobrosController : Controller
 
         var model = new CollectionRegisterViewModel
         {
+            IsEdit = false,
             PortfolioItem = item,
             Sale = _repository.GetById(id),
             Input = new CollectionFormInput
@@ -199,7 +223,8 @@ public sealed class CobrosController : Controller
                 FechaCobro = DateTime.Today,
                 Usuario = string.IsNullOrWhiteSpace(profile) ? item.Cobrador : profile,
                 ImporteCobro = item.ImporteRestante > 0 ? item.ImporteRestante : 0,
-                CoordenadasCobro = item.Coordenadas
+                CoordenadasCobro = item.Coordenadas,
+                ActionStatus = ResolveActionStatus(item.Estatus)
             },
             Historial = _repository.GetCollections(idV: id),
             CollectorProfiles = _repository.GetCollectorProfiles(),
@@ -213,24 +238,75 @@ public sealed class CobrosController : Controller
         return View(model);
     }
 
+    [HttpGet]
+    public IActionResult EditCollection(string idCc, string? profile = null, string? day = null, string? status = null, string? zone = null)
+    {
+        var record = _repository.GetCollectionById(idCc);
+        if (record is null)
+        {
+            return NotFound();
+        }
+
+        var item = GetScopedPortfolioItem(record.IdV, profile);
+        if (item is null)
+        {
+            return NotFound();
+        }
+
+        var model = new CollectionRegisterViewModel
+        {
+            IsEdit = true,
+            PortfolioItem = item,
+            Sale = _repository.GetById(record.IdV),
+            Input = new CollectionFormInput
+            {
+                IdCc = record.IdCc,
+                IdV = record.IdV,
+                ImporteCobro = record.ImporteCobro,
+                FechaCobro = record.FechaCobro,
+                ObservacionCobro = record.ObservacionCobro,
+                Usuario = record.Usuario,
+                CoordenadasCobro = record.CoordenadasCobro,
+                ActionStatus = ResolveActionStatus(record.Estatus)
+            },
+            Historial = _repository.GetCollections(idV: record.IdV),
+            CollectorProfiles = _repository.GetCollectorProfiles(),
+            ReturnProfile = profile,
+            ReturnDay = day,
+            ReturnStatus = status,
+            ReturnZone = zone
+        };
+
+        ViewData["CollectionsRoleView"] = IsSupervisor() ? "supervisor" : "collector";
+        return View("Register", model);
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult Register(CollectionFormInput input, string? profile = null, string? day = null, string? status = null, string? zone = null)
     {
         try
         {
-            _repository.RegisterCollection(input);
+            if (string.IsNullOrWhiteSpace(input.IdCc))
+            {
+                _repository.RegisterCollection(input);
+            }
+            else
+            {
+                _repository.UpdateCollection(input.IdCc, input);
+            }
             _sessionTracker.UpdateCoordinates(User.Identity?.Name ?? string.Empty, input.CoordenadasCobro, "Cobro registrado");
             TempData["CobroMessage"] = "Cobro registrado correctamente.";
             return IsSupervisor()
                 ? RedirectToAction(nameof(SupervisorMonitor), new { profile, groupBy = "zone" })
-                : RedirectToAction(nameof(CollectorQueue), new { profile = ResolveCollectorProfile(profile), groupBy = "day", filter = "today" });
+                : RedirectToAction(nameof(CollectorQueue), new { profile = ResolveCollectorProfile(profile), day, status, zone, groupBy = "status", filter = "all" });
         }
         catch (InvalidOperationException ex)
         {
             ModelState.AddModelError(string.Empty, ex.Message);
             var model = new CollectionRegisterViewModel
             {
+                IsEdit = !string.IsNullOrWhiteSpace(input.IdCc),
                 PortfolioItem = GetScopedPortfolioItem(input.IdV, profile ?? input.Usuario),
                 Sale = _repository.GetById(input.IdV),
                 Input = input,
@@ -340,6 +416,67 @@ public sealed class CobrosController : Controller
         }
 
         return _userService.GetUser(username)?.Zone?.Trim() ?? string.Empty;
+    }
+
+    private IReadOnlyList<CollectionRecord> GetScopedCollections(string? profile)
+    {
+        var ids = GetScopedPortfolio(profile, includeLiquidated: true)
+            .Select(x => x.IdV)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return _repository.GetCollections()
+            .Where(x => ids.Contains(x.IdV))
+            .OrderByDescending(x => x.FechaCobro)
+            .ThenByDescending(x => x.FechaCaptura)
+            .ToArray();
+    }
+
+    private static string NormalizeHistoryOutcome(string? outcome)
+    {
+        return (outcome ?? string.Empty).Trim().ToLowerInvariant() switch
+        {
+            "nopay" => "nopay",
+            "paid" => "paid",
+            _ => "pending"
+        };
+    }
+
+    private IReadOnlyList<CollectionHistorySummaryCard> BuildHistorySummaryCards(string profile, IReadOnlyList<CollectionRecord> history, string active)
+    {
+        var pendingCount = GetScopedPortfolio(profile).Count;
+        var paidCount = history.Count(x => x.ImporteCobro > 0);
+        var noPayCount = history.Count(x => x.ImporteCobro <= 0 || string.Equals(x.EstadoCc, "NO PAGO", StringComparison.OrdinalIgnoreCase));
+
+        return
+        [
+            new CollectionHistorySummaryCard { Code = "pending", Title = "Por hacer", Subtitle = "Pendientes", Count = pendingCount, IsActive = active == "pending" },
+            new CollectionHistorySummaryCard { Code = "paid", Title = "Pagaron", Subtitle = "Con abono", Count = paidCount, IsActive = active == "paid" },
+            new CollectionHistorySummaryCard { Code = "nopay", Title = "No dieron", Subtitle = "Sin pago", Count = noPayCount, IsActive = active == "nopay" }
+        ];
+    }
+
+    private IReadOnlyList<CollectionRecord> FilterHistory(IReadOnlyList<CollectionRecord> history, string outcome)
+    {
+        return NormalizeHistoryOutcome(outcome) switch
+        {
+            "paid" => history.Where(x => x.ImporteCobro > 0).ToArray(),
+            "nopay" => history.Where(x => x.ImporteCobro <= 0 || string.Equals(x.EstadoCc, "NO PAGO", StringComparison.OrdinalIgnoreCase)).ToArray(),
+            _ => []
+        };
+    }
+
+    private static string ResolveActionStatus(string? status)
+    {
+        return NormalizeKey(status) switch
+        {
+            "ALCORRIENTE" => "AL CORRIENTE",
+            "PROXIMASEMANA" => "PROXIMA SEMANA",
+            "PASARMANANA" => "PASAR MAÑANA",
+            "ATRASADO" => "ATRASADO",
+            "PASARMASTARDE" => "PASAR MAS TARDE",
+            "CANCELADO" => "CANCELADO",
+            "LIQUIDADO" => "LIQUIDADO",
+            _ => "AL CORRIENTE"
+        };
     }
 
     private List<CollectorClientListItem> BuildCollectorClients(string? profile)
@@ -882,4 +1019,5 @@ public sealed class CobrosController : Controller
         return builder.ToString().Normalize(NormalizationForm.FormC);
     }
 }
+
 

@@ -59,6 +59,20 @@
         }
     </section>
 
+    <section class="collector-home-historysummary">
+        @foreach (var summary in Model.HistorySummaryCards)
+        {
+            var targetUrl = summary.Code == "pending"
+                ? Url.Action("CollectorQueue", "Cobros", new { profile = Model.Profile, groupBy = "status", filter = "all" })
+                : Url.Action("CollectionHistory", "Cobros", new { profile = Model.Profile, outcome = summary.Code });
+            <a class="collector-history-summarycard @(summary.IsActive ? "active" : string.Empty)" href="@targetUrl">
+                <span>@summary.Title</span>
+                <strong>@summary.Count</strong>
+                <small>@summary.Subtitle</small>
+            </a>
+        }
+    </section>
+
     <section class="collector-inline-section">
         <div class="collector-section-head">
             <div>

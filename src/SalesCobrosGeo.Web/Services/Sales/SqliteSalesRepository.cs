@@ -205,16 +205,17 @@ public sealed class SqliteSalesRepository : ISalesRepository
             .ToArray();
     }
 
+    public CollectionRecord? GetCollectionById(string idCc)
+    {
+        var entity = _dbContext.Collections.AsNoTracking().FirstOrDefault(x => x.IdCc == idCc);
+        return entity is null ? null : MapCollection(entity);
+    }
+
     public CollectionRecord RegisterCollection(CollectionFormInput input)
     {
         if (string.IsNullOrWhiteSpace(input.IdV))
         {
             throw new InvalidOperationException("Venta invalida.");
-        }
-
-        if (input.ImporteCobro <= 0)
-        {
-            throw new InvalidOperationException("El importe de cobro debe ser mayor a 0.");
         }
 
         if (string.IsNullOrWhiteSpace(input.Usuario))
@@ -235,7 +236,7 @@ public sealed class SqliteSalesRepository : ISalesRepository
 
         var nuevoAbonado = totalAbonado + input.ImporteCobro;
         var nuevoRestante = Math.Max(0m, sale.ImporteTotal - nuevoAbonado);
-        var estatus = nuevoRestante <= 0 ? "LIQUIDADO" : "AL CORRIENTE";
+        var estatus = ResolveCollectionStatus(input.ActionStatus, input.ImporteCobro, nuevoRestante);
 
         var entity = new CollectionEntity
         {
@@ -249,7 +250,7 @@ public sealed class SqliteSalesRepository : ISalesRepository
             FechaCaptura = DateTime.Now,
             ImporteTotal = sale.ImporteTotal,
             ImporteRestante = nuevoRestante,
-            EstadoCc = "SI PAGO",
+            EstadoCc = input.ImporteCobro > 0 ? "SI PAGO" : "NO PAGO",
             Usuario = input.Usuario.Trim(),
             ImporteAbonado = nuevoAbonado,
             Estatus = estatus,
@@ -260,9 +261,56 @@ public sealed class SqliteSalesRepository : ISalesRepository
         };
 
         _dbContext.Collections.Add(entity);
+        ApplySaleStatusFromCollections(sale, sale.Collections.Append(entity).ToList(), nuevoRestante, input.FechaCobro);
+        sale.ObservacionVenta = MergeOperationalNote(sale.ObservacionVenta, input.ActionStatus, input.ObservacionCobro);
+        sale.FechaActu = DateTime.Now;
+        sale.FechaPrimerCobro ??= input.FechaCobro;
 
-        sale.Estado = estatus == "LIQUIDADO" ? "LIQUIDADO" : "EN COBRO";
-        sale.Estado2 = estatus == "LIQUIDADO" ? "CLOSED" : "OPEN";
+        _dbContext.SaveChanges();
+        return MapCollection(entity);
+    }
+
+    public CollectionRecord UpdateCollection(string idCc, CollectionFormInput input)
+    {
+        if (string.IsNullOrWhiteSpace(input.Usuario))
+        {
+            throw new InvalidOperationException("Usuario cobrador es obligatorio.");
+        }
+
+        var entity = _dbContext.Collections.FirstOrDefault(x => x.IdCc == idCc)
+            ?? throw new InvalidOperationException("No se encontro el registro de cobro.");
+        var sale = _dbContext.Sales.Include(x => x.Collections).FirstOrDefault(x => x.IdV == entity.IdV)
+            ?? throw new InvalidOperationException("No se encontro la venta.");
+
+        var otherCollections = sale.Collections.Where(x => x.IdCc != entity.IdCc).ToList();
+        var totalAbonadoPrevio = otherCollections.Select(x => x.ImporteCobro).DefaultIfEmpty(0m).Sum();
+        var restanteActual = Math.Max(0m, sale.ImporteTotal - totalAbonadoPrevio);
+
+        if (input.ImporteCobro > restanteActual)
+        {
+            throw new InvalidOperationException($"El cobro no puede superar el restante ({restanteActual:0.00}).");
+        }
+
+        var nuevoAbonado = totalAbonadoPrevio + input.ImporteCobro;
+        var nuevoRestante = Math.Max(0m, sale.ImporteTotal - nuevoAbonado);
+        var estatus = ResolveCollectionStatus(input.ActionStatus, input.ImporteCobro, nuevoRestante);
+
+        entity.ImporteCobro = input.ImporteCobro;
+        entity.FechaCobro = input.FechaCobro;
+        entity.ObservacionCobro = input.ObservacionCobro?.Trim();
+        entity.FechaCaptura = DateTime.Now;
+        entity.ImporteTotal = sale.ImporteTotal;
+        entity.ImporteRestante = nuevoRestante;
+        entity.EstadoCc = input.ImporteCobro > 0 ? "SI PAGO" : "NO PAGO";
+        entity.Usuario = input.Usuario.Trim();
+        entity.ImporteAbonado = nuevoAbonado;
+        entity.Estatus = estatus;
+        entity.Zona = sale.Zona;
+        entity.DiaCobroPrevisto = sale.DiaCobro;
+        entity.DiaCobrado = GetDayName(input.FechaCobro);
+
+        ApplySaleStatusFromCollections(sale, otherCollections.Append(entity).ToList(), nuevoRestante, input.FechaCobro);
+        sale.ObservacionVenta = MergeOperationalNote(sale.ObservacionVenta, input.ActionStatus, input.ObservacionCobro);
         sale.FechaActu = DateTime.Now;
         sale.FechaPrimerCobro ??= input.FechaCobro;
 
@@ -433,6 +481,54 @@ public sealed class SqliteSalesRepository : ISalesRepository
         return date.ToString("dddd", new CultureInfo("es-ES")).ToUpperInvariant();
     }
 
+    private static string ResolveCollectionStatus(string? actionStatus, decimal amount, decimal remaining)
+    {
+        var normalized = NormalizeProfile(actionStatus).ToUpperInvariant();
+        if (remaining <= 0 || normalized == "LIQUIDADO")
+        {
+            return "LIQUIDADO";
+        }
+
+        return normalized switch
+        {
+            "CANCELADO" => "CANCELADO",
+            "ATRASADO" => "ATRASADO",
+            "PROXIMA SEMANA" => "PROXIMA SEMANA",
+            "PASAR MAÑANA" => "PASAR MANANA",
+            "PASAR MAS TARDE" => "PASAR MAS TARDE",
+            "AL CORRIENTE" when amount > 0 => "AL CORRIENTE",
+            _ when amount > 0 => "AL CORRIENTE",
+            _ => "PENDIENTE"
+        };
+    }
+
+    private static void ApplySaleStatusFromCollections(SaleEntity sale, IReadOnlyList<CollectionEntity> collections, decimal remaining, DateTime eventDate)
+    {
+        var latest = collections.OrderByDescending(x => x.FechaCobro).FirstOrDefault();
+        var latestStatus = latest?.Estatus ?? string.Empty;
+        sale.Estado = remaining <= 0 || latestStatus == "LIQUIDADO"
+            ? "LIQUIDADO"
+            : latestStatus == "CANCELADO"
+                ? "CANCELADO"
+                : "EN COBRO";
+        sale.Estado2 = sale.Estado == "LIQUIDADO" || sale.Estado == "CANCELADO" ? "CLOSED" : "OPEN";
+        sale.FechaPrimerCobro ??= eventDate;
+    }
+
+    private static string? MergeOperationalNote(string? current, string? actionStatus, string? note)
+    {
+        var action = NormalizeProfile(actionStatus);
+        var cleanNote = NormalizeProfile(note);
+        if (string.IsNullOrWhiteSpace(action))
+        {
+            return string.IsNullOrWhiteSpace(cleanNote) ? current : cleanNote;
+        }
+
+        return string.IsNullOrWhiteSpace(cleanNote)
+            ? $"ESTATUS: {action}"
+            : $"ESTATUS: {action} · {cleanNote}";
+    }
+
     private static string ResolvePortfolioStatus(SaleEntity sale, IReadOnlyList<CollectionEntity> collections, decimal restante)
     {
         if (restante <= 0)
@@ -446,6 +542,14 @@ public sealed class SqliteSalesRepository : ISalesRepository
         }
 
         var lastCollection = collections.OrderByDescending(x => x.FechaCobro).First();
+        if (lastCollection.Estatus == "CANCELADO")
+        {
+            return "CANCELADO";
+        }
+        if (lastCollection.Estatus is "PROXIMA SEMANA" or "PASAR MANANA" or "PASAR MAS TARDE")
+        {
+            return lastCollection.Estatus;
+        }
         var currentWeekStart = DateTime.Today.AddDays(-(((int)DateTime.Today.DayOfWeek + 6) % 7));
         return lastCollection.FechaCobro.Date >= currentWeekStart ? "AL CORRIENTE" : "ATRASADO";
     }
