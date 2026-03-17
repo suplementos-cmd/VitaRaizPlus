@@ -5,10 +5,9 @@ using SalesCobrosGeo.Shared.Security;
 
 namespace SalesCobrosGeo.Api.Controllers;
 
-[ApiController]
 [Route("api/[controller]")]
 [Authorize(Policy = RolePolicies.AdminOnly)]
-public sealed class AuditController : ControllerBase
+public sealed class AuditController : ApiControllerBase
 {
     private readonly IAuditTrailStore _auditTrailStore;
 

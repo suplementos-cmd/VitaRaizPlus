@@ -68,7 +68,13 @@ public sealed class SecurityDatabaseInitializer
 
     private void SetUserVersion(int version)
     {
-        _dbContext.Database.ExecuteSqlRaw($"PRAGMA user_version = {version};");
+        // PRAGMA user_version sólo acepta un literal entero; usamos la conexión
+        // directamente para evitar falsos positivos de inyección SQL en EF Core.
+        using var connection = _dbContext.Database.GetDbConnection();
+        EnsureOpen(connection);
+        using var command = connection.CreateCommand();
+        command.CommandText = $"PRAGMA user_version = {version};";
+        command.ExecuteNonQuery();
     }
 
     private void EnsureUserColumns()

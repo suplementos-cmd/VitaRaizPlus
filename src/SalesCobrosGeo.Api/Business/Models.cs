@@ -65,8 +65,17 @@ public sealed record CollectionEntry(
 
 public sealed class SaleRecord
 {
+    // ── Backing fields para colecciones encapsuladas ──────────────────────────
+    private readonly List<SaleItem> _items = [];
+    private readonly List<SaleHistoryEntry> _history = [];
+    private readonly List<CollectionEntry> _collections = [];
+
+    // ── Propiedades de identidad / inmutables ─────────────────────────────────
     public int Id { get; init; }
     public string SaleNumber { get; init; } = string.Empty;
+    public DateTime CreatedAtUtc { get; init; }
+
+    // ── Estado mutable ────────────────────────────────────────────────────────
     public int ClientId { get; set; }
     public string SellerUserName { get; set; } = string.Empty;
     public string? CollectorUserName { get; set; }
@@ -77,17 +86,30 @@ public sealed class SaleRecord
     public CollectionWorkflowStatus CollectionStatus { get; set; } = CollectionWorkflowStatus.Pending;
     public bool Collectable { get; set; }
     public decimal SellerCommissionPercent { get; set; }
-    public DateTime CreatedAtUtc { get; init; }
     public DateTime UpdatedAtUtc { get; set; }
     public DateTime? FirstCollectionAtUtc { get; set; }
     public decimal TotalAmount { get; set; }
     public decimal CollectedAmount { get; set; }
     public SaleEvidence Evidence { get; set; } = new(string.Empty, null, null, Array.Empty<string>());
-    public List<SaleItem> Items { get; } = [];
-    public List<SaleHistoryEntry> History { get; } = [];
-    public List<CollectionEntry> Collections { get; } = [];
 
+    // ── Colecciones (solo lectura hacia afuera) ───────────────────────────────
+    public IReadOnlyList<SaleItem> Items => _items;
+    public IReadOnlyList<SaleHistoryEntry> History => _history;
+    public IReadOnlyList<CollectionEntry> Collections => _collections;
+
+    // ── Computed ──────────────────────────────────────────────────────────────
     public decimal RemainingAmount => Math.Max(0m, TotalAmount - CollectedAmount);
+
+    // ── Métodos de mutación (uso interno del store) ───────────────────────────
+    internal void SetItems(IEnumerable<SaleItem> items)
+    {
+        _items.Clear();
+        _items.AddRange(items);
+    }
+
+    internal void AddHistoryEntry(SaleHistoryEntry entry) => _history.Add(entry);
+
+    internal void AddCollectionEntry(CollectionEntry entry) => _collections.Add(entry);
 }
 
 public sealed record CollectionSummary(

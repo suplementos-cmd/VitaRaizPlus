@@ -1,42 +1,51 @@
-﻿using SalesCobrosGeo.Api.Business;
+﻿using System.ComponentModel.DataAnnotations;
+using SalesCobrosGeo.Api.Business;
 
 namespace SalesCobrosGeo.Api.Contracts.Sales;
 
-public sealed record CreateSaleItemRequest(int ProductId, int Quantity, decimal? UnitPrice);
+public sealed record CreateSaleItemRequest(
+    [Range(1, int.MaxValue)] int ProductId,
+    [Range(1, 9999)] int Quantity,
+    [Range(0.01, 999_999.99)] decimal? UnitPrice);
 
 public sealed record SaleEvidenceRequest(
-    string PrimaryCoordinates,
-    string? SecondaryCoordinates,
-    string? LocationUrl,
+    [Required, MaxLength(128)] string PrimaryCoordinates,
+    [MaxLength(128)] string? SecondaryCoordinates,
+    [MaxLength(512), Url] string? LocationUrl,
     IReadOnlyList<string> PhotoUrls);
 
 public sealed record CreateSaleRequest(
-    int ClientId,
-    string PaymentMethodCode,
-    string CollectionDay,
-    string? CollectorUserName,
-    decimal SellerCommissionPercent,
+    [Range(1, int.MaxValue)] int ClientId,
+    [Required, MaxLength(32)] string PaymentMethodCode,
+    [Required, MaxLength(32)] string CollectionDay,
+    [MaxLength(64)] string? CollectorUserName,
+    [Range(0, 100)] decimal SellerCommissionPercent,
     bool Collectable,
-    string? Notes,
+    [MaxLength(512)] string? Notes,
     bool IsDraft,
-    IReadOnlyList<CreateSaleItemRequest> Items,
-    SaleEvidenceRequest Evidence);
+    [Required, MinLength(1)] IReadOnlyList<CreateSaleItemRequest> Items,
+    [Required] SaleEvidenceRequest Evidence);
 
 public sealed record UpdateSaleDraftRequest(
-    int ClientId,
-    string PaymentMethodCode,
-    string CollectionDay,
-    string? CollectorUserName,
-    decimal SellerCommissionPercent,
+    [Range(1, int.MaxValue)] int ClientId,
+    [Required, MaxLength(32)] string PaymentMethodCode,
+    [Required, MaxLength(32)] string CollectionDay,
+    [MaxLength(64)] string? CollectorUserName,
+    [Range(0, 100)] decimal SellerCommissionPercent,
     bool Collectable,
-    string? Notes,
+    [MaxLength(512)] string? Notes,
     bool SubmitForReview,
-    string? ChangeReason,
-    IReadOnlyList<CreateSaleItemRequest> Items,
-    SaleEvidenceRequest Evidence);
+    [MaxLength(512)] string? ChangeReason,
+    [Required, MinLength(1)] IReadOnlyList<CreateSaleItemRequest> Items,
+    [Required] SaleEvidenceRequest Evidence);
 
-public sealed record ReviewSaleRequest(string Action, string? Reason);
-public sealed record AssignCollectorRequest(string CollectorUserName, string? Reason);
+public sealed record ReviewSaleRequest(
+    [Required, MaxLength(32)] string Action,
+    [MaxLength(512)] string? Reason);
+
+public sealed record AssignCollectorRequest(
+    [Required, MaxLength(64)] string CollectorUserName,
+    [MaxLength(512)] string? Reason);
 
 public sealed record SaleSummaryResponse(
     int Id,

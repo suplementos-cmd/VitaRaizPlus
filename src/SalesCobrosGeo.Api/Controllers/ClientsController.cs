@@ -6,10 +6,9 @@ using SalesCobrosGeo.Shared.Security;
 
 namespace SalesCobrosGeo.Api.Controllers;
 
-[ApiController]
 [Route("api/clients")]
 [Authorize(Policy = RolePolicies.CanManageClients)]
-public sealed class ClientsController : ControllerBase
+public sealed class ClientsController : ApiControllerBase
 {
     private readonly IBusinessStore _store;
 
@@ -28,45 +27,18 @@ public sealed class ClientsController : ControllerBase
     public IActionResult GetClientById(int id)
     {
         var client = _store.GetClientById(id);
-        if (client is null)
-        {
-            return NotFound(new { message = "Client not found." });
-        }
-
-        return Ok(client);
+        return client is null
+            ? Problem("Client not found.", statusCode: StatusCodes.Status404NotFound)
+            : Ok(client);
     }
 
     [HttpPost]
     public IActionResult CreateClient([FromBody] CreateClientRequest request)
-    {
-        try
-        {
-            return Ok(_store.AddClient(request, User.Identity?.Name ?? "unknown"));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+        => HandleBiz(() => _store.AddClient(request, CurrentUserName));
 
     [HttpPut("{id:int}")]
     public IActionResult UpdateClient(int id, [FromBody] UpdateClientRequest request)
-    {
-        var currentRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-        var canManageAll = string.Equals(currentRole, UserRole.SupervisorVentas.ToString(), StringComparison.OrdinalIgnoreCase)
-            || string.Equals(currentRole, UserRole.Administrador.ToString(), StringComparison.OrdinalIgnoreCase);
-
-        try
-        {
-            return Ok(_store.UpdateClient(id, request, User.Identity?.Name ?? "unknown", canManageAll));
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+        => HandleBiz(() => _store.UpdateClient(
+            id, request, CurrentUserName,
+            canManageAll: HasAnyRole(UserRole.SupervisorVentas, UserRole.Administrador)));
 }

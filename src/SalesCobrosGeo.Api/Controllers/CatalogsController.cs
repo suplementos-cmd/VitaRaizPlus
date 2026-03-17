@@ -6,10 +6,9 @@ using SalesCobrosGeo.Shared.Security;
 
 namespace SalesCobrosGeo.Api.Controllers;
 
-[ApiController]
 [Route("api/catalogs")]
 [Authorize]
-public sealed class CatalogsController : ControllerBase
+public sealed class CatalogsController : ApiControllerBase
 {
     private readonly IBusinessStore _store;
 
@@ -20,109 +19,47 @@ public sealed class CatalogsController : ControllerBase
 
     [HttpGet("snapshot")]
     public IActionResult GetSnapshot()
-    {
-        return Ok(_store.GetCatalogSnapshot());
-    }
+        => Ok(_store.GetCatalogSnapshot());
 
     [HttpGet("zones")]
     public IActionResult GetZones([FromQuery] bool includeInactive = false)
-    {
-        return Ok(_store.GetZones(includeInactive));
-    }
+        => Ok(_store.GetZones(includeInactive));
 
     [HttpPost("zones")]
     [Authorize(Policy = RolePolicies.CanManageCatalogs)]
     public IActionResult CreateZone([FromBody] CreateZoneRequest request)
-    {
-        try
-        {
-            return Ok(_store.AddZone(request));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+        => HandleBiz(() => _store.AddZone(request));
 
     [HttpPut("zones/{id:int}")]
     [Authorize(Policy = RolePolicies.CanManageCatalogs)]
     public IActionResult UpdateZone(int id, [FromBody] UpdateZoneRequest request)
-    {
-        try
-        {
-            return Ok(_store.UpdateZone(id, request));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+        => HandleBiz(() => _store.UpdateZone(id, request));
 
     [HttpGet("products")]
     public IActionResult GetProducts([FromQuery] bool includeInactive = false)
-    {
-        return Ok(_store.GetProducts(includeInactive));
-    }
+        => Ok(_store.GetProducts(includeInactive));
 
     [HttpPost("products")]
     [Authorize(Policy = RolePolicies.CanManageCatalogs)]
     public IActionResult CreateProduct([FromBody] CreateProductRequest request)
-    {
-        try
-        {
-            return Ok(_store.AddProduct(request));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+        => HandleBiz(() => _store.AddProduct(request));
 
     [HttpPut("products/{id:int}")]
     [Authorize(Policy = RolePolicies.CanManageCatalogs)]
     public IActionResult UpdateProduct(int id, [FromBody] UpdateProductRequest request)
-    {
-        try
-        {
-            return Ok(_store.UpdateProduct(id, request));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+        => HandleBiz(() => _store.UpdateProduct(id, request));
 
     [HttpGet("payment-methods")]
     public IActionResult GetPaymentMethods([FromQuery] bool includeInactive = false)
-    {
-        return Ok(_store.GetPaymentMethods(includeInactive));
-    }
+        => Ok(_store.GetPaymentMethods(includeInactive));
 
     [HttpPost("payment-methods")]
     [Authorize(Policy = RolePolicies.CanManageCatalogs)]
     public IActionResult CreatePaymentMethod([FromBody] CreatePaymentMethodRequest request)
-    {
-        try
-        {
-            return Ok(_store.AddPaymentMethod(request));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+        => HandleBiz(() => _store.AddPaymentMethod(request));
 
     [HttpPut("payment-methods/{id:int}")]
     [Authorize(Policy = RolePolicies.CanManageCatalogs)]
     public IActionResult UpdatePaymentMethod(int id, [FromBody] UpdatePaymentMethodRequest request)
-    {
-        try
-        {
-            return Ok(_store.UpdatePaymentMethod(id, request));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+        => HandleBiz(() => _store.UpdatePaymentMethod(id, request));
 }

@@ -1,24 +1,62 @@
 ﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.RateLimiting;
+using Scalar.AspNetCore;
 using SalesCobrosGeo.Api.Audit;
 using SalesCobrosGeo.Api.Business;
 using SalesCobrosGeo.Api.Security;
 using SalesCobrosGeo.Shared.Security;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ── Controladores + ProblemDetails estandarizado ──────────────────────────────────
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
 
+// ── Documentación OpenAPI (spec en /openapi/v1.json, UI en /scalar/v1) ────────────
+builder.Services.AddOpenApi();
+
+// ── CORS: únicamente para orígenes locales ────────────────────────────────────────
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("LocalDev", policy =>
+        policy
+            .WithOrigins(
+                "http://localhost:5000", "https://localhost:5001",
+                "http://localhost:7000", "https://localhost:7001",
+                "http://localhost:4200", "http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials());
+});
+
+// ── Rate Limiting: máx 10 intentos por minuto en login ───────────────────────────
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("login", opt =>
+    {
+        opt.PermitLimit = 10;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
+// ── Servicios in-memory (datos demo — mantener hasta migrar a BD) ─────────────────
 builder.Services.AddSingleton<IUserStore, InMemoryUserStore>();
 builder.Services.AddSingleton<ITokenService, InMemoryTokenService>();
 builder.Services.AddSingleton<IAuditTrailStore, InMemoryAuditTrailStore>();
 builder.Services.AddSingleton<IBusinessStore, InMemoryBusinessStore>();
 
+// ── Autenticación Bearer personalizada ────────────────────────────────────────────
 builder.Services
     .AddAuthentication(BearerTokenAuthenticationHandler.SchemeName)
     .AddScheme<AuthenticationSchemeOptions, BearerTokenAuthenticationHandler>(
         BearerTokenAuthenticationHandler.SchemeName,
         _ => { });
 
+// ── Autorización por políticas de rol ─────────────────────────────────────────────
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(RolePolicies.Authenticated, policy => policy.RequireAuthenticatedUser());
@@ -40,12 +78,25 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
+// ── Pipeline HTTP ─────────────────────────────────────────────────────────────────
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
+    app.MapOpenApi();
+    app.MapScalarApiReference(opts =>
+    {
+        opts.Title = "SalesCobrosGeo API";
+        opts.Theme = ScalarTheme.Purple;
+    });
+}
+else
+{
+    app.UseExceptionHandler();
+    app.UseHsts();
 }
 
 app.UseHttpsRedirection();
+app.UseCors("LocalDev");
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -55,9 +106,8 @@ app.MapControllers();
 app.MapGet("/", () => Results.Ok(new
 {
     service = "SalesCobrosGeo.Api",
-    status = "running",
-    security = "block-1",
-    business = "blocks-2-3-4",
+    status  = "running",
+    docs    = "/scalar/v1",
     timestampUtc = DateTime.UtcNow
 }));
 

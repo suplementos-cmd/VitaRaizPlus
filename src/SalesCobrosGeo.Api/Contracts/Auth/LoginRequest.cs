@@ -1,3 +1,7 @@
-﻿namespace SalesCobrosGeo.Api.Contracts.Auth;
+﻿using System.ComponentModel.DataAnnotations;
 
-public sealed record LoginRequest(string UserName, string Password);
+namespace SalesCobrosGeo.Api.Contracts.Auth;
+
+public sealed record LoginRequest(
+    [Required, MaxLength(64)] string UserName,
+    [Required, MaxLength(128)] string Password);

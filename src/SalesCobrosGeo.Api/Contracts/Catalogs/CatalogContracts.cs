@@ -1,4 +1,5 @@
-﻿using SalesCobrosGeo.Api.Business;
+﻿using System.ComponentModel.DataAnnotations;
+using SalesCobrosGeo.Api.Business;
 
 namespace SalesCobrosGeo.Api.Contracts.Catalogs;
 
@@ -8,11 +9,34 @@ public sealed record CatalogSnapshot(
     IReadOnlyList<Product> Products,
     IReadOnlyList<PaymentMethod> PaymentMethods);
 
-public sealed record CreateZoneRequest(string Code, string Name, bool IsActive = true);
-public sealed record UpdateZoneRequest(string Code, string Name, bool IsActive = true);
+public sealed record CreateZoneRequest(
+    [Required, MaxLength(32)] string Code,
+    [Required, MaxLength(128)] string Name,
+    bool IsActive = true);
 
-public sealed record CreateProductRequest(string Code, string Name, decimal Price, bool IsActive = true);
-public sealed record UpdateProductRequest(string Code, string Name, decimal Price, bool IsActive = true);
+public sealed record UpdateZoneRequest(
+    [Required, MaxLength(32)] string Code,
+    [Required, MaxLength(128)] string Name,
+    bool IsActive = true);
 
-public sealed record CreatePaymentMethodRequest(string Code, string Name, bool IsActive = true);
-public sealed record UpdatePaymentMethodRequest(string Code, string Name, bool IsActive = true);
+public sealed record CreateProductRequest(
+    [Required, MaxLength(32)] string Code,
+    [Required, MaxLength(256)] string Name,
+    [Range(0.01, 999_999.99)] decimal Price,
+    bool IsActive = true);
+
+public sealed record UpdateProductRequest(
+    [Required, MaxLength(32)] string Code,
+    [Required, MaxLength(256)] string Name,
+    [Range(0.01, 999_999.99)] decimal Price,
+    bool IsActive = true);
+
+public sealed record CreatePaymentMethodRequest(
+    [Required, MaxLength(32)] string Code,
+    [Required, MaxLength(128)] string Name,
+    bool IsActive = true);
+
+public sealed record UpdatePaymentMethodRequest(
+    [Required, MaxLength(32)] string Code,
+    [Required, MaxLength(128)] string Name,
+    bool IsActive = true);

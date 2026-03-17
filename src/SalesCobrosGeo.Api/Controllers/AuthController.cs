@@ -1,14 +1,14 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using SalesCobrosGeo.Api.Contracts.Auth;
 using SalesCobrosGeo.Api.Security;
 
 namespace SalesCobrosGeo.Api.Controllers;
 
-[ApiController]
 [Route("api/[controller]")]
-public sealed class AuthController : ControllerBase
+public sealed class AuthController : ApiControllerBase
 {
     private readonly IUserStore _userStore;
     private readonly ITokenService _tokenService;
@@ -21,6 +21,7 @@ public sealed class AuthController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("login")]
     public IActionResult Login([FromBody] LoginRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(request.Password))
@@ -60,16 +61,10 @@ public sealed class AuthController : ControllerBase
     [Authorize]
     public IActionResult Me()
     {
-        var userName = User.Identity?.Name ?? "unknown";
-        var fullName = User.FindFirstValue(ClaimTypes.GivenName) ?? userName;
+        var fullName = User.FindFirstValue(ClaimTypes.GivenName) ?? CurrentUserName;
         var role = User.FindFirstValue(ClaimTypes.Role) ?? "unknown";
 
-        return Ok(new
-        {
-            userName,
-            fullName,
-            role
-        });
+        return Ok(new { userName = CurrentUserName, fullName, role });
     }
 
     private string? ReadBearerToken()

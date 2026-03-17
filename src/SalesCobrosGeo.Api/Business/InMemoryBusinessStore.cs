@@ -321,8 +321,8 @@ public sealed class InMemoryBusinessStore : IBusinessStore
                 Evidence = evidence
             };
 
-            sale.Items.AddRange(items);
-            sale.History.Add(new SaleHistoryEntry(now, userName, SaleWorkflowStatus.Draft, sale.Status, null, "create"));
+            sale.SetItems(items);
+            sale.AddHistoryEntry(new SaleHistoryEntry(now, userName, SaleWorkflowStatus.Draft, sale.Status, null, "create"));
 
             _sales.Add(sale);
             return sale;
@@ -363,12 +363,11 @@ public sealed class InMemoryBusinessStore : IBusinessStore
             sale.Collectable = request.Collectable;
             sale.SellerCommissionPercent = request.SellerCommissionPercent;
             sale.Evidence = BuildEvidence(request.Evidence, !request.SubmitForReview);
-            sale.Items.Clear();
-            sale.Items.AddRange(BuildSaleItems(request.Items));
+            sale.SetItems(BuildSaleItems(request.Items));
             sale.TotalAmount = sale.Items.Sum(i => i.Subtotal);
             sale.Status = nextStatus;
             sale.UpdatedAtUtc = DateTime.UtcNow;
-            sale.History.Add(new SaleHistoryEntry(sale.UpdatedAtUtc, userName, previousStatus, nextStatus, request.ChangeReason?.Trim(), "update-draft"));
+            sale.AddHistoryEntry(new SaleHistoryEntry(sale.UpdatedAtUtc, userName, previousStatus, nextStatus, request.ChangeReason?.Trim(), "update-draft"));
 
             return sale;
         }
@@ -400,7 +399,7 @@ public sealed class InMemoryBusinessStore : IBusinessStore
             var previous = sale.Status;
             sale.Status = target;
             sale.UpdatedAtUtc = DateTime.UtcNow;
-            sale.History.Add(new SaleHistoryEntry(sale.UpdatedAtUtc, reviewer, previous, target, request.Reason?.Trim(), "review"));
+            sale.AddHistoryEntry(new SaleHistoryEntry(sale.UpdatedAtUtc, reviewer, previous, target, request.Reason?.Trim(), "review"));
             RefreshCollectionStatus(sale);
             return sale;
         }
@@ -413,7 +412,7 @@ public sealed class InMemoryBusinessStore : IBusinessStore
             var sale = _sales.FirstOrDefault(s => s.Id == id) ?? throw new InvalidOperationException("Sale not found.");
             sale.CollectorUserName = request.CollectorUserName.Trim();
             sale.UpdatedAtUtc = DateTime.UtcNow;
-            sale.History.Add(new SaleHistoryEntry(sale.UpdatedAtUtc, reviewer, sale.Status, sale.Status, request.Reason?.Trim(), "assign-collector"));
+            sale.AddHistoryEntry(new SaleHistoryEntry(sale.UpdatedAtUtc, reviewer, sale.Status, sale.Status, request.Reason?.Trim(), "assign-collector"));
             return sale;
         }
     }
@@ -472,7 +471,7 @@ public sealed class InMemoryBusinessStore : IBusinessStore
                 CollectedAtUtc: request.CollectedAtUtc ?? DateTime.UtcNow,
                 CapturedAtUtc: DateTime.UtcNow);
 
-            sale.Collections.Add(entry);
+            sale.AddCollectionEntry(entry);
             sale.CollectedAmount += request.Amount;
             sale.FirstCollectionAtUtc ??= entry.CollectedAtUtc;
             sale.CollectorUserName ??= collectorUserName;
@@ -483,7 +482,7 @@ public sealed class InMemoryBusinessStore : IBusinessStore
             {
                 var previous = sale.Status;
                 sale.Status = SaleWorkflowStatus.Closed;
-                sale.History.Add(new SaleHistoryEntry(sale.UpdatedAtUtc, collectorUserName, previous, SaleWorkflowStatus.Closed, "Auto close after full collection", "auto-close"));
+                sale.AddHistoryEntry(new SaleHistoryEntry(sale.UpdatedAtUtc, collectorUserName, previous, SaleWorkflowStatus.Closed, "Auto close after full collection", "auto-close"));
             }
 
             return sale;
@@ -514,7 +513,7 @@ public sealed class InMemoryBusinessStore : IBusinessStore
             {
                 sale.CollectorUserName = toCollector;
                 sale.UpdatedAtUtc = DateTime.UtcNow;
-                sale.History.Add(new SaleHistoryEntry(sale.UpdatedAtUtc, supervisorUserName, sale.Status, sale.Status, request.Reason?.Trim(), "reassign-portfolio"));
+                sale.AddHistoryEntry(new SaleHistoryEntry(sale.UpdatedAtUtc, supervisorUserName, sale.Status, sale.Status, request.Reason?.Trim(), "reassign-portfolio"));
             }
 
             return candidates.Length;

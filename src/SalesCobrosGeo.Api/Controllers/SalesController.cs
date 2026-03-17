@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SalesCobrosGeo.Api.Business;
 using SalesCobrosGeo.Api.Contracts.Sales;
@@ -7,10 +6,9 @@ using SalesCobrosGeo.Shared.Security;
 
 namespace SalesCobrosGeo.Api.Controllers;
 
-[ApiController]
 [Route("api/sales")]
 [Authorize]
-public sealed class SalesController : ControllerBase
+public sealed class SalesController : ApiControllerBase
 {
     private readonly IBusinessStore _store;
 
@@ -23,11 +21,8 @@ public sealed class SalesController : ControllerBase
     [Authorize(Policy = RolePolicies.CanCreateSales)]
     public IActionResult GetMine()
     {
-        var user = User.Identity?.Name ?? "unknown";
         var manageAll = HasAnyRole(UserRole.SupervisorVentas, UserRole.Administrador);
-        var sales = _store.GetSalesForUser(user, manageAll)
-            .Select(MapToResponse);
-
+        var sales = _store.GetSalesForUser(CurrentUserName, manageAll).Select(MapToResponse);
         return Ok(sales);
     }
 
@@ -35,9 +30,7 @@ public sealed class SalesController : ControllerBase
     [Authorize(Policy = RolePolicies.CanManageSales)]
     public IActionResult GetTeam()
     {
-        var sales = _store.GetSalesForUser(User.Identity?.Name ?? "unknown", manageAll: true)
-            .Select(MapToResponse);
-
+        var sales = _store.GetSalesForUser(CurrentUserName, manageAll: true).Select(MapToResponse);
         return Ok(sales);
     }
 
@@ -55,10 +48,10 @@ public sealed class SalesController : ControllerBase
         var sale = _store.GetSaleById(id);
         if (sale is null)
         {
-            return NotFound(new { message = "Sale not found." });
+            return Problem("Sale not found.", statusCode: StatusCodes.Status404NotFound);
         }
 
-        var isOwner = string.Equals(sale.SellerUserName, User.Identity?.Name, StringComparison.OrdinalIgnoreCase);
+        var isOwner = string.Equals(sale.SellerUserName, CurrentUserName, StringComparison.OrdinalIgnoreCase);
         if (!isOwner && !HasAnyRole(UserRole.SupervisorVentas, UserRole.Administrador))
         {
             return Forbid();
@@ -70,94 +63,42 @@ public sealed class SalesController : ControllerBase
     [HttpPost]
     [Authorize(Policy = RolePolicies.CanCreateSales)]
     public IActionResult Create([FromBody] CreateSaleRequest request)
-    {
-        try
-        {
-            var sale = _store.AddSale(request, User.Identity?.Name ?? "unknown", canRegisterDirectly: true);
-            return Ok(MapToResponse(sale));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+        => HandleBiz(() => MapToResponse(_store.AddSale(request, CurrentUserName, canRegisterDirectly: true)));
 
     [HttpPut("{id:int}/draft")]
     [Authorize(Policy = RolePolicies.CanCreateSales)]
     public IActionResult UpdateDraft(int id, [FromBody] UpdateSaleDraftRequest request)
-    {
-        try
-        {
-            var sale = _store.UpdateSaleDraft(id, request, User.Identity?.Name ?? "unknown", HasAnyRole(UserRole.SupervisorVentas, UserRole.Administrador));
-            return Ok(MapToResponse(sale));
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+        => HandleBiz(() => MapToResponse(
+            _store.UpdateSaleDraft(id, request, CurrentUserName, HasAnyRole(UserRole.SupervisorVentas, UserRole.Administrador))));
 
     [HttpPost("{id:int}/review")]
     [Authorize(Policy = RolePolicies.CanManageSales)]
     public IActionResult Review(int id, [FromBody] ReviewSaleRequest request)
-    {
-        try
-        {
-            var sale = _store.ReviewSale(id, request, User.Identity?.Name ?? "unknown");
-            return Ok(MapToResponse(sale));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+        => HandleBiz(() => MapToResponse(_store.ReviewSale(id, request, CurrentUserName)));
 
     [HttpPost("{id:int}/assign-collector")]
     [Authorize(Policy = RolePolicies.CanManageSales)]
     public IActionResult AssignCollector(int id, [FromBody] AssignCollectorRequest request)
-    {
-        try
-        {
-            var sale = _store.AssignCollector(id, request, User.Identity?.Name ?? "unknown");
-            return Ok(MapToResponse(sale));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+        => HandleBiz(() => MapToResponse(_store.AssignCollector(id, request, CurrentUserName)));
 
-    private bool HasAnyRole(params UserRole[] roles)
-    {
-        var role = User.FindFirstValue(ClaimTypes.Role);
-        return roles.Any(r => string.Equals(role, r.ToString(), StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static SaleSummaryResponse MapToResponse(SaleRecord sale)
-    {
-        return new SaleSummaryResponse(
-            Id: sale.Id,
-            SaleNumber: sale.SaleNumber,
-            ClientId: sale.ClientId,
-            SellerUserName: sale.SellerUserName,
-            CollectorUserName: sale.CollectorUserName,
-            Status: sale.Status,
-            CollectionStatus: sale.CollectionStatus,
-            TotalAmount: sale.TotalAmount,
-            CollectedAmount: sale.CollectedAmount,
-            RemainingAmount: sale.RemainingAmount,
-            PaymentMethodCode: sale.PaymentMethodCode,
-            CollectionDay: sale.CollectionDay,
-            CreatedAtUtc: sale.CreatedAtUtc,
-            UpdatedAtUtc: sale.UpdatedAtUtc,
-            Notes: sale.Notes,
-            Items: sale.Items.ToArray(),
-            Evidence: sale.Evidence,
-            History: sale.History.ToArray(),
-            Collections: sale.Collections.ToArray());
-    }
+    private static SaleSummaryResponse MapToResponse(SaleRecord sale) => new(
+        Id: sale.Id,
+        SaleNumber: sale.SaleNumber,
+        ClientId: sale.ClientId,
+        SellerUserName: sale.SellerUserName,
+        CollectorUserName: sale.CollectorUserName,
+        Status: sale.Status,
+        CollectionStatus: sale.CollectionStatus,
+        TotalAmount: sale.TotalAmount,
+        CollectedAmount: sale.CollectedAmount,
+        RemainingAmount: sale.RemainingAmount,
+        PaymentMethodCode: sale.PaymentMethodCode,
+        CollectionDay: sale.CollectionDay,
+        CreatedAtUtc: sale.CreatedAtUtc,
+        UpdatedAtUtc: sale.UpdatedAtUtc,
+        Notes: sale.Notes,
+        Items: sale.Items.ToArray(),
+        Evidence: sale.Evidence,
+        History: sale.History.ToArray(),
+        Collections: sale.Collections.ToArray());
 }
