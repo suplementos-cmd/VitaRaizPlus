@@ -2493,6 +2493,11 @@
   box-shadow: var(--vr-shadow-soft);
 }
 
+.collector-history-panel-compact {
+  padding: 12px;
+  border-radius: 18px;
+}
+
 .collector-history-panelhead {
   display: flex;
   align-items: center;
@@ -2502,6 +2507,14 @@
 
 .collector-history-panelhead strong { color: #16345d; }
 .collector-history-panelhead span { color: #6f819a; font-size: 0.8rem; }
+
+.collector-history-panelhead.compact strong {
+  font-size: 0.95rem;
+}
+
+.collector-history-panelhead.compact span {
+  font-size: 0.74rem;
+}
 
 .collector-history-record {
   display: grid;
@@ -2514,9 +2527,28 @@
   border: 1px solid rgba(50, 78, 128, 0.08);
 }
 
+.collector-history-records-compact {
+  gap: 8px;
+}
+
+.collector-history-recordlink {
+  grid-template-columns: minmax(0, 1.5fr) auto auto;
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 16px;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.collector-history-recordlink:hover {
+  border-color: rgba(42, 95, 193, 0.18);
+  box-shadow: 0 10px 20px rgba(24, 56, 100, 0.08);
+  transform: translateY(-1px);
+}
+
 .collector-history-recordcopy,
 .collector-history-recordmeta,
-.collector-history-recordactions {
+.collector-history-recordactions,
+.collector-history-recordaside {
   display: grid;
   gap: 3px;
 }
@@ -2531,6 +2563,30 @@
 .collector-history-recordmeta span {
   color: #6f819a;
   font-size: 0.76rem;
+}
+
+.collector-history-recordcopy.compact strong,
+.collector-history-recordmeta.compact strong {
+  font-size: 0.88rem;
+}
+
+.collector-history-recordcopy.compact span,
+.collector-history-recordcopy.compact small,
+.collector-history-recordmeta.compact span {
+  font-size: 0.72rem;
+}
+
+.collector-history-recordaside {
+  justify-items: end;
+  align-content: center;
+}
+
+.collector-history-recordstate {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #5d7290;
 }
 
 .collector-status-actions {
@@ -2658,6 +2714,14 @@
     grid-template-columns: 1fr;
   }
 
+  .collector-history-recordlink {
+    grid-template-columns: 1fr auto;
+  }
+
+  .collector-history-recordaside {
+    justify-items: end;
+  }
+
   .collector-status-actions {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -2687,6 +2751,18 @@
   .collector-mobile-historycard {
     padding: 10px 10px;
     border-radius: 14px;
+  }
+
+  .collector-history-recordlink {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .collector-history-recordaside {
+    grid-auto-flow: column;
+    justify-content: space-between;
+    justify-items: stretch;
+    align-items: center;
   }
 
   .collector-status-actions {
