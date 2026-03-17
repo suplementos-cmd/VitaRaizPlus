@@ -3,6 +3,9 @@
 @functions {
     string SaleTone(CollectorClientListItem item) => item.Status.ToUpperInvariant() switch
     {
+        _ when item.HasPromiseOverdue => "danger",
+        _ when item.IsNotLocated => "warning",
+        _ when item.IsRefused => "muted",
         "ATRASADO" => "danger",
         "CANCELADO" => "muted",
         "LIQUIDADO" => "success",
@@ -13,14 +16,27 @@
         _ => "neutral"
     };
 
-    string SaleFlag(string tone) => tone switch
+    string SaleFlag(CollectorClientListItem item) => item switch
     {
-        "danger" => "Urgente",
-        "muted" => "Cancelada",
-        "success" => "Estable",
-        "warning" => "Seguimiento",
-        "info" => "Promesa",
+        _ when item.HasPromiseOverdue => "Promesa vencida",
+        _ when item.HasPromise => "Promesa activa",
+        _ when item.IsNotLocated => "No localizado",
+        _ when item.IsRefused => "Se nego",
+        _ when item.Status.Equals("ATRASADO", StringComparison.OrdinalIgnoreCase) => "Urgente",
+        _ when item.Status.Equals("CANCELADO", StringComparison.OrdinalIgnoreCase) => "Cancelada",
+        _ when item.Status.Equals("LIQUIDADO", StringComparison.OrdinalIgnoreCase) => "Liquidada",
         _ => "Pendiente"
+    };
+
+    string SaleIcon(CollectorClientListItem item) => item switch
+    {
+        _ when item.HasPromiseOverdue => "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M12 9v4'/><path d='M12 17h.01'/><path d='M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z'/></svg>",
+        _ when item.HasPromise => "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M8 7h8'/><path d='M8 12h8'/><path d='M8 17h5'/><path d='M5 4h14a1 1 0 0 1 1 1v14l-4-3-4 3-4-3-4 3V5a1 1 0 0 1 1-1z'/></svg>",
+        _ when item.IsNotLocated => "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='m21 10-5.2-5.2a2 2 0 0 0-2.8 0L4 14v6h6l9-9a2 2 0 0 0 0-2.8Z'/><path d='M7 17h.01'/></svg>",
+        _ when item.IsRefused => "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='9'/><path d='m15 9-6 6'/><path d='m9 9 6 6'/></svg>",
+        _ when item.Status.Equals("ATRASADO", StringComparison.OrdinalIgnoreCase) => "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='9'/><path d='M12 7v5l3 3'/></svg>",
+        _ when item.Status.Equals("LIQUIDADO", StringComparison.OrdinalIgnoreCase) => "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='m5 13 4 4L19 7'/></svg>",
+        _ => "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><rect x='3' y='5' width='18' height='16' rx='2'/><path d='M16 3v4'/><path d='M8 3v4'/><path d='M3 11h18'/></svg>"
     };
 
     string StatusIcon(string icon) => icon switch
@@ -97,7 +113,7 @@
                     var tone = SaleTone(item);
                     <article class="collector-mobile-clientrow compact zone-child status-@tone" data-search="@(item.Name.ToLowerInvariant()) @(item.Zone.ToLowerInvariant()) @(item.ReferenceText.ToLowerInvariant()) @(item.NumVenta)">
                         <a class="collector-mobile-clientmain" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">
-                            <strong>@item.Name <span class="collector-inline-flag @tone">@SaleFlag(tone)</span></strong>
+                            <strong><span class="collector-semantic-icon @tone">@Html.Raw(SaleIcon(item))</span>@item.Name <span class="collector-inline-flag @tone">@SaleFlag(item)</span></strong>
                             <span>@item.Zone · @item.NextAction</span>
                         </a>
                         <div class="collector-mobile-clientactions">

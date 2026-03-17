@@ -360,7 +360,9 @@ public sealed class CobrosController : Controller
             var last = history?.FirstOrDefault();
             var note = last?.ObservacionCobro ?? sale?.ObservacionVenta ?? string.Empty;
             var hasPromise = ContainsKeyword(note, "PROMESA");
+            var promiseOverdue = hasPromise && (ContainsKeyword(note, "VENCID") || ContainsKeyword(note, "INCUMPL") || NormalizeKey(item.Estatus) == "ATRASADO");
             var notLocated = ContainsKeyword(note, "NO LOCALIZ") || ContainsKeyword(note, "NO ENCONTR");
+            var refused = ContainsKeyword(note, "SE NEGO") || ContainsKeyword(note, "SE NEGÓ") || ContainsKeyword(note, "NEGATIVA") || ContainsKeyword(note, "SE NIEGA");
             var wasVisited = history is { Count: > 0 } || !string.IsNullOrWhiteSpace(note);
 
             list.Add(new CollectorClientListItem
@@ -371,8 +373,8 @@ public sealed class CobrosController : Controller
                 Zone = item.Zona,
                 Route = item.DiaCobroPrevisto,
                 Status = item.Estatus,
-                Priority = ComputePriority(item.Estatus, hasPromise, notLocated),
-                NextAction = ComputeNextAction(item.Estatus, hasPromise, notLocated, wasVisited),
+                Priority = ComputePriority(item.Estatus, hasPromise, promiseOverdue, notLocated, refused),
+                NextAction = ComputeNextAction(item.Estatus, hasPromise, promiseOverdue, notLocated, refused, wasVisited),
                 ReferenceText = string.IsNullOrWhiteSpace(sale?.ObservacionVenta) ? $"Zona {item.Zona}" : sale.ObservacionVenta!,
                 Phone = item.Celular,
                 Coordinates = item.Coordenadas,
@@ -381,6 +383,9 @@ public sealed class CobrosController : Controller
                 LastNote = string.IsNullOrWhiteSpace(note) ? "Sin gestion reciente" : note,
                 SaleState = item.EstadoVenta,
                 HasPromise = hasPromise,
+                HasPromiseOverdue = promiseOverdue,
+                IsNotLocated = notLocated,
+                IsRefused = refused,
                 WasVisited = wasVisited
             });
         }
@@ -584,7 +589,7 @@ public sealed class CobrosController : Controller
             "cancelled" => normalizedStatus == "CANCELADO" || normalizedSaleState == "CANCELADO",
             "liquidated" => normalizedStatus == "LIQUIDADO",
             "promise" => item.HasPromise,
-            "followup" => NormalizeKey(item.NextAction) == "SEGUIMIENTO" || ContainsKeyword(item.LastNote, "REAGEND"),
+            "followup" => NormalizeKey(item.NextAction) == "SEGUIMIENTO" || ContainsKeyword(item.LastNote, "REAGEND") || item.IsNotLocated || item.IsRefused,
             "overdue" => normalizedStatus == "ATRASADO",
             "recovery" => normalizedStatus == "PARCIAL",
             "current" => normalizedStatus == "AL CORRIENTE",
@@ -602,8 +607,8 @@ public sealed class CobrosController : Controller
             "overdue" => clients.Where(x => NormalizeKey(x.Status) == "ATRASADO").ToList(),
             "promise" => clients.Where(x => x.HasPromise).ToList(),
             "unvisited" => clients.Where(x => !x.WasVisited).ToList(),
-            "notlocated" => clients.Where(x => ContainsKeyword(x.LastNote, "NO LOCALIZ") || ContainsKeyword(x.LastNote, "NO ENCONTR")).ToList(),
-            "followup" => clients.Where(x => NormalizeKey(x.NextAction) == NormalizeKey("Seguimiento") || ContainsKeyword(x.LastNote, "REAGEND")).ToList(),
+            "notlocated" => clients.Where(x => x.IsNotLocated).ToList(),
+            "followup" => clients.Where(x => NormalizeKey(x.NextAction) == NormalizeKey("Seguimiento") || ContainsKeyword(x.LastNote, "REAGEND") || x.IsNotLocated || x.IsRefused).ToList(),
             _ => clients.Where(x => NormalizeKey(x.Route) == GetTodayKey() || NormalizeKey(x.Status) == "ATRASADO").ToList()
         };
     }
@@ -711,9 +716,9 @@ public sealed class CobrosController : Controller
         return ordered;
     }
 
-    private static string ComputePriority(string status, bool hasPromise, bool notLocated)
+    private static string ComputePriority(string status, bool hasPromise, bool hasPromiseOverdue, bool notLocated, bool refused)
     {
-        if (NormalizeKey(status) == "ATRASADO" || notLocated)
+        if (NormalizeKey(status) == "ATRASADO" || hasPromiseOverdue || notLocated || refused)
         {
             return "Alta";
         }
@@ -726,11 +731,21 @@ public sealed class CobrosController : Controller
         return "Normal";
     }
 
-    private static string ComputeNextAction(string status, bool hasPromise, bool notLocated, bool wasVisited)
+    private static string ComputeNextAction(string status, bool hasPromise, bool hasPromiseOverdue, bool notLocated, bool refused, bool wasVisited)
     {
         if (notLocated)
         {
             return "Revisar referencia";
+        }
+
+        if (refused)
+        {
+            return "Escalar seguimiento";
+        }
+
+        if (hasPromiseOverdue)
+        {
+            return "Recuperar promesa";
         }
 
         if (hasPromise)
