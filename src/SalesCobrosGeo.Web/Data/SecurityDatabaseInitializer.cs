@@ -453,7 +453,7 @@ CREATE TABLE IF NOT EXISTS Collections (
 
     private void SeedDemoSalesMatrix()
     {
-        if (_dbContext.Sales.Any(x => x.IdV.StartsWith("demo", StringComparison.OrdinalIgnoreCase)))
+        if (_dbContext.Sales.Any(x => EF.Functions.Like(x.IdV, "demo%")))
         {
             return;
         }
