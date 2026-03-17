@@ -320,11 +320,6 @@ CREATE TABLE IF NOT EXISTS Collections (
 
     private void SeedCatalogs()
     {
-        if (_dbContext.CatalogItems.Any())
-        {
-            return;
-        }
-
         var items = new (string Category, string Code, string Name, decimal? Price, int SortOrder)[]
         {
             ("zone", "HEROES CHALCO", "Heroes Chalco", null, 1),
@@ -352,11 +347,29 @@ CREATE TABLE IF NOT EXISTS Collections (
             ("collector", "MARIO", "Mario", null, 2),
             ("collector", "ELENA", "Elena", null, 3),
             ("collector", "jakelinepink88@gmail.com", "jakelinepink88@gmail.com", null, 4),
-            ("collector", "ggab75218@gmail.com", "ggab75218@gmail.com", null, 5)
+            ("collector", "ggab75218@gmail.com", "ggab75218@gmail.com", null, 5),
+            ("sale_status", "PENDIENTE", "Pendiente", null, 1),
+            ("sale_status", "EN COBRO", "En cobro", null, 2),
+            ("sale_status", "AL CORRIENTE", "Al corriente", null, 3),
+            ("sale_status", "CANCELADO", "Cancelado", null, 4),
+            ("sale_status", "LIQUIDADO", "Liquidado", null, 5),
+            ("collection_status_group", "pending", "Pendientes hoy", null, 1),
+            ("collection_status_group", "promise", "Promesas pago hoy", null, 2),
+            ("collection_status_group", "followup", "Reagendados", null, 3),
+            ("collection_status_group", "overdue", "Atrasados", null, 4),
+            ("collection_status_group", "recovery", "Recuperacion", null, 5),
+            ("collection_status_group", "current", "Al corriente", null, 6),
+            ("collection_status_group", "liquidated", "Liquidados", null, 7),
+            ("collection_status_group", "cancelled", "Cancelados", null, 8)
         };
 
         foreach (var item in items)
         {
+            if (_dbContext.CatalogItems.Any(x => x.Category == item.Category && x.Code == item.Code))
+            {
+                continue;
+            }
+
             _dbContext.CatalogItems.Add(new CatalogItemEntity
             {
                 Category = item.Category,

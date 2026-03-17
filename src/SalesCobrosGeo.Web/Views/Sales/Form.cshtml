@@ -221,7 +221,9 @@
                             </div>
                             <div class="col-md-4">
                                 <label asp-for="Input.Estado" class="form-label">Estado</label>
-                                <input asp-for="Input.Estado" class="form-control" />
+                                <select asp-for="Input.Estado" class="form-select" asp-items="@(new SelectList(Model.Catalogs.SaleStatuses, nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Code), nameof(SalesCobrosGeo.Web.Models.Sales.CatalogOption.Name)))">
+                                    <option value="">Seleccione</option>
+                                </select>
                             </div>
                             <div class="col-md-4">
                                 <label asp-for="Input.Estado2" class="form-label">Estado2</label>

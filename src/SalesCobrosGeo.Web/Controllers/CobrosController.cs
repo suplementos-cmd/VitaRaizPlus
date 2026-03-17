@@ -46,13 +46,7 @@ public sealed class CobrosController : Controller
             Profile = activeProfile,
             DisplayName = User.GetDisplayName(),
             RouteLabel = string.IsNullOrWhiteSpace(activeProfile) ? "Ruta asignada" : activeProfile,
-            Cards =
-            [
-                new CollectorOperationalCard { Title = "Pendientes de hoy", Subtitle = "Visitas para arrancar la jornada", Count = CountByFilter(clients, "today"), Accent = "primary", TargetAction = nameof(CollectorQueue) },
-                new CollectorOperationalCard { Title = "Promesas para hoy", Subtitle = "Seguimiento y confirmacion", Count = CountByFilter(clients, "promise"), Accent = "warning", TargetAction = nameof(CollectorQueue) },
-                new CollectorOperationalCard { Title = "Reagendados", Subtitle = "Clientes con nueva visita", Count = CountByFilter(clients, "followup"), Accent = "info", TargetAction = nameof(CollectorQueue) },
-                new CollectorOperationalCard { Title = "Atrasados", Subtitle = "Gestion prioritaria del dia", Count = CountByFilter(clients, "overdue"), Accent = "danger", TargetAction = nameof(CollectorQueue) }
-            ],
+            Cards = BuildCollectorOperationalCards(clients),
             TodayClients = todayClients
         };
 
@@ -407,6 +401,43 @@ public sealed class CobrosController : Controller
         ];
     }
 
+    private IReadOnlyList<CollectorOperationalCard> BuildCollectorOperationalCards(IReadOnlyList<CollectorClientListItem> clients)
+    {
+        return _repository.GetMaintenanceCatalog("estatus-cobro-grupos")
+            .Where(x => x.IsActive)
+            .Select(x => new CollectorOperationalCard
+            {
+                Title = x.Name,
+                Subtitle = BuildCollectorOperationalSubtitle(x.Code),
+                Count = clients.Count(client => MatchesStatusBucket(client, NormalizeStatusBucket(x.Code))),
+                Accent = ResolveStatusTone(x.Code) switch
+                {
+                    "warning" => "warning",
+                    "info" => "info",
+                    "danger" => "danger",
+                    _ => "primary"
+                },
+                StatusKey = NormalizeStatusBucket(x.Code),
+                TargetAction = nameof(CollectorQueue)
+            })
+            .ToArray();
+    }
+
+    private static string BuildCollectorOperationalSubtitle(string? code)
+    {
+        return NormalizeStatusBucket(code) switch
+        {
+            "promise" => "Seguimiento y confirmacion",
+            "followup" => "Clientes con nueva visita",
+            "overdue" => "Gestion prioritaria del dia",
+            "recovery" => "Cobros parciales por recuperar",
+            "current" => "Cuentas al corriente para seguimiento",
+            "liquidated" => "Cuentas liquidadas del dia",
+            "cancelled" => "Cuentas fuera de operacion",
+            _ => "Visitas para arrancar la jornada"
+        };
+    }
+
     private string ResolveSelectedDay(IReadOnlyList<CollectorClientListItem> clients, string? day)
     {
         var normalized = NormalizeDayKey(day);
@@ -463,17 +494,17 @@ public sealed class CobrosController : Controller
     private IReadOnlyList<CollectorMobileStatusGroup> BuildMobileStatusGroups(IReadOnlyList<CollectorClientListItem> clients)
     {
         var remaining = clients.ToList();
-        var definitions = new[]
-        {
-            new { Key = "pending", Title = "Pendientes hoy", Tone = "neutral", Icon = "pending" },
-            new { Key = "promise", Title = "Promesas pago hoy", Tone = "warning", Icon = "promise" },
-            new { Key = "followup", Title = "Reagendados", Tone = "info", Icon = "followup" },
-            new { Key = "overdue", Title = "Atrasados", Tone = "danger", Icon = "overdue" },
-            new { Key = "recovery", Title = "Recuperacion", Tone = "brand", Icon = "recovery" },
-            new { Key = "current", Title = "Al corriente", Tone = "success", Icon = "current" },
-            new { Key = "liquidated", Title = "Liquidados", Tone = "muted", Icon = "liquidated" },
-            new { Key = "cancelled", Title = "Cancelados", Tone = "muted", Icon = "cancelled" }
-        };
+        var definitions = _repository.GetMaintenanceCatalog("estatus-cobro-grupos")
+            .Where(x => x.IsActive)
+            .Select(x => new
+            {
+                Key = NormalizeStatusBucket(x.Code),
+                Title = x.Name,
+                Tone = ResolveStatusTone(x.Code),
+                Icon = NormalizeStatusBucket(x.Code)
+            })
+            .Where(x => !string.IsNullOrWhiteSpace(x.Key))
+            .ToArray();
 
         var result = new List<CollectorMobileStatusGroup>(definitions.Length);
         foreach (var definition in definitions)
@@ -512,6 +543,20 @@ public sealed class CobrosController : Controller
         }
 
         return result;
+    }
+
+    private static string ResolveStatusTone(string? code)
+    {
+        return NormalizeStatusBucket(code) switch
+        {
+            "promise" => "warning",
+            "followup" => "info",
+            "overdue" => "danger",
+            "recovery" => "brand",
+            "current" => "success",
+            "liquidated" or "cancelled" => "muted",
+            _ => "neutral"
+        };
     }
 
     private static string NormalizeStatusBucket(string? status)

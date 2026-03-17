@@ -33,7 +33,8 @@ public sealed class SqliteSalesRepository : ISalesRepository
             items.Where(x => x.Category == "collection_day").Select(x => new CatalogOption(x.Code, x.Name)).ToArray(),
             items.Where(x => x.Category == "product").Select(x => new ProductOption(x.Code, x.Name, x.Price ?? 0m)).ToArray(),
             items.Where(x => x.Category == "seller").Select(x => new CatalogOption(x.Code, x.Name)).ToArray(),
-            items.Where(x => x.Category == "collector").Select(x => new CatalogOption(x.Code, x.Name)).ToArray());
+            items.Where(x => x.Category == "collector").Select(x => new CatalogOption(x.Code, x.Name)).ToArray(),
+            items.Where(x => x.Category == "sale_status").Select(x => new CatalogOption(x.Code, x.Name)).ToArray());
     }
 
     public IReadOnlyList<MaintenanceCatalogRecord> GetMaintenanceCatalog(string section)
@@ -290,6 +291,8 @@ public sealed class SqliteSalesRepository : ISalesRepository
             "productos" => "product",
             "vendedores" => "seller",
             "cobradores" => "collector",
+            "estatus-venta" => "sale_status",
+            "estatus-cobro-grupos" => "collection_status_group",
             _ => string.Empty
         };
     }
