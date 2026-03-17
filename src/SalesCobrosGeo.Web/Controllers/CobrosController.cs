@@ -27,7 +27,7 @@ public sealed class CobrosController : Controller
     {
         return IsSupervisor()
             ? RedirectToAction(nameof(SupervisorDashboard), new { profile })
-            : RedirectToAction(nameof(CollectorHome), new { profile = ResolveCollectorProfile(profile) });
+            : RedirectToAction(nameof(CollectorQueue), new { profile = ResolveCollectorProfile(profile), day = GetTodayKey(), filter = "all", groupBy = "status" });
     }
 
     [HttpGet]
@@ -60,24 +60,40 @@ public sealed class CobrosController : Controller
     }
 
     [HttpGet]
-    public IActionResult CollectorQueue(string? profile = null, string groupBy = "day", string filter = "today", string? day = null)
+    public IActionResult CollectorQueue(string? profile = null, string groupBy = "day", string filter = "today", string? day = null, string? status = null, string? zone = null)
     {
         var activeProfile = ResolveCollectorProfile(profile);
         var baseClients = BuildCollectorClients(activeProfile);
         var selectedDay = ResolveSelectedDay(baseClients, day);
         var dayScopedClients = ApplyCollectorDay(baseClients, selectedDay);
-        var filteredClients = ApplyCollectorFilter(dayScopedClients, filter);
+        var selectedStatus = NormalizeStatusBucket(status);
+        var statusScopedClients = string.IsNullOrWhiteSpace(selectedStatus)
+            ? dayScopedClients
+            : dayScopedClients.Where(x => MatchesStatusBucket(x, selectedStatus)).ToList();
+        var selectedZone = string.IsNullOrWhiteSpace(zone) ? string.Empty : zone.Trim();
+        var zoneScopedClients = string.IsNullOrWhiteSpace(selectedZone)
+            ? statusScopedClients
+            : statusScopedClients.Where(x => string.Equals(x.Zone, selectedZone, StringComparison.OrdinalIgnoreCase)).ToList();
+        var filteredClients = ApplyCollectorFilter(zoneScopedClients, filter);
+        var mobileStatusGroups = BuildMobileStatusGroups(dayScopedClients);
+        var mobileZoneGroups = string.IsNullOrWhiteSpace(selectedStatus)
+            ? []
+            : mobileStatusGroups.FirstOrDefault(x => x.Key == selectedStatus)?.Zones ?? [];
 
         var model = new CollectorQueueViewModel
         {
             Profile = activeProfile,
             GroupBy = string.IsNullOrWhiteSpace(groupBy) ? "day" : groupBy.ToLowerInvariant(),
-            Filter = string.IsNullOrWhiteSpace(filter) ? "today" : filter.ToLowerInvariant(),
+            Filter = string.IsNullOrWhiteSpace(filter) ? "all" : filter.ToLowerInvariant(),
             SelectedDay = selectedDay,
+            SelectedStatus = selectedStatus,
+            SelectedZone = selectedZone,
             SearchPlaceholder = "Buscar por nombre, direccion, telefono o folio",
             QuickFilters = BuildQuickFilters(baseClients, filter),
             DayTabs = BuildCollectorDayTabs(baseClients, selectedDay),
-            MobileStatusGroups = BuildMobileStatusGroups(dayScopedClients),
+            MobileStatusGroups = mobileStatusGroups,
+            MobileZoneGroups = mobileZoneGroups,
+            MobileZoneClients = zoneScopedClients,
             Groups = BuildCollectorGroups(filteredClients, groupBy)
         };
 
@@ -496,6 +512,22 @@ public sealed class CobrosController : Controller
         }
 
         return result;
+    }
+
+    private static string NormalizeStatusBucket(string? status)
+    {
+        return NormalizeKey(status) switch
+        {
+            "PENDING" or "PENDIENTESHOY" => "pending",
+            "PROMISE" or "PROMESASPAGOHOY" => "promise",
+            "FOLLOWUP" or "REAGENDADOS" => "followup",
+            "OVERDUE" or "ATRASADOS" => "overdue",
+            "RECOVERY" or "RECUPERACION" => "recovery",
+            "CURRENT" or "ALCORRIENTE" => "current",
+            "LIQUIDATED" or "LIQUIDADOS" => "liquidated",
+            "CANCELLED" or "CANCELADOS" => "cancelled",
+            _ => string.Empty
+        };
     }
 
     private static bool MatchesStatusBucket(CollectorClientListItem item, string bucket)

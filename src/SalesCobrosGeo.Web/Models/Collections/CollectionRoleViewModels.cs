@@ -95,10 +95,14 @@ public sealed class CollectorQueueViewModel
     public string GroupBy { get; set; } = string.Empty;
     public string Filter { get; set; } = string.Empty;
     public string SelectedDay { get; set; } = string.Empty;
+    public string SelectedStatus { get; set; } = string.Empty;
+    public string SelectedZone { get; set; } = string.Empty;
     public string SearchPlaceholder { get; set; } = string.Empty;
     public IReadOnlyList<CollectorQuickFilter> QuickFilters { get; set; } = [];
     public IReadOnlyList<CollectorDayTab> DayTabs { get; set; } = [];
     public IReadOnlyList<CollectorMobileStatusGroup> MobileStatusGroups { get; set; } = [];
+    public IReadOnlyList<CollectorMobileZoneGroup> MobileZoneGroups { get; set; } = [];
+    public IReadOnlyList<CollectorClientListItem> MobileZoneClients { get; set; } = [];
     public IReadOnlyList<CollectorQueueGroupViewModel> Groups { get; set; } = [];
 }
 
