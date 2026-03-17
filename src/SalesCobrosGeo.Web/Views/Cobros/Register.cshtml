@@ -1,8 +1,8 @@
-@model SalesCobrosGeo.Web.Models.Sales.CollectionRegisterViewModel
+﻿@model SalesCobrosGeo.Web.Models.Sales.CollectionRegisterViewModel
 @using Microsoft.AspNetCore.Mvc.Rendering
 @using SalesCobrosGeo.Web.Models.Shared
 @{
-    ViewData["Title"] = "Registrar Cobro";
+    ViewData["Title"] = Model.IsEdit ? "Editar Cobro" : "Registrar Cobro";
     var sale = Model.Sale;
     var roleView = (ViewData["CollectionsRoleView"] as string) ?? "collector";
     var isSupervisorView = string.Equals(roleView, "supervisor", StringComparison.OrdinalIgnoreCase);
@@ -26,8 +26,18 @@
         "LIQUIDADO" => "status-chip status-done",
         _ => "status-chip"
     };
+    var actionStatuses = new[]
+    {
+        ("AL CORRIENTE", "Al corriente", "ok"),
+        ("PROXIMA SEMANA", "Prox. semana", "clock"),
+        ("PASAR MAÑANA", "Pasar manana", "next"),
+        ("ATRASADO", "Atrasado", "alert"),
+        ("PASAR MAS TARDE", "Mas tarde", "later"),
+        ("CANCELADO", "Cancelado", "off"),
+        ("LIQUIDADO", "Liquidado", "done")
+    };
     ViewData["MobileContextBar"] = new MobileContextBarModel(
-        "Registrar cobro",
+        Model.IsEdit ? "Editar cobro" : "Registrar cobro",
         Model.PortfolioItem is null ? "Captura de abono" : Model.PortfolioItem.NombreCliente,
         Url.Action("Index", "Cobros", new { profile = Model.ReturnProfile, day = Model.ReturnDay, status = Model.ReturnStatus, zone = Model.ReturnZone }));
 }
@@ -35,18 +45,17 @@
 <div class="collector-register-page collector-register-page-tight">
     <div class="collector-register-topbar compact">
         <a class="btn btn-outline-secondary btn-sm collector-back-btn" asp-controller="Cobros" asp-action="Index" asp-route-profile="@Model.ReturnProfile" asp-route-day="@Model.ReturnDay" asp-route-status="@Model.ReturnStatus" asp-route-zone="@Model.ReturnZone">
-            <span class="collector-back-icon">?</span>
             <span class="collector-back-text">Volver</span>
         </a>
         <div class="collector-register-title-wrap compact">
-            <h1 class="collector-register-title">Venta para cobro</h1>
-            <div class="collector-register-subtitle">El estado se actualiza automaticamente al registrar cobro o abono</div>
+            <h1 class="collector-register-title">@(Model.IsEdit ? "Editar movimiento" : "Venta para cobro")</h1>
+            <div class="collector-register-subtitle">El estado operativo queda claro al momento de registrar o corregir el movimiento.</div>
         </div>
     </div>
 
     @if (!ViewData.ModelState.IsValid)
     {
-        <div class="app-toast-inline danger">No se pudo registrar el cobro. Revisa los datos.</div>
+        <div class="app-toast-inline danger">No se pudo guardar el cobro. Revisa los datos.</div>
     }
 
     @if (Model.PortfolioItem is not null)
@@ -75,7 +84,7 @@
                     <div>
                         <div class="collector-register-client">@Model.PortfolioItem.NombreCliente</div>
                         <div class="collector-register-meta">Venta #@Model.PortfolioItem.NumVenta</div>
-                        <div class="collector-register-meta">@Model.PortfolioItem.Zona � @Model.PortfolioItem.DiaCobroPrevisto</div>
+                        <div class="collector-register-meta">@Model.PortfolioItem.Zona • @Model.PortfolioItem.DiaCobroPrevisto</div>
                     </div>
                 </div>
             </div>
@@ -88,6 +97,10 @@
                         <div><span>Abonado</span><strong>@Model.PortfolioItem.ImporteAbonado.ToString("0.00")</strong></div>
                         <div class="collector-restante"><span>Restante</span><strong>@Model.PortfolioItem.ImporteRestante.ToString("0.00")</strong></div>
                     </div>
+                    @if (!string.IsNullOrWhiteSpace(sale?.Coordenadas))
+                    {
+                        <div class="collector-register-coords">GPS interno: @sale.Coordenadas</div>
+                    }
                 }
                 else
                 {
@@ -96,21 +109,30 @@
                         <div><span>Ultimo pago</span><strong>@(Model.Historial.FirstOrDefault()?.FechaCobro.ToString("dd/MM/yyyy") ?? "Sin registro")</strong></div>
                     </div>
                 }
-                @if (!string.IsNullOrWhiteSpace(sale?.Coordenadas))
-                {
-                    <div class="collector-register-coords">@sale.Coordenadas</div>
-                }
             </div>
         </div>
     }
 
     <form method="post" class="card card-body mb-4 collector-register-form">
         @Html.AntiForgeryToken()
+        <input asp-for="Input.IdCc" type="hidden" />
         <input asp-for="Input.IdV" type="hidden" />
+        <input asp-for="Input.ActionStatus" type="hidden" id="collectionActionStatus" />
+        <input asp-for="Input.CoordenadasCobro" type="hidden" id="collectorGpsCoordinates" />
         <input type="hidden" name="profile" value="@Model.ReturnProfile" />
         <input type="hidden" name="day" value="@Model.ReturnDay" />
         <input type="hidden" name="status" value="@Model.ReturnStatus" />
         <input type="hidden" name="zone" value="@Model.ReturnZone" />
+
+        <div class="collector-status-actions mb-3">
+            @foreach (var option in actionStatuses)
+            {
+                <button type="button" class="collector-status-action @(string.Equals(Model.Input.ActionStatus, option.Item1, StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" data-action-status="@option.Item1">
+                    <span class="collector-status-actionicon @option.Item3"></span>
+                    <span>@option.Item2</span>
+                </button>
+            }
+        </div>
 
         <div class="row g-3">
             <div class="col-md-4">
@@ -127,17 +149,10 @@
                     <option value="">Seleccione</option>
                 </select>
             </div>
-            <div class="col-md-6">
-                <label asp-for="Input.CoordenadasCobro" class="form-label">Coordenadas cobro</label>
-                <div class="input-group">
-                    <input asp-for="Input.CoordenadasCobro" class="form-control" id="collectorGpsCoordinates" placeholder="19.260839, -98.831437" />
-                    <button type="button" class="btn btn-outline-primary" id="btnCollectorGpsInline">GPS</button>
-                </div>
-                <small id="collectorGpsStatus" class="text-muted">Puedes detectar GPS automatico.</small>
-            </div>
-            <div class="col-md-6">
+            <div class="col-12">
                 <label asp-for="Input.ObservacionCobro" class="form-label">Observacion cobro</label>
                 <input asp-for="Input.ObservacionCobro" class="form-control" />
+                <small id="collectorGpsStatus" class="text-muted">GPS interno detectado automaticamente para supervision.</small>
             </div>
         </div>
 
@@ -148,13 +163,13 @@
                     <div class="collector-register-actionlabel">Restante actual</div>
                     <div class="collector-register-actionamount">@Model.PortfolioItem.ImporteRestante.ToString("0.00")</div>
                 </div>
-                <button type="submit" class="btn btn-success collector-register-submit">Guardar cobro</button>
+                <button type="submit" class="btn btn-success collector-register-submit">@(Model.IsEdit ? "Guardar cambios" : "Guardar cobro")</button>
             </div>
         }
         else
         {
             <div class="mt-3 d-flex justify-content-end">
-                <button type="submit" class="btn btn-success">Guardar cobro</button>
+                <button type="submit" class="btn btn-success">@(Model.IsEdit ? "Guardar cambios" : "Guardar cobro")</button>
             </div>
         }
     </form>
@@ -166,7 +181,7 @@
             {
                 <div class="app-empty-state compact">
                     <strong>Sin cobros previos</strong>
-                    <span>Cuando registres un abono empezara a verse el historial aqui.</span>
+                    <span>Cuando registres un movimiento empezara a verse el historial aqui.</span>
                 </div>
             }
             else
@@ -181,13 +196,16 @@
                             </div>
                             <div>
                                 <strong>@item.ImporteCobro.ToString("0.00")</strong>
-                                <div class="collector-register-meta">abono</div>
+                                <div class="collector-register-meta">@item.EstadoCc</div>
                             </div>
                             <div>
                                 <strong>@item.ImporteRestante.ToString("0.00")</strong>
                                 <div class="collector-register-meta">restante</div>
                             </div>
                             <div class="@StatusClass(item.Estatus)">@item.Estatus</div>
+                            <div>
+                                <a class="btn btn-sm btn-outline-primary" asp-action="EditCollection" asp-route-idCc="@item.IdCc" asp-route-profile="@Model.ReturnProfile" asp-route-day="@Model.ReturnDay" asp-route-status="@Model.ReturnStatus" asp-route-zone="@Model.ReturnZone">Editar</a>
+                            </div>
                         </div>
                     }
                 </div>
@@ -201,9 +219,11 @@
 (function() {
     const coords = document.getElementById('collectorGpsCoordinates');
     const status = document.getElementById('collectorGpsStatus');
-    const buttons = [document.getElementById('btnCollectorGps'), document.getElementById('btnCollectorGpsInline')].filter(Boolean);
+    const actionStatus = document.getElementById('collectionActionStatus');
+    const buttons = [document.getElementById('btnCollectorGps')].filter(Boolean);
+    const actionButtons = Array.from(document.querySelectorAll('[data-action-status]'));
 
-    if (!coords || !status || buttons.length === 0) {
+    if (!coords || !status) {
         return;
     }
 
@@ -211,7 +231,7 @@
         const lat = position.coords.latitude.toFixed(6);
         const lng = position.coords.longitude.toFixed(6);
         coords.value = `${lat}, ${lng}`;
-        status.textContent = 'Ubicacion detectada correctamente.';
+        status.textContent = 'Ubicacion interna detectada correctamente.';
     }
 
     function detect() {
@@ -228,11 +248,15 @@
         );
     }
 
+    actionButtons.forEach((btn) => {
+        btn.addEventListener('click', function() {
+            actionStatus.value = this.getAttribute('data-action-status') || 'AL CORRIENTE';
+            actionButtons.forEach((item) => item.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
     buttons.forEach((btn) => btn.addEventListener('click', detect));
 })();
 </script>
 }
-
-
-
-

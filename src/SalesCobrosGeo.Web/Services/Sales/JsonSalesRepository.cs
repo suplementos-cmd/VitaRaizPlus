@@ -19,7 +19,9 @@ public interface ISalesRepository
     IReadOnlyList<CollectorPortfolioItem> GetCollectorPortfolio(string? profile);
     CollectorPortfolioItem? GetPortfolioItem(string idV, string? profile);
     IReadOnlyList<CollectionRecord> GetCollections(string? profile = null, string? idV = null);
+    CollectionRecord? GetCollectionById(string idCc);
     CollectionRecord RegisterCollection(CollectionFormInput input);
+    CollectionRecord UpdateCollection(string idCc, CollectionFormInput input);
     IReadOnlyList<CatalogOption> GetCollectorProfiles();
 }
 
@@ -249,6 +251,14 @@ public sealed class JsonSalesRepository : ISalesRepository
         }
     }
 
+    public CollectionRecord? GetCollectionById(string idCc)
+    {
+        lock (_sync)
+        {
+            return LoadCollections().FirstOrDefault(x => x.IdCc.Equals(idCc, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
     public CollectionRecord RegisterCollection(CollectionFormInput input)
     {
         lock (_sync)
@@ -256,11 +266,6 @@ public sealed class JsonSalesRepository : ISalesRepository
             if (string.IsNullOrWhiteSpace(input.IdV))
             {
                 throw new InvalidOperationException("Venta invalida.");
-            }
-
-            if (input.ImporteCobro <= 0)
-            {
-                throw new InvalidOperationException("El importe de cobro debe ser mayor a 0.");
             }
 
             if (string.IsNullOrWhiteSpace(input.Usuario))
@@ -283,7 +288,7 @@ public sealed class JsonSalesRepository : ISalesRepository
 
             var nuevoAbonado = totalAbonado + input.ImporteCobro;
             var nuevoRestante = Math.Max(0m, sale.ImporteTotal - nuevoAbonado);
-            var estatus = nuevoRestante <= 0 ? "LIQUIDADO" : (nuevoAbonado > 0 ? "PARCIAL" : "POR INICIAR");
+            var estatus = ResolveCollectionStatus(input.ActionStatus, input.ImporteCobro, nuevoRestante);
 
             var record = new CollectionRecord
             {
@@ -297,7 +302,7 @@ public sealed class JsonSalesRepository : ISalesRepository
                 FechaCaptura = DateTime.Now,
                 ImporteTotal = sale.ImporteTotal,
                 ImporteRestante = nuevoRestante,
-                EstadoCc = "SI PAGO",
+                EstadoCc = input.ImporteCobro > 0 ? "SI PAGO" : "NO PAGO",
                 Usuario = input.Usuario.Trim(),
                 ImporteAbonado = nuevoAbonado,
                 Estatus = estatus,
@@ -310,8 +315,64 @@ public sealed class JsonSalesRepository : ISalesRepository
             collections.Add(record);
             SaveCollections(collections);
 
-            sale.Estado = estatus == "LIQUIDADO" ? "LIQUIDADO" : "EN COBRO";
-            sale.Estado2 = estatus == "LIQUIDADO" ? "CLOSED" : "OPEN";
+            ApplySaleStatus(sale, collections.Where(x => x.IdV == sale.IdV).ToList(), nuevoRestante);
+            sale.ObservacionVenta = MergeOperationalNote(sale.ObservacionVenta, input.ActionStatus, input.ObservacionCobro);
+            sale.FechaActu = DateTime.Now;
+            if (sale.FechaPrimerCobro is null)
+            {
+                sale.FechaPrimerCobro = input.FechaCobro;
+            }
+            SaveSales(sales);
+
+            return record;
+        }
+    }
+
+    public CollectionRecord UpdateCollection(string idCc, CollectionFormInput input)
+    {
+        lock (_sync)
+        {
+            if (string.IsNullOrWhiteSpace(input.Usuario))
+            {
+                throw new InvalidOperationException("Usuario cobrador es obligatorio.");
+            }
+
+            var sales = LoadSales();
+            var collections = LoadCollections();
+            var record = collections.FirstOrDefault(x => x.IdCc.Equals(idCc, StringComparison.OrdinalIgnoreCase))
+                ?? throw new InvalidOperationException("No se encontro el registro de cobro.");
+            var sale = sales.FirstOrDefault(x => x.IdV.Equals(record.IdV, StringComparison.OrdinalIgnoreCase))
+                ?? throw new InvalidOperationException("No se encontro la venta.");
+
+            var totalAbonadoPrevio = collections.Where(x => x.IdV == sale.IdV && !x.IdCc.Equals(idCc, StringComparison.OrdinalIgnoreCase)).Select(x => x.ImporteCobro).DefaultIfEmpty(0m).Sum();
+            var restanteActual = Math.Max(0m, sale.ImporteTotal - totalAbonadoPrevio);
+            if (input.ImporteCobro > restanteActual)
+            {
+                throw new InvalidOperationException($"El cobro no puede superar el restante ({restanteActual:0.00}).");
+            }
+
+            var nuevoAbonado = totalAbonadoPrevio + input.ImporteCobro;
+            var nuevoRestante = Math.Max(0m, sale.ImporteTotal - nuevoAbonado);
+            var estatus = ResolveCollectionStatus(input.ActionStatus, input.ImporteCobro, nuevoRestante);
+
+            record.ImporteCobro = input.ImporteCobro;
+            record.FechaCobro = input.FechaCobro;
+            record.ObservacionCobro = input.ObservacionCobro?.Trim();
+            record.FechaCaptura = DateTime.Now;
+            record.ImporteTotal = sale.ImporteTotal;
+            record.ImporteRestante = nuevoRestante;
+            record.EstadoCc = input.ImporteCobro > 0 ? "SI PAGO" : "NO PAGO";
+            record.Usuario = input.Usuario.Trim();
+            record.ImporteAbonado = nuevoAbonado;
+            record.Estatus = estatus;
+            record.Zona = sale.Zona;
+            record.DiaCobroPrevisto = sale.DiaCobro;
+            record.DiaCobrado = GetDayName(input.FechaCobro);
+
+            SaveCollections(collections);
+
+            ApplySaleStatus(sale, collections.Where(x => x.IdV == sale.IdV).ToList(), nuevoRestante);
+            sale.ObservacionVenta = MergeOperationalNote(sale.ObservacionVenta, input.ActionStatus, input.ObservacionCobro);
             sale.FechaActu = DateTime.Now;
             if (sale.FechaPrimerCobro is null)
             {
@@ -571,6 +632,52 @@ public sealed class JsonSalesRepository : ISalesRepository
     private static string GetDayName(DateTime date)
     {
         return date.ToString("dddd", new CultureInfo("es-ES")).ToUpperInvariant();
+    }
+
+    private static string ResolveCollectionStatus(string? actionStatus, decimal amount, decimal remaining)
+    {
+        var normalized = NormalizeProfile(actionStatus).ToUpperInvariant();
+        if (remaining <= 0 || normalized == "LIQUIDADO")
+        {
+            return "LIQUIDADO";
+        }
+
+        return normalized switch
+        {
+            "CANCELADO" => "CANCELADO",
+            "ATRASADO" => "ATRASADO",
+            "PROXIMA SEMANA" => "PROXIMA SEMANA",
+            "PASAR MAÑANA" => "PASAR MANANA",
+            "PASAR MAS TARDE" => "PASAR MAS TARDE",
+            "AL CORRIENTE" when amount > 0 => "AL CORRIENTE",
+            _ when amount > 0 => "AL CORRIENTE",
+            _ => "PENDIENTE"
+        };
+    }
+
+    private static void ApplySaleStatus(SaleRecord sale, IReadOnlyList<CollectionRecord> collections, decimal remaining)
+    {
+        var last = collections.Where(x => x.IdV == sale.IdV).OrderByDescending(x => x.FechaCobro).FirstOrDefault();
+        sale.Estado = remaining <= 0 || last?.Estatus == "LIQUIDADO"
+            ? "LIQUIDADO"
+            : last?.Estatus == "CANCELADO"
+                ? "CANCELADO"
+                : "EN COBRO";
+        sale.Estado2 = sale.Estado == "LIQUIDADO" || sale.Estado == "CANCELADO" ? "CLOSED" : "OPEN";
+    }
+
+    private static string? MergeOperationalNote(string? current, string? actionStatus, string? note)
+    {
+        var action = NormalizeProfile(actionStatus);
+        var cleanNote = NormalizeProfile(note);
+        if (string.IsNullOrWhiteSpace(action))
+        {
+            return string.IsNullOrWhiteSpace(cleanNote) ? current : cleanNote;
+        }
+
+        return string.IsNullOrWhiteSpace(cleanNote)
+            ? $"ESTATUS: {action}"
+            : $"ESTATUS: {action} · {cleanNote}";
     }
 }
 
