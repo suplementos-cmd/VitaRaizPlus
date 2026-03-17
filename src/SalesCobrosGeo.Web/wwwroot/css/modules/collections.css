@@ -1573,6 +1573,188 @@
   font-weight: 800;
 }
 
+.collector-mobile-daybar {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.collector-mobile-daytab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(50, 78, 128, 0.10);
+  background: rgba(255,255,255,0.98);
+  color: #1b3a64;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 900;
+  box-shadow: var(--vr-shadow-soft);
+}
+
+.collector-mobile-daytab.active {
+  background: linear-gradient(135deg, var(--vr-color-brand), var(--vr-color-brand-2));
+  color: #fff;
+  border-color: transparent;
+}
+
+.collector-mobile-statusstack {
+  display: grid;
+  gap: 8px;
+}
+
+.collector-mobile-statusbranch {
+  border-radius: 16px;
+  background: rgba(255,255,255,0.98);
+  border: 1px solid rgba(50, 78, 128, 0.10);
+  box-shadow: var(--vr-shadow-soft);
+  overflow: clip;
+}
+
+.collector-mobile-statusbranch summary {
+  list-style: none;
+}
+
+.collector-mobile-statusbranch summary::-webkit-details-marker {
+  display: none;
+}
+
+.collector-mobile-statusitem {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 56px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.collector-mobile-statusicon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #edf3fd;
+  color: #2d5ba8;
+}
+
+.collector-mobile-statusicon svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.collector-mobile-statuscopy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.collector-mobile-statuscopy strong,
+.collector-mobile-statuscopy span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collector-mobile-statuscopy strong {
+  color: #17365f;
+  font-size: 0.86rem;
+}
+
+.collector-mobile-statuscopy span {
+  color: #6b7f98;
+  font-size: 0.7rem;
+}
+
+.collector-mobile-statusaside {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.collector-mobile-statusbody {
+  display: grid;
+  gap: 10px;
+  padding: 0 12px 12px;
+  border-top: 1px solid rgba(50, 78, 128, 0.06);
+}
+
+.collector-mobile-zonecluster {
+  display: grid;
+  gap: 6px;
+  padding-top: 10px;
+}
+
+.collector-mobile-zonecluster + .collector-mobile-zonecluster {
+  border-top: 1px dashed rgba(50, 78, 128, 0.10);
+}
+
+.collector-mobile-zonehead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.collector-mobile-zonehead strong {
+  color: #17365f;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.collector-mobile-zonehead span {
+  color: #6d7f97;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.collector-mobile-emptymini {
+  padding: 12px 0 4px;
+  color: #7689a1;
+  font-size: 0.72rem;
+}
+
+.collector-mobile-statusitem.warning .collector-mobile-statusicon {
+  background: rgba(229, 148, 28, 0.14);
+  color: #b96b11;
+}
+
+.collector-mobile-statusitem.info .collector-mobile-statusicon {
+  background: rgba(109, 79, 213, 0.14);
+  color: #5f44b6;
+}
+
+.collector-mobile-statusitem.danger .collector-mobile-statusicon {
+  background: rgba(221, 59, 95, 0.14);
+  color: #bf2148;
+}
+
+.collector-mobile-statusitem.success .collector-mobile-statusicon {
+  background: rgba(32, 160, 94, 0.14);
+  color: #1f8f56;
+}
+
+.collector-mobile-statusitem.brand .collector-mobile-statusicon {
+  background: rgba(50, 91, 168, 0.14);
+  color: #2d5ba8;
+}
+
+.collector-mobile-statusitem.muted .collector-mobile-statusicon {
+  background: rgba(108, 122, 143, 0.14);
+  color: #5c6e85;
+}
+
+.collector-mobile-statusbranch[open] .collector-mobile-treearrow {
+  transform: rotate(90deg);
+}
+
 .collector-mobile-treearrow {
   color: #71839d;
   font-size: 1rem;

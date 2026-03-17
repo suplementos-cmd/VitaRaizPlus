@@ -60,19 +60,24 @@ public sealed class CobrosController : Controller
     }
 
     [HttpGet]
-    public IActionResult CollectorQueue(string? profile = null, string groupBy = "day", string filter = "today")
+    public IActionResult CollectorQueue(string? profile = null, string groupBy = "day", string filter = "today", string? day = null)
     {
         var activeProfile = ResolveCollectorProfile(profile);
         var baseClients = BuildCollectorClients(activeProfile);
-        var filteredClients = ApplyCollectorFilter(baseClients, filter);
+        var selectedDay = ResolveSelectedDay(baseClients, day);
+        var dayScopedClients = ApplyCollectorDay(baseClients, selectedDay);
+        var filteredClients = ApplyCollectorFilter(dayScopedClients, filter);
 
         var model = new CollectorQueueViewModel
         {
             Profile = activeProfile,
             GroupBy = string.IsNullOrWhiteSpace(groupBy) ? "day" : groupBy.ToLowerInvariant(),
             Filter = string.IsNullOrWhiteSpace(filter) ? "today" : filter.ToLowerInvariant(),
+            SelectedDay = selectedDay,
             SearchPlaceholder = "Buscar por nombre, direccion, telefono o folio",
             QuickFilters = BuildQuickFilters(baseClients, filter),
+            DayTabs = BuildCollectorDayTabs(baseClients, selectedDay),
+            MobileStatusGroups = BuildMobileStatusGroups(dayScopedClients),
             Groups = BuildCollectorGroups(filteredClients, groupBy)
         };
 
@@ -364,6 +369,7 @@ public sealed class CobrosController : Controller
                 Thumbnail = string.IsNullOrWhiteSpace(item.FotoCliente) ? item.FotoFachada : item.FotoCliente,
                 LastPaymentDate = last?.FechaCobro,
                 LastNote = string.IsNullOrWhiteSpace(note) ? "Sin gestion reciente" : note,
+                SaleState = item.EstadoVenta,
                 HasPromise = hasPromise,
                 WasVisited = wasVisited
             });
@@ -385,11 +391,137 @@ public sealed class CobrosController : Controller
         ];
     }
 
+    private string ResolveSelectedDay(IReadOnlyList<CollectorClientListItem> clients, string? day)
+    {
+        var normalized = NormalizeDayKey(day);
+        if (!string.IsNullOrWhiteSpace(normalized))
+        {
+            return normalized;
+        }
+
+        var today = GetTodayKey();
+        if (clients.Any(x => NormalizeDayKey(x.Route) == today))
+        {
+            return today;
+        }
+
+        return clients
+            .Select(x => NormalizeDayKey(x.Route))
+            .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))
+            ?? "LUNES";
+    }
+
+    private List<CollectorClientListItem> ApplyCollectorDay(IEnumerable<CollectorClientListItem> clients, string selectedDay)
+    {
+        var normalized = NormalizeDayKey(selectedDay);
+        return clients
+            .Where(x => NormalizeDayKey(x.Route) == normalized)
+            .OrderByDescending(x => PriorityRank(x.Priority))
+            .ThenBy(x => x.Name)
+            .ToList();
+    }
+
+    private IReadOnlyList<CollectorDayTab> BuildCollectorDayTabs(IReadOnlyList<CollectorClientListItem> clients, string selectedDay)
+    {
+        var days = new[]
+        {
+            ("LUNES", "L", "Lunes"),
+            ("MARTES", "M", "Martes"),
+            ("MIERCOLES", "M", "Miercoles"),
+            ("JUEVES", "J", "Jueves"),
+            ("VIERNES", "V", "Viernes")
+        };
+
+        return days
+            .Select(day => new CollectorDayTab
+            {
+                Code = day.Item1,
+                ShortLabel = day.Item2,
+                Label = day.Item3,
+                Count = clients.Count(x => NormalizeDayKey(x.Route) == day.Item1),
+                IsActive = NormalizeDayKey(selectedDay) == day.Item1
+            })
+            .ToArray();
+    }
+
+    private IReadOnlyList<CollectorMobileStatusGroup> BuildMobileStatusGroups(IReadOnlyList<CollectorClientListItem> clients)
+    {
+        var remaining = clients.ToList();
+        var definitions = new[]
+        {
+            new { Key = "pending", Title = "Pendientes hoy", Tone = "neutral", Icon = "pending" },
+            new { Key = "promise", Title = "Promesas pago hoy", Tone = "warning", Icon = "promise" },
+            new { Key = "followup", Title = "Reagendados", Tone = "info", Icon = "followup" },
+            new { Key = "overdue", Title = "Atrasados", Tone = "danger", Icon = "overdue" },
+            new { Key = "recovery", Title = "Recuperacion", Tone = "brand", Icon = "recovery" },
+            new { Key = "current", Title = "Al corriente", Tone = "success", Icon = "current" },
+            new { Key = "liquidated", Title = "Liquidados", Tone = "muted", Icon = "liquidated" },
+            new { Key = "cancelled", Title = "Cancelados", Tone = "muted", Icon = "cancelled" }
+        };
+
+        var result = new List<CollectorMobileStatusGroup>(definitions.Length);
+        foreach (var definition in definitions)
+        {
+            var matched = remaining.Where(x => MatchesStatusBucket(x, definition.Key)).ToList();
+            if (matched.Count > 0)
+            {
+                remaining.RemoveAll(x => matched.Any(y => y.IdV == x.IdV));
+            }
+
+            var zoneGroups = matched
+                .GroupBy(x => string.IsNullOrWhiteSpace(x.Zone) ? "Sin zona" : x.Zone)
+                .OrderByDescending(x => x.Count())
+                .ThenBy(x => x.Key)
+                .Select(g => new CollectorMobileZoneGroup
+                {
+                    Zone = g.Key,
+                    Accounts = g.Count(),
+                    Clients = g
+                        .OrderByDescending(x => PriorityRank(x.Priority))
+                        .ThenBy(x => x.Name)
+                        .ToArray()
+                })
+                .ToArray();
+
+            result.Add(new CollectorMobileStatusGroup
+            {
+                Key = definition.Key,
+                Title = definition.Title,
+                Tone = definition.Tone,
+                Icon = definition.Icon,
+                Count = matched.Count,
+                IsOpen = result.Count == 0 && matched.Count > 0,
+                Zones = zoneGroups
+            });
+        }
+
+        return result;
+    }
+
+    private static bool MatchesStatusBucket(CollectorClientListItem item, string bucket)
+    {
+        var normalizedStatus = NormalizeKey(item.Status);
+        var normalizedSaleState = NormalizeKey(item.SaleState);
+        return bucket switch
+        {
+            "cancelled" => normalizedStatus == "CANCELADO" || normalizedSaleState == "CANCELADO",
+            "liquidated" => normalizedStatus == "LIQUIDADO",
+            "promise" => item.HasPromise,
+            "followup" => NormalizeKey(item.NextAction) == "SEGUIMIENTO" || ContainsKeyword(item.LastNote, "REAGEND"),
+            "overdue" => normalizedStatus == "ATRASADO",
+            "recovery" => normalizedStatus == "PARCIAL",
+            "current" => normalizedStatus == "AL CORRIENTE",
+            "pending" => normalizedStatus == "POR INICIAR" || !item.WasVisited,
+            _ => false
+        };
+    }
+
     private List<CollectorClientListItem> ApplyCollectorFilter(List<CollectorClientListItem> clients, string filter)
     {
         var normalized = filter?.Trim().ToLowerInvariant() ?? "today";
         return normalized switch
         {
+            "all" => clients.ToList(),
             "overdue" => clients.Where(x => NormalizeKey(x.Status) == "ATRASADO").ToList(),
             "promise" => clients.Where(x => x.HasPromise).ToList(),
             "unvisited" => clients.Where(x => !x.WasVisited).ToList(),
@@ -620,6 +752,21 @@ public sealed class CobrosController : Controller
             DayOfWeek.Friday => "VIERNES",
             DayOfWeek.Saturday => "SABADO",
             _ => "DOMINGO"
+        };
+    }
+
+    private static string NormalizeDayKey(string? value)
+    {
+        return NormalizeKey(value) switch
+        {
+            "L" or "LUN" or "LUNES" => "LUNES",
+            "M" or "MAR" or "MARTES" => "MARTES",
+            "MIE" or "MIERCOLES" => "MIERCOLES",
+            "J" or "JUE" or "JUEVES" => "JUEVES",
+            "V" or "VIE" or "VIERNES" => "VIERNES",
+            "S" or "SAB" or "SABADO" => "SABADO",
+            "D" or "DOM" or "DOMINGO" => "DOMINGO",
+            _ => NormalizeKey(value)
         };
     }
 
