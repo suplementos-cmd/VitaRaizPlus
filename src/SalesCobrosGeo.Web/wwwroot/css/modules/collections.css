@@ -2393,3 +2393,24 @@
   gap: 8px;
   flex-wrap: wrap;
 }
+.collector-semantic-icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  vertical-align: -3px;
+  color: #5f7395;
+}
+
+.collector-semantic-icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.collector-semantic-icon.danger { color: #bf2148; }
+.collector-semantic-icon.warning { color: #ca7416; }
+.collector-semantic-icon.info { color: #6547c7; }
+.collector-semantic-icon.success { color: #1a8650; }
+.collector-semantic-icon.muted { color: #5a6b84; }
+.collector-semantic-icon.neutral { color: #2f5ba6; }

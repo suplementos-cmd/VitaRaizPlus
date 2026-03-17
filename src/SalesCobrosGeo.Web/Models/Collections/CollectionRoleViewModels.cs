@@ -38,6 +38,9 @@ public sealed class CollectorClientListItem
     public string LastNote { get; set; } = string.Empty;
     public string SaleState { get; set; } = string.Empty;
     public bool HasPromise { get; set; }
+    public bool HasPromiseOverdue { get; set; }
+    public bool IsNotLocated { get; set; }
+    public bool IsRefused { get; set; }
     public bool WasVisited { get; set; }
 }
 
