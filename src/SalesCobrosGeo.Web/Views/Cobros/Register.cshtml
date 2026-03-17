@@ -28,13 +28,19 @@
     };
     var actionStatuses = new[]
     {
-        ("AL CORRIENTE", "Al corriente", "ok"),
-        ("PROXIMA SEMANA", "Prox. semana", "clock"),
-        ("PASAR MAÑANA", "Pasar manana", "next"),
-        ("ATRASADO", "Atrasado", "alert"),
-        ("PASAR MAS TARDE", "Mas tarde", "later"),
-        ("CANCELADO", "Cancelado", "off"),
-        ("LIQUIDADO", "Liquidado", "done")
+        ("AL CORRIENTE", "A corr.", "ok"),
+        ("PROXIMA SEMANA", "Pr. sem.", "clock"),
+        ("PASAR MAÑANA", "Man.", "next"),
+        ("ATRASADO", "Atr.", "alert"),
+        ("PASAR MAS TARDE", "Mas t.", "later"),
+        ("CANCELADO", "Canc.", "off"),
+        ("LIQUIDADO", "Liq.", "done")
+    };
+    string MoneyClass(decimal amount) => amount switch
+    {
+        > 0m => "is-positive",
+        < 0m => "is-negative",
+        _ => "is-zero"
     };
     ViewData["MobileContextBar"] = new MobileContextBarModel(
         Model.IsEdit ? "Editar cobro" : "Registrar cobro",
@@ -127,7 +133,7 @@
         <div class="collector-status-actions mb-3">
             @foreach (var option in actionStatuses)
             {
-                <button type="button" class="collector-status-action @(string.Equals(Model.Input.ActionStatus, option.Item1, StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" data-action-status="@option.Item1">
+                <button type="button" class="collector-status-action @(string.Equals(Model.Input.ActionStatus, option.Item1, StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" data-action-status="@option.Item1" title="@option.Item1" aria-label="@option.Item1">
                     <span class="collector-status-actionicon @option.Item3"></span>
                     <span>@option.Item2</span>
                 </button>
@@ -186,27 +192,30 @@
             }
             else
             {
-                <div class="collector-history-list">
+                <div class="collector-history-list compact-rows">
                     @foreach (var item in Model.Historial)
                     {
-                        <div class="collector-history-item">
-                            <div>
+                        <a class="collector-history-row" asp-action="EditCollection" asp-route-idCc="@item.IdCc" asp-route-profile="@Model.ReturnProfile" asp-route-day="@Model.ReturnDay" asp-route-status="@Model.ReturnStatus" asp-route-zone="@Model.ReturnZone">
+                            <div class="collector-history-rowcell collector-history-rowdate">
                                 <strong>@item.FechaCobro.ToString("dd/MM/yyyy")</strong>
-                                <div class="collector-register-meta">@item.Usuario</div>
+                                <span>@item.Usuario</span>
                             </div>
-                            <div>
-                                <strong>@item.ImporteCobro.ToString("0.00")</strong>
-                                <div class="collector-register-meta">@item.EstadoCc</div>
+                            <div class="collector-history-rowcell collector-history-rowmoney">
+                                <span>Abono</span>
+                                <strong class="@MoneyClass(item.ImporteCobro)">@item.ImporteCobro.ToString("0.00")</strong>
                             </div>
-                            <div>
-                                <strong>@item.ImporteRestante.ToString("0.00")</strong>
-                                <div class="collector-register-meta">restante</div>
+                            <div class="collector-history-rowcell collector-history-rowmoney">
+                                <span>Restante</span>
+                                <strong class="@MoneyClass(item.ImporteRestante)">@item.ImporteRestante.ToString("0.00")</strong>
                             </div>
-                            <div class="@StatusClass(item.Estatus)">@item.Estatus</div>
-                            <div>
-                                <a class="btn btn-sm btn-outline-primary" asp-action="EditCollection" asp-route-idCc="@item.IdCc" asp-route-profile="@Model.ReturnProfile" asp-route-day="@Model.ReturnDay" asp-route-status="@Model.ReturnStatus" asp-route-zone="@Model.ReturnZone">Editar</a>
+                            <div class="collector-history-rowcell collector-history-rowstatus">
+                                <span class="@StatusClass(item.Estatus)">@item.Estatus</span>
+                                <small>@item.EstadoCc</small>
                             </div>
-                        </div>
+                            <div class="collector-history-rowcell collector-history-rowarrow">
+                                <span>&rsaquo;</span>
+                            </div>
+                        </a>
                     }
                 </div>
             }

@@ -448,9 +448,9 @@ public sealed class CobrosController : Controller
 
         return
         [
-            new CollectionHistorySummaryCard { Code = "pending", Title = "Por hacer", Subtitle = "Pendientes", Count = pendingCount, IsActive = active == "pending" },
-            new CollectionHistorySummaryCard { Code = "paid", Title = "Pagaron", Subtitle = "Con abono", Count = paidCount, IsActive = active == "paid" },
-            new CollectionHistorySummaryCard { Code = "nopay", Title = "No dieron", Subtitle = "Sin pago", Count = noPayCount, IsActive = active == "nopay" }
+            new CollectionHistorySummaryCard { Code = "pending", Title = "Pend", Subtitle = "Por cubrir", Count = pendingCount, IsActive = active == "pending" },
+            new CollectionHistorySummaryCard { Code = "paid", Title = "Complet. abon", Subtitle = "Con pago", Count = paidCount, IsActive = active == "paid" },
+            new CollectionHistorySummaryCard { Code = "nopay", Title = "Complet. 0", Subtitle = "Sin pago", Count = noPayCount, IsActive = active == "nopay" }
         ];
     }
 
@@ -612,25 +612,77 @@ public sealed class CobrosController : Controller
 
     private IReadOnlyList<CollectorDayTab> BuildCollectorDayTabs(IReadOnlyList<CollectorClientListItem> clients, string selectedDay)
     {
-        var days = new[]
+        var days = _repository.GetMaintenanceCatalog("dias-cobro")
+            .Where(x => x.IsActive)
+            .Select(x => new
+            {
+                Code = NormalizeDayKey(x.Code),
+                Label = string.IsNullOrWhiteSpace(x.Name) ? x.Code : x.Name.Trim(),
+                Sort = ResolveDaySort(x.Code)
+            })
+            .Where(x => !string.IsNullOrWhiteSpace(x.Code))
+            .OrderBy(x => x.Sort)
+            .ThenBy(x => x.Label)
+            .ToArray();
+
+        if (days.Length == 0)
         {
-            ("LUNES", "L", "Lunes"),
-            ("MARTES", "M", "Martes"),
-            ("MIERCOLES", "M", "Miercoles"),
-            ("JUEVES", "J", "Jueves"),
-            ("VIERNES", "V", "Viernes")
-        };
+            days = new[]
+            {
+                new { Code = "LUNES", Label = "Lunes", Sort = 1 },
+                new { Code = "MARTES", Label = "Martes", Sort = 2 },
+                new { Code = "MIERCOLES", Label = "Miercoles", Sort = 3 },
+                new { Code = "JUEVES", Label = "Jueves", Sort = 4 },
+                new { Code = "VIERNES", Label = "Viernes", Sort = 5 }
+            };
+        }
 
         return days
             .Select(day => new CollectorDayTab
             {
-                Code = day.Item1,
-                ShortLabel = day.Item2,
-                Label = day.Item3,
-                Count = clients.Count(x => NormalizeDayKey(x.Route) == day.Item1),
-                IsActive = NormalizeDayKey(selectedDay) == day.Item1
+                Code = day.Code,
+                ShortLabel = ResolveDayShortLabel(day.Label),
+                Label = day.Label,
+                Count = clients.Count(x => NormalizeDayKey(x.Route) == day.Code),
+                IsActive = NormalizeDayKey(selectedDay) == day.Code
             })
             .ToArray();
+    }
+
+    private static int ResolveDaySort(string? code)
+    {
+        return NormalizeDayKey(code) switch
+        {
+            "LUNES" => 1,
+            "MARTES" => 2,
+            "MIERCOLES" => 3,
+            "JUEVES" => 4,
+            "VIERNES" => 5,
+            "SABADO" => 6,
+            "DOMINGO" => 7,
+            _ => 99
+        };
+    }
+
+    private static string ResolveDayShortLabel(string? label)
+    {
+        if (string.IsNullOrWhiteSpace(label))
+        {
+            return "?";
+        }
+
+        var normalized = RemoveDiacritics(label.Trim()).ToUpperInvariant();
+        return normalized switch
+        {
+            var x when x.StartsWith("LUN") => "L",
+            var x when x.StartsWith("MAR") => "M",
+            var x when x.StartsWith("MIE") => "M",
+            var x when x.StartsWith("JUE") => "J",
+            var x when x.StartsWith("VIE") => "V",
+            var x when x.StartsWith("SAB") => "S",
+            var x when x.StartsWith("DOM") => "D",
+            _ => normalized[..1]
+        };
     }
 
     private IReadOnlyList<CollectorMobileStatusGroup> BuildMobileStatusGroups(IReadOnlyList<CollectorClientListItem> clients)
@@ -1007,6 +1059,21 @@ public sealed class CobrosController : Controller
         }
 
         var normalized = value.Trim().ToUpperInvariant().Normalize(NormalizationForm.FormD);
+        var builder = new StringBuilder(normalized.Length);
+        foreach (var ch in normalized)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
+            {
+                builder.Append(ch);
+            }
+        }
+
+        return builder.ToString().Normalize(NormalizationForm.FormC);
+    }
+
+    private static string RemoveDiacritics(string value)
+    {
+        var normalized = value.Normalize(NormalizationForm.FormD);
         var builder = new StringBuilder(normalized.Length);
         foreach (var ch in normalized)
         {
