@@ -20,10 +20,10 @@
         }
     </div>
 
-    <div class="collector-history-panel">
-        <div class="collector-history-panelhead">
-            <strong>Registros realizados</strong>
-            <span>@Model.Records.Count movimientos</span>
+    <div class="collector-history-panel collector-history-panel-compact">
+        <div class="collector-history-panelhead compact">
+            <strong>Registros</strong>
+            <span>@Model.Records.Count mov.</span>
         </div>
 
         @if (Model.Records.Count == 0)
@@ -35,24 +35,24 @@
         }
         else
         {
-            <div class="collector-history-records">
+            <div class="collector-history-records collector-history-records-compact">
                 @foreach (var item in Model.Records)
                 {
-                    <article class="collector-history-record">
-                        <div class="collector-history-recordcopy">
+                    <a class="collector-history-record collector-history-recordlink" asp-action="EditCollection" asp-route-idCc="@item.IdCc" asp-route-profile="@Model.Profile">
+                        <div class="collector-history-recordcopy compact">
                             <strong>@item.NombreCliente</strong>
-                            <span>Venta #@item.NumVenta · @item.Zona · @item.FechaCobro.ToString("dd/MM/yyyy")</span>
+                            <span>@item.FechaCobro.ToString("dd/MM/yyyy") · Venta #@item.NumVenta</span>
                             <small>@(string.IsNullOrWhiteSpace(item.ObservacionCobro) ? item.Estatus : item.ObservacionCobro)</small>
                         </div>
-                        <div class="collector-history-recordmeta">
+                        <div class="collector-history-recordmeta compact">
                             <strong>@item.ImporteCobro.ToString("0.00")</strong>
-                            <span>@item.EstadoCc</span>
+                            <span>@item.Zona</span>
                         </div>
-                        <div class="collector-history-recordactions">
-                            <a class="btn btn-sm btn-outline-primary" asp-action="EditCollection" asp-route-idCc="@item.IdCc" asp-route-profile="@Model.Profile">Editar</a>
-                            <a class="btn btn-sm btn-primary" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">Ver venta</a>
+                        <div class="collector-history-recordaside">
+                            <span class="collector-history-recordstate">@item.EstadoCc</span>
+                            <span class="collector-mobile-treearrow">&rsaquo;</span>
                         </div>
-                    </article>
+                    </a>
                 }
             </div>
         }
