@@ -9,7 +9,8 @@ public sealed record SalesCatalogs(
     IReadOnlyList<CatalogOption> CollectionDays,
     IReadOnlyList<ProductOption> Products,
     IReadOnlyList<CatalogOption> Sellers,
-    IReadOnlyList<CatalogOption> Collectors);
+    IReadOnlyList<CatalogOption> Collectors,
+    IReadOnlyList<CatalogOption> SaleStatuses);
 
 public sealed class SaleProductLineInput
 {
@@ -115,7 +116,7 @@ public sealed class SaleFormViewModel
 {
     public bool IsEdit { get; set; }
     public SaleFormInput Input { get; set; } = new();
-    public SalesCatalogs Catalogs { get; set; } = new([], [], [], [], [], []);
+    public SalesCatalogs Catalogs { get; set; } = new([], [], [], [], [], [], []);
     public string PageTitle { get; set; } = string.Empty;
 }
 

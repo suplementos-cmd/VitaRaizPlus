@@ -13,8 +13,8 @@
     <div class="collector-mobile-tree">
         @foreach (var card in Model.Cards)
         {
-            var filter = card.Title.Contains("Promesas") ? "promise" : card.Title.Contains("Reagend") ? "followup" : card.Title.Contains("Atras") ? "overdue" : "today";
-            <a class="collector-mobile-treeitem collector-mobile-treeitem-link" asp-action="@card.TargetAction" asp-route-profile="@Model.Profile" asp-route-filter="@filter" asp-route-groupBy="day">
+            var filter = string.IsNullOrWhiteSpace(card.StatusKey) ? "pending" : card.StatusKey;
+            <a class="collector-mobile-treeitem collector-mobile-treeitem-link" asp-action="@card.TargetAction" asp-route-profile="@Model.Profile" asp-route-status="@filter" asp-route-filter="all" asp-route-groupBy="status">
                 <span class="collector-mobile-treeicon @filter">@Html.Raw(IconSvg(filter))</span>
                 <div class="collector-mobile-treecopy">
                     <strong>@card.Title</strong>
@@ -45,3 +45,4 @@
         }
     </div>
 </div>
+

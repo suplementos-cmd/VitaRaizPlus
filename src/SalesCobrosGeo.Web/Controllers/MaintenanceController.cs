@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SalesCobrosGeo.Web.Models.Maintenance;
 using SalesCobrosGeo.Web.Security;
@@ -9,7 +9,7 @@ namespace SalesCobrosGeo.Web.Controllers;
 [Authorize(Policy = AppPolicies.MaintenanceAccess)]
 public sealed class MaintenanceController : Controller
 {
-    private static readonly string[] EditableSections = ["zonas", "dias-cobro", "formas-pago", "productos", "vendedores", "cobradores"];
+    private static readonly string[] EditableSections = ["zonas", "dias-cobro", "formas-pago", "productos", "vendedores", "cobradores", "estatus-venta", "estatus-cobro-grupos"];
 
     private readonly ISalesRepository _repository;
     private readonly IApplicationUserService _userService;
@@ -110,13 +110,15 @@ public sealed class MaintenanceController : Controller
         var activeUsers = _userService.GetUsers().Count(x => x.IsActive);
         var productCount = _repository.GetMaintenanceCatalog("productos").Count(x => x.IsActive);
         var zoneCount = _repository.GetMaintenanceCatalog("zonas").Count(x => x.IsActive);
+        var statusCount = _repository.GetMaintenanceCatalog("estatus-cobro-grupos").Count(x => x.IsActive);
 
         return
         [
             new MaintenanceStat("Registros", editableCount.ToString(), "brand"),
             new MaintenanceStat("Personal activo", activeUsers.ToString(), "success"),
             new MaintenanceStat("Productos activos", productCount.ToString(), "warning"),
-            new MaintenanceStat("Zonas activas", zoneCount.ToString(), "danger")
+            new MaintenanceStat("Zonas activas", zoneCount.ToString(), "danger"),
+            new MaintenanceStat("Estatus cobro", statusCount.ToString(), "brand")
         ];
     }
 
@@ -128,6 +130,8 @@ public sealed class MaintenanceController : Controller
         var products = BuildCatalogSection("productos", "Productos", "Catalogo comercial con precio base editable.", "Base comercial para ventas y comisiones.", "Producto", "brand");
         var sellers = BuildCatalogSection("vendedores", "Vendedores", "Equipo comercial disponible para asignacion de ventas.", "Catalogo base del equipo de ventas.", "Vendedor", "brand");
         var collectors = BuildCatalogSection("cobradores", "Cobradores", "Equipo de cobranza asignable a cartera y ruta.", "Catalogo base del equipo de cobros.", "Cobrador", "success");
+        var saleStatuses = BuildCatalogSection("estatus-venta", "Estatus venta", "Estados disponibles para capturar y editar ventas.", "Controla los estados que se veran en el formulario de ventas.", "Venta", "warning");
+        var collectionGroups = BuildCatalogSection("estatus-cobro-grupos", "Estatus cobro", "Grupos operativos visibles en cobros movil y arbol de cartera.", "Puedes activar o renombrar los grupos operativos del arbol de cobros.", "Cobro", "brand");
 
         var users = _userService.GetUsers();
         var employees = new MaintenanceSection(
@@ -139,7 +143,7 @@ public sealed class MaintenanceController : Controller
                 index + 1,
                 user.Username,
                 user.DisplayName,
-                $"{user.RoleLabel} � Zona {user.Zone}",
+                $"{user.RoleLabel} • Zona {user.Zone}",
                 user.IsActive ? "Activo" : "Inactivo",
                 user.IsActive ? "success" : "danger",
                 user.IsActive)).ToArray());
@@ -156,10 +160,12 @@ public sealed class MaintenanceController : Controller
                 new MaintenanceItem(4, "PRO", "Productos", $"{products.Items.Count} productos", "Catalogo", "brand", true),
                 new MaintenanceItem(5, "VEN", "Vendedores", $"{sellers.Items.Count} perfiles", "Equipo", "brand", true),
                 new MaintenanceItem(6, "COB", "Cobradores", $"{collectors.Items.Count} perfiles", "Equipo", "success", true),
-                new MaintenanceItem(7, "EMP", "Empleados", $"{employees.Items.Count} accesos", "Usuarios", "danger", true)
+                new MaintenanceItem(7, "ESTV", "Estatus venta", $"{saleStatuses.Items.Count} estados", "Ventas", "warning", true),
+                new MaintenanceItem(8, "ESTC", "Estatus cobro", $"{collectionGroups.Items.Count} grupos", "Cobros", "brand", true),
+                new MaintenanceItem(9, "EMP", "Empleados", $"{employees.Items.Count} accesos", "Usuarios", "danger", true)
             ]);
 
-        return [summary, sellers, collectors, employees, zones, days, paymentMethods, products];
+        return [summary, sellers, collectors, saleStatuses, collectionGroups, employees, zones, days, paymentMethods, products];
     }
 
     private MaintenanceSection BuildCatalogSection(string key, string title, string subtitle, string summary, string badgeLabel, string tone)
@@ -191,8 +197,11 @@ public sealed class MaintenanceController : Controller
             "dias-cobro" => "dias-cobro",
             "formas-pago" => "formas-pago",
             "productos" => "productos",
+            "estatus-venta" => "estatus-venta",
+            "estatus-cobro-grupos" => "estatus-cobro-grupos",
             _ => "catalogos"
         };
     }
 }
+
 

@@ -14,6 +14,7 @@ public sealed class CollectorOperationalCard
     public string Subtitle { get; set; } = string.Empty;
     public int Count { get; set; }
     public string Accent { get; set; } = string.Empty;
+    public string StatusKey { get; set; } = string.Empty;
     public string TargetAction { get; set; } = string.Empty;
     public object? RouteValues { get; set; }
 }

@@ -89,6 +89,14 @@ public sealed class JsonSalesRepository : ISalesRepository
                 new CatalogOption("ELENA", "Elena"),
                 new CatalogOption("jakelinepink88@gmail.com", "jakelinepink88@gmail.com"),
                 new CatalogOption("ggab75218@gmail.com", "ggab75218@gmail.com")
+            ],
+            SaleStatuses:
+            [
+                new CatalogOption("PENDIENTE", "Pendiente"),
+                new CatalogOption("EN COBRO", "En cobro"),
+                new CatalogOption("AL CORRIENTE", "Al corriente"),
+                new CatalogOption("CANCELADO", "Cancelado"),
+                new CatalogOption("LIQUIDADO", "Liquidado")
             ]);
     }
 
@@ -102,6 +110,18 @@ public sealed class JsonSalesRepository : ISalesRepository
             "productos" => GetCatalogs().Products.Select((x, i) => new MaintenanceCatalogRecord(i + 1, section, x.Code, x.Name, x.Price, true)).ToArray(),
             "vendedores" => GetCatalogs().Sellers.Select((x, i) => new MaintenanceCatalogRecord(i + 1, section, x.Code, x.Name, null, true)).ToArray(),
             "cobradores" => GetCatalogs().Collectors.Select((x, i) => new MaintenanceCatalogRecord(i + 1, section, x.Code, x.Name, null, true)).ToArray(),
+            "estatus-venta" => GetCatalogs().SaleStatuses.Select((x, i) => new MaintenanceCatalogRecord(i + 1, section, x.Code, x.Name, null, true)).ToArray(),
+            "estatus-cobro-grupos" => new[]
+            {
+                new MaintenanceCatalogRecord(1, section, "pending", "Pendientes hoy", null, true),
+                new MaintenanceCatalogRecord(2, section, "promise", "Promesas pago hoy", null, true),
+                new MaintenanceCatalogRecord(3, section, "followup", "Reagendados", null, true),
+                new MaintenanceCatalogRecord(4, section, "overdue", "Atrasados", null, true),
+                new MaintenanceCatalogRecord(5, section, "recovery", "Recuperacion", null, true),
+                new MaintenanceCatalogRecord(6, section, "current", "Al corriente", null, true),
+                new MaintenanceCatalogRecord(7, section, "liquidated", "Liquidados", null, true),
+                new MaintenanceCatalogRecord(8, section, "cancelled", "Cancelados", null, true)
+            },
             _ => []
         };
     }

@@ -3,8 +3,9 @@
 @{
     ViewData["Title"] = "Mantenimiento";
     var current = Model.Sections.First(x => x.Key == Model.SelectedSection);
-    var editableSection = new[] { "zonas", "dias-cobro", "formas-pago", "productos", "vendedores", "cobradores" }
+    var editableSection = new[] { "zonas", "dias-cobro", "formas-pago", "productos", "vendedores", "cobradores", "estatus-venta", "estatus-cobro-grupos" }
         .Contains(Model.SelectedSection, StringComparer.OrdinalIgnoreCase);
+    var readonlyCodeSection = Model.SelectedSection.Equals("estatus-cobro-grupos", StringComparison.OrdinalIgnoreCase);
     ViewData["MobileContextBar"] = editableSection
         ? new MobileContextBarModel("Mantenimiento", current.Title, null, new[] { new MobileContextAction("Agregar", "add", Url: Url.Action("Index", "Maintenance", new { section = Model.SelectedSection, create = true }), AriaLabel: "Agregar registro", CssClass: "is-primary") })
         : new MobileContextBarModel("Mantenimiento", current.Title);
@@ -153,7 +154,7 @@
 
                     <div>
                         <label class="form-label" for="maintenanceCode">Codigo</label>
-                        <input class="form-control" id="maintenanceCode" name="Code" value="@Model.Editor.Code" />
+                        <input class="form-control" id="maintenanceCode" name="Code" value="@Model.Editor.Code" @(readonlyCodeSection ? "readonly" : null) />
                     </div>
 
                     <div>
