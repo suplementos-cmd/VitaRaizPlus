@@ -1,4 +1,4 @@
-@using SalesCobrosGeo.Web.Models.Collections
+﻿@using SalesCobrosGeo.Web.Models.Collections
 @model CollectorHomeViewModel
 @functions {
     string IconSvg(string filter) => filter switch
@@ -14,23 +14,17 @@
         @foreach (var card in Model.Cards)
         {
             var filter = card.Title.Contains("Promesas") ? "promise" : card.Title.Contains("Reagend") ? "followup" : card.Title.Contains("Atras") ? "overdue" : "today";
-            <details class="collector-mobile-treebranch" @(filter == "today" ? "open" : null)>
-                <summary class="collector-mobile-treeitem">
-                    <span class="collector-mobile-treeicon @filter">@Html.Raw(IconSvg(filter))</span>
-                    <div class="collector-mobile-treecopy">
-                        <strong>@card.Title</strong>
-                        <span>@card.Subtitle</span>
-                    </div>
-                    <div class="collector-mobile-treeaside">
-                        <span class="collector-mobile-treecount">@card.Count</span>
-                        <span class="collector-mobile-treearrow">&rsaquo;</span>
-                    </div>
-                </summary>
-                <div class="collector-mobile-treebody">
-                    <p>@card.Subtitle</p>
-                    <a class="collector-mobile-treecta" asp-action="@card.TargetAction" asp-route-profile="@Model.Profile" asp-route-filter="@filter" asp-route-groupBy="day">Abrir lista</a>
+            <a class="collector-mobile-treeitem collector-mobile-treeitem-link" asp-action="@card.TargetAction" asp-route-profile="@Model.Profile" asp-route-filter="@filter" asp-route-groupBy="day">
+                <span class="collector-mobile-treeicon @filter">@Html.Raw(IconSvg(filter))</span>
+                <div class="collector-mobile-treecopy">
+                    <strong>@card.Title</strong>
+                    <span>@card.Subtitle</span>
                 </div>
-            </details>
+                <div class="collector-mobile-treeaside">
+                    <span class="collector-mobile-treecount">@card.Count</span>
+                    <span class="collector-mobile-treearrow">&rsaquo;</span>
+                </div>
+            </a>
         }
     </div>
     <div class="collector-mobile-compactlist">
@@ -40,7 +34,7 @@
             <article class="collector-mobile-clientrow">
                 <a class="collector-mobile-clientmain" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">
                     <strong>@item.Name</strong>
-                    <span>@item.Zone � @item.NextAction</span>
+                    <span>@item.Zone · @item.NextAction</span>
                 </a>
                 <div class="collector-mobile-clientactions">
                     @if (!string.IsNullOrWhiteSpace(item.Phone)) { <a href="tel:@item.Phone">LL</a> }

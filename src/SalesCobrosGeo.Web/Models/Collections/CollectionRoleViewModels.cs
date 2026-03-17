@@ -35,8 +35,36 @@ public sealed class CollectorClientListItem
     public string? Thumbnail { get; set; }
     public DateTime? LastPaymentDate { get; set; }
     public string LastNote { get; set; } = string.Empty;
+    public string SaleState { get; set; } = string.Empty;
     public bool HasPromise { get; set; }
     public bool WasVisited { get; set; }
+}
+
+public sealed class CollectorDayTab
+{
+    public string Code { get; set; } = string.Empty;
+    public string ShortLabel { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+    public int Count { get; set; }
+    public bool IsActive { get; set; }
+}
+
+public sealed class CollectorMobileZoneGroup
+{
+    public string Zone { get; set; } = string.Empty;
+    public int Accounts { get; set; }
+    public IReadOnlyList<CollectorClientListItem> Clients { get; set; } = [];
+}
+
+public sealed class CollectorMobileStatusGroup
+{
+    public string Key { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Icon { get; set; } = string.Empty;
+    public string Tone { get; set; } = string.Empty;
+    public int Count { get; set; }
+    public bool IsOpen { get; set; }
+    public IReadOnlyList<CollectorMobileZoneGroup> Zones { get; set; } = [];
 }
 
 public sealed class CollectorQueueGroupViewModel
@@ -66,8 +94,11 @@ public sealed class CollectorQueueViewModel
     public string Profile { get; set; } = string.Empty;
     public string GroupBy { get; set; } = string.Empty;
     public string Filter { get; set; } = string.Empty;
+    public string SelectedDay { get; set; } = string.Empty;
     public string SearchPlaceholder { get; set; } = string.Empty;
     public IReadOnlyList<CollectorQuickFilter> QuickFilters { get; set; } = [];
+    public IReadOnlyList<CollectorDayTab> DayTabs { get; set; } = [];
+    public IReadOnlyList<CollectorMobileStatusGroup> MobileStatusGroups { get; set; } = [];
     public IReadOnlyList<CollectorQueueGroupViewModel> Groups { get; set; } = [];
 }
 
