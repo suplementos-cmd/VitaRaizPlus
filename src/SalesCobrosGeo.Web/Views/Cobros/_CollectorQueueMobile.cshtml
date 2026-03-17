@@ -61,6 +61,20 @@
         }
     </div>
 
+    <div class="collector-mobile-historycards collector-mobile-historycards-queue">
+        @foreach (var summary in Model.HistorySummaryCards)
+        {
+            var targetUrl = summary.Code == "pending"
+                ? Url.Action("CollectorQueue", "Cobros", new { profile = Model.Profile, day = Model.SelectedDay, groupBy = "status", filter = "all" })
+                : Url.Action("CollectionHistory", "Cobros", new { profile = Model.Profile, outcome = summary.Code });
+            <a class="collector-mobile-historycard @(summary.IsActive ? "active" : string.Empty)" href="@targetUrl">
+                <strong>@summary.Title</strong>
+                <span>@summary.Subtitle</span>
+                <b>@summary.Count</b>
+            </a>
+        }
+    </div>
+
     <div class="collector-mobile-searchbar" data-cobros-search-shell="true" hidden>
         <span class="collector-mobile-searchicon">&#8981;</span>
         <input id="collectorRoleSearch" type="search" class="collector-mobile-searchinput" placeholder="@Model.SearchPlaceholder" autocomplete="off" />

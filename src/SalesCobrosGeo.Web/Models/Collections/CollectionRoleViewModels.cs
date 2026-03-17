@@ -105,6 +105,7 @@ public sealed class CollectorQueueViewModel
     public string SelectedStatus { get; set; } = string.Empty;
     public string SelectedZone { get; set; } = string.Empty;
     public string SearchPlaceholder { get; set; } = string.Empty;
+    public IReadOnlyList<CollectionHistorySummaryCard> HistorySummaryCards { get; set; } = [];
     public IReadOnlyList<CollectorQuickFilter> QuickFilters { get; set; } = [];
     public IReadOnlyList<CollectorDayTab> DayTabs { get; set; } = [];
     public IReadOnlyList<CollectorMobileStatusGroup> MobileStatusGroups { get; set; } = [];

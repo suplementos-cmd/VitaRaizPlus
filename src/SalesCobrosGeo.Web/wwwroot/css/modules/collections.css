@@ -2473,6 +2473,11 @@
   gap: 8px;
 }
 
+.collector-mobile-historycards-queue,
+.collector-home-historysummary-queue {
+  margin: 8px 0 10px;
+}
+
 .collector-history-shell,
 .collector-history-panel,
 .collector-history-records {
