@@ -384,11 +384,16 @@ CREATE TABLE IF NOT EXISTS Collections (
 
     private void SeedSalesAndCollections()
     {
-        if (_dbContext.Sales.Any())
+        if (!_dbContext.Sales.Any())
         {
-            return;
+            SeedBaseSaleSample();
         }
 
+        SeedDemoSalesMatrix();
+    }
+
+    private void SeedBaseSaleSample()
+    {
         var productLines = JsonSerializer.Serialize(new List<SaleProductLineInput>
         {
             new() { ProductCode = "GEL TICILT", Quantity = 1, UnitPrice = 1490m }
@@ -444,5 +449,174 @@ CREATE TABLE IF NOT EXISTS Collections (
             DiaCobroPrevisto = "LUNES",
             DiaCobrado = "VIERNES"
         });
+    }
+
+    private void SeedDemoSalesMatrix()
+    {
+        if (_dbContext.Sales.Any(x => x.IdV.StartsWith("demo", StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        var zones = _dbContext.CatalogItems
+            .Where(x => x.Category == "zone" && x.IsActive)
+            .OrderBy(x => x.SortOrder)
+            .Select(x => x.Code)
+            .ToArray();
+        var days = _dbContext.CatalogItems
+            .Where(x => x.Category == "collection_day" && x.IsActive)
+            .OrderBy(x => x.SortOrder)
+            .Select(x => x.Code)
+            .ToArray();
+        var sellers = _dbContext.CatalogItems
+            .Where(x => x.Category == "seller" && x.IsActive)
+            .OrderBy(x => x.SortOrder)
+            .Select(x => x.Code)
+            .ToArray();
+        var collectors = _dbContext.CatalogItems
+            .Where(x => x.Category == "collector" && x.IsActive)
+            .OrderBy(x => x.SortOrder)
+            .Select(x => x.Code)
+            .ToArray();
+        var products = _dbContext.CatalogItems
+            .Where(x => x.Category == "product" && x.IsActive)
+            .OrderBy(x => x.SortOrder)
+            .Select(x => new { x.Code, Price = x.Price ?? 0m })
+            .ToArray();
+        var paymentMethods = _dbContext.CatalogItems
+            .Where(x => x.Category == "payment" && x.IsActive)
+            .OrderBy(x => x.SortOrder)
+            .Select(x => x.Code)
+            .ToArray();
+
+        var zoneCoordinates = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["HEROES CHALCO"] = "19.264010,-98.898170",
+            ["JARDINES"] = "19.251230,-98.887540",
+            ["XICO"] = "19.273900,-98.915230",
+            ["CENTRO"] = "19.261420,-98.892340",
+            ["NORTE"] = "19.281120,-98.880430"
+        };
+
+        var saleStatuses = new[] { "PENDIENTE", "EN COBRO", "AL CORRIENTE", "CANCELADO", "LIQUIDADO" };
+        var baseDate = DateTime.Today.AddDays(-21);
+        var nextNumVenta = (_dbContext.Sales.Select(x => (int?)x.NumVenta).Max() ?? 0) + 1;
+        var demoIndex = 1;
+
+        foreach (var day in days)
+        {
+            foreach (var zone in zones)
+            {
+                for (var slot = 0; slot < 3; slot++)
+                {
+                    var status = saleStatuses[(demoIndex - 1) % saleStatuses.Length];
+                    var product = products[(demoIndex - 1) % products.Length];
+                    var quantity = (demoIndex % 3) + 1;
+                    var total = quantity * product.Price;
+                    var seller = sellers[(demoIndex - 1) % sellers.Length];
+                    var collector = collectors[(demoIndex - 1) % collectors.Length];
+                    var payment = paymentMethods[(demoIndex - 1) % paymentMethods.Length];
+                    var saleDate = baseDate.AddDays(demoIndex % 14);
+                    var idV = $"demo{nextNumVenta:0000}";
+                    var name = $"Demo {zone[..Math.Min(zone.Length, 4)]} {day[..Math.Min(day.Length, 3)]} {slot + 1}";
+                    var note = slot switch
+                    {
+                        0 => $"PROMESA DE PAGO {day}",
+                        1 => $"REAGENDAR VISITA {zone}",
+                        _ => $"CLIENTE DEMO PARA RUTA {zone}"
+                    };
+                    var coordinates = zoneCoordinates.TryGetValue(zone, out var zonePoint) ? zonePoint : "19.260000,-98.890000";
+
+                    _dbContext.Sales.Add(new SaleEntity
+                    {
+                        IdV = idV,
+                        NumVenta = nextNumVenta,
+                        FechaVenta = saleDate,
+                        NombreCliente = name.ToUpperInvariant(),
+                        Celular = $"555{nextNumVenta:0000000}"[..10],
+                        Telefono = $"555{nextNumVenta:0000000}"[..10],
+                        Zona = zone,
+                        FormaPago = payment,
+                        DiaCobro = day,
+                        ObservacionVenta = note,
+                        Vendedor = seller,
+                        Usuario = $"demo{slot + 1}@vitarraiz.local",
+                        Cobrador = collector,
+                        Coordenadas = coordinates,
+                        UrlUbicacion = $"https://maps.google.com/?q={coordinates}",
+                        FechaPrimerCobro = saleDate.AddDays(3),
+                        Estado = status,
+                        FechaActu = saleDate.AddHours(9),
+                        Cliente = name.ToUpperInvariant(),
+                        Producto = product.Code,
+                        Estado2 = status is "CANCELADO" or "LIQUIDADO" ? "CLOSED" : "OPEN",
+                        ComisionVendedorPct = 5,
+                        Cobrar = "OK",
+                        ProductosCantidad = quantity,
+                        ImporteTotal = total,
+                        ProductLinesJson = JsonSerializer.Serialize(new List<SaleProductLineInput>
+                        {
+                            new() { ProductCode = product.Code, Quantity = quantity, UnitPrice = product.Price }
+                        })
+                    });
+
+                    if (status == "LIQUIDADO")
+                    {
+                        _dbContext.Collections.Add(BuildDemoCollection(idV, nextNumVenta, name, total, total, 0m, saleDate.AddDays(5), collector, zone, day, "LIQUIDADO", coordinates, "LIQUIDADO DEMO"));
+                    }
+                    else if (status == "AL CORRIENTE")
+                    {
+                        var partial = Math.Round(total * 0.45m, 2);
+                        _dbContext.Collections.Add(BuildDemoCollection(idV, nextNumVenta, name, partial, partial, total - partial, DateTime.Today.AddDays(-1), collector, zone, day, "PARCIAL", coordinates, "PROMESA DE PAGO ACTIVA"));
+                    }
+                    else if (status == "EN COBRO")
+                    {
+                        var partial = Math.Round(total * 0.30m, 2);
+                        _dbContext.Collections.Add(BuildDemoCollection(idV, nextNumVenta, name, partial, partial, total - partial, DateTime.Today.AddDays(-12), collector, zone, day, "PARCIAL", coordinates, "REAGENDAR VISITA Y DAR SEGUIMIENTO"));
+                    }
+
+                    nextNumVenta++;
+                    demoIndex++;
+                }
+            }
+        }
+    }
+
+    private static CollectionEntity BuildDemoCollection(
+        string idV,
+        int numVenta,
+        string clientName,
+        decimal amount,
+        decimal paid,
+        decimal remaining,
+        DateTime collectionDate,
+        string collector,
+        string zone,
+        string plannedDay,
+        string status,
+        string coordinates,
+        string note)
+    {
+        return new CollectionEntity
+        {
+            IdCc = Guid.NewGuid().ToString("N")[..8],
+            IdV = idV,
+            NumVenta = numVenta,
+            NombreCliente = clientName.ToUpperInvariant(),
+            ImporteCobro = amount,
+            FechaCobro = collectionDate,
+            ObservacionCobro = note,
+            FechaCaptura = collectionDate,
+            ImporteTotal = paid + remaining,
+            ImporteRestante = remaining,
+            EstadoCc = amount > 0 ? "SI PAGO" : "NO PAGO",
+            Usuario = collector,
+            ImporteAbonado = paid,
+            Estatus = status,
+            Zona = zone,
+            DiaCobroPrevisto = plannedDay,
+            DiaCobrado = collectionDate.ToString("dddd", new System.Globalization.CultureInfo("es-ES")).ToUpperInvariant(),
+            CoordenadasCobro = coordinates
+        };
     }
 }
