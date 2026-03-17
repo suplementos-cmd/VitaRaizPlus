@@ -96,6 +96,7 @@ public sealed class CobrosController : Controller
         var mobileZoneGroups = string.IsNullOrWhiteSpace(selectedStatus)
             ? []
             : mobileStatusGroups.FirstOrDefault(x => x.Key == selectedStatus)?.Zones ?? [];
+        var scopedHistory = GetScopedCollections(activeProfile);
 
         var model = new CollectorQueueViewModel
         {
@@ -106,6 +107,7 @@ public sealed class CobrosController : Controller
             SelectedStatus = selectedStatus,
             SelectedZone = selectedZone,
             SearchPlaceholder = "Buscar por nombre, direccion, telefono o folio",
+            HistorySummaryCards = BuildHistorySummaryCards(activeProfile, scopedHistory, "pending"),
             QuickFilters = BuildQuickFilters(baseClients, filter),
             DayTabs = BuildCollectorDayTabs(baseClients, selectedDay),
             MobileStatusGroups = mobileStatusGroups,
