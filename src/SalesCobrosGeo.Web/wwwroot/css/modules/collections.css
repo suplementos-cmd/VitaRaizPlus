@@ -2792,3 +2792,292 @@
     justify-items: end;
   }
 }
+
+/* =============================================================
+   COBROS MOBILE — DESIGN IMPROVEMENTS
+   ============================================================= */
+
+/* --- Row icon: mostrar SVG correctamente ------------------- */
+.collector-mobile-row-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.collector-mobile-row-icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.collector-mobile-row-icon.day {
+  background: rgba(39, 92, 194, 0.12);
+  color: #2456c9;
+}
+
+.collector-mobile-row-icon.status {
+  background: rgba(34, 171, 104, 0.14);
+  color: #16724a;
+}
+
+.collector-mobile-row-icon.zone {
+  background: rgba(140, 79, 230, 0.12);
+  color: #6e3db6;
+}
+
+/* --- Chevron SVG en filas ----------------------------------- */
+.collector-mobile-row-arrow {
+  display: inline-flex;
+  align-items: center;
+  color: #8fa0bb;
+  flex-shrink: 0;
+}
+
+.collector-mobile-row-arrow svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+/* --- Row hover/active --------------------------------------- */
+.collector-mobile-row,
+.collector-mobile-treeitem,
+.collector-mobile-zoneitem,
+.collector-mobile-statusitem {
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.15s ease,
+              background 0.12s ease;
+}
+
+.collector-mobile-row:hover,
+.collector-mobile-treeitem:hover,
+.collector-mobile-zoneitem:hover,
+.collector-mobile-statusitem:hover {
+  transform: translateX(3px);
+  box-shadow: 0 6px 20px rgba(30, 55, 110, 0.12);
+  background: rgba(255, 255, 255, 1);
+}
+
+.collector-mobile-row:active,
+.collector-mobile-treeitem:active,
+.collector-mobile-zoneitem:active,
+.collector-mobile-statusitem:active {
+  transform: translateX(1px) scale(0.99);
+}
+
+/* --- Client row: más compacto y mejor distribución --------- */
+.collector-mobile-clientrow {
+  padding: 9px 10px;
+  gap: 8px;
+  transition: transform 0.18s ease, box-shadow 0.15s ease;
+}
+
+.collector-mobile-clientrow:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(30, 55, 110, 0.11);
+}
+
+.collector-mobile-clientrow:active {
+  transform: scale(0.99);
+}
+
+.collector-mobile-clientmain strong {
+  font-size: 0.85rem;
+}
+
+.collector-mobile-clientmain span {
+  font-size: 0.71rem;
+}
+
+/* --- CMA buttons (Llamar / Mapa / Registrar) ---------------- */
+.cma-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  text-decoration: none;
+  transition: transform 0.16s ease, box-shadow 0.15s ease, background 0.12s ease;
+  flex-shrink: 0;
+}
+
+.cma-btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.cma-btn:hover {
+  transform: translateY(-2px) scale(1.06);
+}
+
+.cma-btn:active {
+  transform: scale(0.94);
+}
+
+.cma-btn.disabled {
+  opacity: 0.36;
+  pointer-events: none;
+}
+
+.cma-call {
+  background: rgba(30, 160, 90, 0.10);
+  border-color: rgba(30, 160, 90, 0.18);
+  color: #1a8450;
+}
+
+.cma-call:hover {
+  background: rgba(30, 160, 90, 0.18);
+  box-shadow: 0 4px 12px rgba(30, 160, 90, 0.28);
+}
+
+.cma-map {
+  background: rgba(50, 100, 220, 0.10);
+  border-color: rgba(50, 100, 220, 0.18);
+  color: #2456c9;
+}
+
+.cma-map:hover {
+  background: rgba(50, 100, 220, 0.18);
+  box-shadow: 0 4px 12px rgba(50, 100, 220, 0.28);
+}
+
+.cma-register {
+  background: rgba(109, 79, 213, 0.10);
+  border-color: rgba(109, 79, 213, 0.18);
+  color: #6547c7;
+}
+
+.cma-register:hover {
+  background: rgba(109, 79, 213, 0.18);
+  box-shadow: 0 4px 12px rgba(109, 79, 213, 0.28);
+}
+
+/* --- Mini actions en _MobileSalesList ---------------------- */
+.collector-mobile-mini-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: center;
+}
+
+/* --- Semantic icon: tamaño de SVG -------------------------- */
+.collector-semantic-icon {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+
+.collector-semantic-icon svg {
+  width: 13px;
+  height: 13px;
+  display: block;
+}
+
+/* --- Tree item: layout mejorado con icon temático ---------- */
+.collector-mobile-treeitem {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  min-height: 52px;
+  padding: 9px 12px;
+}
+
+.collector-mobile-treeicon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.collector-mobile-treeicon svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.collector-mobile-treeicon.pending {
+  background: rgba(39, 92, 194, 0.12);
+  color: #2456c9;
+}
+
+.collector-mobile-treeicon.promise {
+  background: rgba(109, 79, 213, 0.12);
+  color: #6547c7;
+}
+
+.collector-mobile-treeicon.followup {
+  background: rgba(226, 136, 28, 0.12);
+  color: #ca7416;
+}
+
+.collector-mobile-treeicon.overdue {
+  background: rgba(221, 59, 95, 0.12);
+  color: #bf2148;
+}
+
+/* --- Day tab: mayor contraste y tamaño -------------------- */
+.collector-mobile-daytab {
+  min-height: 40px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  transition: transform 0.16s ease, box-shadow 0.15s ease;
+}
+
+.collector-mobile-daytab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(30, 55, 110, 0.14);
+}
+
+.collector-mobile-daytab:active {
+  transform: scale(0.97);
+}
+
+/* --- History card: entrada animada + hover ---------------- */
+.collector-mobile-historycard {
+  transition: transform 0.18s ease, box-shadow 0.15s ease;
+}
+
+.collector-mobile-historycard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(30, 55, 110, 0.13);
+}
+
+.collector-mobile-historycard:active {
+  transform: scale(0.98);
+}
+
+/* --- Status item: icon con tono de color ------------------ */
+.collector-mobile-statusitem.danger .collector-mobile-statusicon {
+  background: rgba(221, 59, 95, 0.12);
+  color: #bf2148;
+}
+
+.collector-mobile-statusitem.warning .collector-mobile-statusicon {
+  background: rgba(226, 136, 28, 0.12);
+  color: #ca7416;
+}
+
+.collector-mobile-statusitem.success .collector-mobile-statusicon {
+  background: rgba(32, 160, 94, 0.12);
+  color: #1a8650;
+}
+
+.collector-mobile-statusitem.muted .collector-mobile-statusicon {
+  background: rgba(108, 122, 143, 0.12);
+  color: #5a6b84;
+}
+
+.collector-mobile-statusitem.info .collector-mobile-statusicon {
+  background: rgba(109, 79, 213, 0.12);
+  color: #6547c7;
+}
