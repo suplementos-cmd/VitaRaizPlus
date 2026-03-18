@@ -1,0 +1,459 @@
+/**
+ * RESPONSIVE LAYOUTS
+ * Sistema de layouts responsivos para desktop y móvil
+ * VitaRaizPlus - Marzo 2026
+ */
+
+/* ===========================================================================
+   CONTAINER SYSTEM
+   =========================================================================== */
+
+.container-responsive {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .container-responsive {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-responsive {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-responsive {
+    max-width: 1024px;
+    padding-left:var(--space-6);
+    padding-right: var(--space-6);
+  }
+}
+
+@media (min-width: 1280px) {
+  .container-responsive {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .container-responsive {
+    max-width: 1536px;
+  }
+}
+
+/* ===========================================================================
+   DASHBOARD LAYOUT - 3 Columnas para Desktop
+   =========================================================================== */
+
+.dashboard-layout-enhanced {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+  padding: var(--space-4);
+}
+
+/* Tablet: 2 columnas */
+@media (min-width: 768px) {
+  .dashboard-layout-enhanced {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-5);
+  }
+}
+
+/* Desktop: 3 columnas con sidebar */
+@media (min-width: 1400px) {
+  .dashboard-layout-enhanced {
+    grid-template-columns: 280px 1fr 320px;
+    gap: 24px;
+    padding: var(--space-6);
+  }
+  
+  .dashboard-layout-enhanced.no-sidebars {
+    grid-template-columns: 1fr;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+}
+
+/* Desktop XL: Más espacio entre columnas */
+@media (min-width: 1920px) {
+  .dashboard-layout-enhanced {
+    max-width: 1800px;
+    margin: 0 auto;
+    grid-template-columns: 320px 1fr 380px;
+    gap: 32px;
+  }
+}
+
+/* Sidebar izquierdo sticky */
+.dashboard-sidebar-left {
+  display: none;
+}
+
+@media (min-width: 1400px) {
+  .dashboard-sidebar-left {
+    display: block;
+    position: sticky;
+    top: 80px;
+    height: fit-content;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+  }
+}
+
+/* Sidebar derecho sticky */
+.dashboard-sidebar-right {
+  display: none;
+}
+
+@media (min-width: 1400px) {
+  .dashboard-sidebar-right {
+    display: block;
+    position: sticky;
+    top: 80px;
+    height: fit-content;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+  }
+}
+
+/* ===========================================================================
+   GRID SYSTEM RESPONSIVE
+   =========================================================================== */
+
+/* Auto-fit grid - se adapta automáticamente */
+.auto-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+@media (min-width: 1024px) {
+  .auto-grid {
+    gap: var(--space-6);
+  }
+}
+
+/* Grid con breakpoints específicos */
+.responsive-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .responsive-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-6);
+  }
+}
+
+@media (min-width: 1280px) {
+  .responsive-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Grid para cards */
+.card-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-5);
+  }
+}
+
+@media (min-width: 1200px) {
+  .card-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-6);
+  }
+}
+
+/* ===========================================================================
+   SIDEBAR COLAPSABLE
+   =========================================================================== */
+
+.app-sidebar-wrapper {
+  position: relative;
+}
+
+.app-sidebar-collapsible {
+  position: fixed;
+  left: 0;
+  top: var(--header-height);
+  width: var(--sidebar-width);
+  height: calc(100vh - var(--header-height));
+  background: var(--vr-color-surface);
+  border-right: 1px solid var(--vr-color-border);
+  transform: translateX(0);
+  transition: transform var(--transition-base);
+  z-index: var(--z-fixed);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.app-sidebar-collapsible.collapsed {
+  transform: translateX(calc(-1 * var(--sidebar-width)));
+}
+
+/* Solo mostrar en desktop */
+@media (max-width: 991px) {
+  .app-sidebar-collapsible {
+    width: 100%;
+    max-width: 320px;
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-xl);
+  }
+  
+  .app-sidebar-collapsible.active {
+    transform: translateX(0);
+  }
+}
+
+/* Toggle button */
+.app-sidebar-toggle {
+  position: fixed;
+  left: var(--sidebar-width);
+  top: calc(var(--header-height) + 8px);
+  width: 32px;
+  height: 48px;
+  background: var(--vr-color-surface);
+  border: 1px solid var(--vr-color-border);
+  border-left: none;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: left var(--transition-base);
+  z-index: calc(var(--z-fixed) + 1);
+  box-shadow: var(--shadow-sm);
+}
+
+.app-sidebar-toggle:hover {
+  background: var(--vr-color-surface-soft);
+}
+
+.app-sidebar-collapsible.collapsed + .app-sidebar-toggle {
+  left: 0;
+}
+
+@media (max-width: 991px) {
+  .app-sidebar-toggle {
+    left: 0;
+    top: calc(var(--header-height) + 8px);
+    width: 40px;
+    height: 40px;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
+}
+
+/* Ajuste del contenido principal */
+.app-main-content {
+  margin-left: 0;
+  transition: margin-left var(--transition-base);
+  min-height: calc(100vh - var(--header-height));
+}
+
+@media (min-width: 992px) {
+  .app-main-content.with-sidebar {
+    margin-left: var(--sidebar-width);
+  }
+  
+  .app-sidebar-collapsible.collapsed ~ .app-main-content {
+    margin-left: 0;
+  }
+}
+
+/* ===========================================================================
+   DATA TABLES / LISTS - Responsive
+   =========================================================================== */
+
+.data-list-responsive {
+  display: grid;
+  gap: var(--space-2);
+}
+
+/* Móvil: Tarjeta apilada */
+.data-row {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--vr-color-border);
+  grid-template-columns: 1fr;
+}
+
+/* Tablet: 2 columnas */
+@media (min-width: 768px) {
+  .data-row {
+    grid-template-columns: 1.5fr 1fr auto;
+    align-items: center;
+    padding: var(--space-4);
+  }
+}
+
+/* Desktop: Tabla completa */
+@media (min-width: 992px) {
+  .data-row {
+    grid-template-columns: 
+      40px              /* Checkbox/Icon */
+      1.5fr             /* Principal */
+      0.8fr             /* Info 1 */
+      0.8fr             /* Info 2 */
+      0.8fr             /* Info 3 */
+      0.6fr             /* Info 4 */
+      120px;            /* Acciones */
+    gap: var(--space-4);
+    padding: 12px 18px;
+  }
+  
+  .data-row:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+}
+
+/* Desktop XL: Aún más columnas */
+@media (min-width: 1400px) {
+  .data-row.data-row-xl {
+    grid-template-columns: 
+      40px 1.5fr 0.8fr 0.8fr 0.8fr 0.6fr 0.5fr 140px;
+  }
+}
+
+/* ===========================================================================
+   FLEX LAYOUTS
+   =========================================================================== */
+
+.flex-layout-responsive {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .flex-layout-responsive {
+    flex-direction: row;
+    gap: var(--space-6);
+  }
+}
+
+/* Split layout - 50/50 */
+.split-layout {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .split-layout {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6);
+  }
+}
+
+/* Sidebar + Main layout */
+.sidebar-main-layout {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1024px) {
+  .sidebar-main-layout {
+    grid-template-columns: 320px 1fr;
+    gap: var(--space-6);
+  }
+}
+
+/* ===========================================================================
+   STICKY SECTIONS
+   =========================================================================== */
+
+.sticky-section {
+  position: sticky;
+  top: calc(var(--header-height) + var(--space-4));
+  z-index: var(--z-sticky);
+}
+
+/* ===========================================================================
+   SAFE AREAS (para dispositivos con notch)
+   =========================================================================== */
+
+@supports (padding-top: env(safe-area-inset-top)) {
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top) !important;
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom) !important;
+  }
+  
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left) !important;
+  }
+  
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right) !important;
+  }
+}
+
+/* ===========================================================================
+   ASPECT RATIOS
+   =========================================================================== */
+
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+.aspect-4-3 {
+  aspect-ratio: 4 / 3;
+}
+
+/* ===========================================================================
+   SPACING SECTIONS
+   =========================================================================== */
+
+.section-spacing {
+  padding-top: var(--space-8);
+  padding-bottom: var(--space-8);
+}
+
+@media (min-width: 768px) {
+  .section-spacing {
+    padding-top: var(--space-12);
+    padding-bottom: var(--space-12);
+  }
+}
+
+@media (min-width: 1024px) {
+  .section-spacing {
+    padding-top: var(--space-16);
+    padding-bottom: var(--space-16);
+  }
+}

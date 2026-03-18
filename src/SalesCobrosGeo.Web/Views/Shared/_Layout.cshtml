@@ -57,9 +57,22 @@
     <script type="importmap"></script>
     <link rel="manifest" href="~/manifest.webmanifest" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    
+    @* Core Design System - Load First *@
+    <link rel="stylesheet" href="~/css/core/design-tokens-enhanced.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/modules/design-tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/core/utilities.css" asp-append-version="true" />
+    
+    @* Layout & Responsive *@
+    <link rel="stylesheet" href="~/css/layout/responsive-layouts.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/modules/layout.css" asp-append-version="true" />
+    
+    @* Components *@
+    <link rel="stylesheet" href="~/css/components/mobile-components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components/ui-ux.css" asp-append-version="true" />
+    
+    @* Feature Modules *@
     <link rel="stylesheet" href="~/css/modules/dashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/modules/sales.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/modules/collections.css" asp-append-version="true" />
@@ -320,6 +333,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/mobile-components.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
