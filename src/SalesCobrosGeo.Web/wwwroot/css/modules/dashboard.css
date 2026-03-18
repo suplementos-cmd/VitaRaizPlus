@@ -539,9 +539,24 @@
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Icon-only button - compact in all resolutions */
+.dashboard-detail-icon-btn {
+  padding: 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  justify-content: center;
+  gap: 0;
+}
+
 .dashboard-detail-btn:hover {
   transform: translateX(3px);
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.dashboard-detail-icon-btn:hover {
+  transform: scale(1.12);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
 }
 
 .dashboard-detail-btn svg {
@@ -551,8 +566,17 @@
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.dashboard-detail-icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
 .dashboard-detail-btn:hover svg {
   transform: translateX(2px);
+}
+
+.dashboard-detail-icon-btn:hover svg {
+  transform: none;
 }
 
 @media (max-width: 768px) {
@@ -565,9 +589,20 @@
     justify-content: center;
   }
   
+  .dashboard-detail-icon-btn {
+    width: 36px;
+    height: 36px;
+    padding: 6px;
+  }
+  
   .dashboard-detail-btn svg {
     width: 18px;
     height: 18px;
+  }
+  
+  .dashboard-detail-icon-btn svg {
+    width: 20px;
+    height: 20px;
   }
   
   .dashboard-detail-btn .btn-text-mobile {
@@ -576,5 +611,9 @@
   
   .dashboard-detail-btn:hover {
     transform: scale(1.08);
+  }
+  
+  .dashboard-detail-icon-btn:hover {
+    transform: scale(1.12);
   }
 }
