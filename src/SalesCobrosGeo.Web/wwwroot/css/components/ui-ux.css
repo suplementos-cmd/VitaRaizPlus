@@ -1,0 +1,683 @@
+/**
+ * UI/UX COMPONENTS
+ * Toasts, Loading States, Skeleton Loaders, Micro-interactions
+ * VitaRaizPlus - Marzo 2026
+ */
+
+/* ===========================================================================
+   TOAST NOTIFICATIONS
+   =========================================================================== */
+
+.toast-container {
+  position: fixed;
+  z-index: var(--z-toast);
+  pointer-events: none;
+}
+
+/* Desktop: top-right */
+@media (min-width: 768px) {
+  .toast-container {
+    top: 24px;
+    right: 24px;
+    max-width: 420px;
+  }
+}
+
+/* Mobile: bottom center (encima del nav) */
+@media (max-width: 767px) {
+  .toast-container {
+    bottom: calc(var(--bottom-nav-height) + 16px);
+    left: 16px;
+    right: 16px;
+  }
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-xl);
+  border-left: 4px solid var(--gray-300);
+  pointer-events: all;
+  animation: slideInRight 0.3s var(--ease-out-back);
+  min-width: 300px;
+}
+
+@media (max-width: 767px) {
+  .toast {
+    min-width: unset;
+    animation: slideInUp 0.3s var(--ease-out-back);
+  }
+}
+
+.toast.success {
+  border-left-color: var(--success-500);
+}
+
+.toast.error {
+  border-left-color: var(--danger-500);
+}
+
+.toast.warning {
+  border-left-color: var(--warning-500);
+}
+
+.toast.info {
+  border-left-color: var(--info-500);
+}
+
+.toast-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: var(--font-bold);
+}
+
+.toast.success .toast-icon {
+  background: var(--success-50);
+  color: var(--success-600);
+}
+
+.toast.error .toast-icon {
+  background: var(--danger-50);
+  color: var(--danger-600);
+}
+
+.toast.warning .toast-icon {
+  background: var(--warning-50);
+  color: var(--warning-600);
+}
+
+.toast.info .toast-icon {
+  background: var(--info-50);
+  color: var(--info-600);
+}
+
+.toast-content {
+  flex: 1;
+}
+
+.toast-title {
+  font-size: 0.9rem;
+  font-weight: var(--font-semibold);
+  color: var(--vr-color-text);
+  margin-bottom: 4px;
+}
+
+.toast-message {
+  font-size: 0.85rem;
+  color: var(--vr-color-text-soft);
+  line-height: 1.4;
+}
+
+.toast-close {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--gray-400);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-fast);
+}
+
+.toast-close:hover {
+  background: var(--hover-overlay);
+  color: var(--gray-600);
+}
+
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--vr-color-brand);
+  border-radius: 0 0 0 var(--radius-lg);
+  animation: progress 5s linear forwards;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+/* ===========================================================================
+   LOADING STATES
+   =========================================================================== */
+
+/* Spinner */
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--gray-200);
+  border-top-color: var(--vr-color-brand);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.spinner-lg {
+  width: 40px;
+  height: 40px;
+  border-width: 3px;
+}
+
+.spinner-sm {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+/* Button loading state */
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* Pulse loading (cards) */
+.loading-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* Dots loading */
+.loading-dots {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.loading-dots span {
+  display: block;
+  width: 8px;
+  height: 8px;
+  background: var(--vr-color-brand);
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.loading-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ===========================================================================
+   SKELETON LOADERS
+   =========================================================================== */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--gray-200) 0%,
+    var(--gray-100) 50%,
+    var(--gray-200) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Skeleton variants */
+.skeleton-text {
+  height: 14px;
+  margin-bottom: 8px;
+}
+
+.skeleton-text:last-child {
+  width: 70%;
+}
+
+.skeleton-title {
+  height: 20px;
+  width: 50%;
+  margin-bottom: 12px;
+}
+
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.skeleton-card {
+  padding: 16px;
+  background: white;
+  border: 1px solid var(--vr-color-border);
+  border-radius: var(--radius-lg);
+}
+
+.skeleton-button {
+  height: 40px;
+  width: 120px;
+}
+
+/* Skeleton card completo */
+.skeleton-collection-card {
+  padding: 14px;
+  border: 1px solid var(--vr-color-border);
+  border-radius: var(--radius-lg);
+  background: white;
+}
+
+.skeleton-collection-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.skeleton-collection-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ===========================================================================
+   MICRO-INTERACTIONS
+   =========================================================================== */
+
+/* Hover lift effect */
+.hover-lift {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.hover-lift:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-md);
+}
+
+/* Hover scale effect */
+.hover-scale {
+  transition: transform var(--transition-fast);
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+.hover-scale:active {
+  transform: scale(0.98);
+}
+
+/* Ripple effect */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.ripple:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* Shake animation (errores) */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-4px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(4px);
+  }
+}
+
+.shake {
+  animation: shake 0.5s;
+}
+
+/* Focus ring mejorado */
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--vr-color-brand-2);
+  border-color: var(--vr-color-brand);
+}
+
+/* ===========================================================================
+   BADGES & INDICATORS
+   =========================================================================== */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: var(--font-semibold);
+  line-height: 1;
+}
+
+.badge-success {
+  background: var(--success-50);
+  color: var(--success-700);
+}
+
+.badge-danger {
+  background: var(--danger-50);
+  color: var(--danger-700);
+}
+
+.badge-warning {
+  background: var(--warning-50);
+  color: var(--warning-700);
+}
+
+.badge-info {
+  background: var(--info-50);
+  color: var(--info-700);
+}
+
+.badge-neutral {
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
+/* Dot indicator */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.status-dot.success {
+  background: var(--success-500);
+}
+
+.status-dot.danger {
+  background: var(--danger-500);
+}
+
+.status-dot.warning {
+  background: var(--warning-500);
+}
+
+.status-dot.neutral {
+  background: var(--gray-400);
+}
+
+/* Pulse indicator (online/sync) */
+.status-dot.pulse {
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 0 4px transparent;
+  }
+}
+
+/* ===========================================================================
+   EMPTY STATES
+   =========================================================================== */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 20px;
+  color: var(--gray-300);
+}
+
+.empty-state-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--vr-color-text);
+  margin-bottom: 8px;
+}
+
+.empty-state-message {
+  font-size: var(--text-base);
+  color: var(--vr-color-text-soft);
+  max-width: 400px;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.empty-state-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--vr-color-brand);
+  color: white;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.empty-state-action:hover {
+  background: var(--vr-color-brand-hover);
+}
+
+/* ===========================================================================
+   PROGRESS BARS
+   =========================================================================== */
+
+.progress-bar {
+  height: 8px;
+  background: var(--gray-200);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--vr-color-brand);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-base);
+}
+
+.progress-bar-fill.success {
+  background: var(--success-500);
+}
+
+.progress-bar-fill.warning {
+  background: var(--warning-500);
+}
+
+.progress-bar-fill.danger {
+  background: var(--danger-500);
+}
+
+/* Progress bar con label */
+.progress-bar-labeled {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-bar-labeled .progress-bar {
+  flex: 1;
+}
+
+.progress-label {
+  font-size: 0.875rem;
+  font-weight: var(--font-semibold);
+  color: var(--vr-color-text);
+  min-width: 45px;
+  text-align: right;
+}
+
+/* ===========================================================================
+   TOOLTIPS
+   =========================================================================== */
+
+.tooltip-trigger {
+  position: relative;
+  cursor: help;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  background: var(--gray-900);
+  color: white;
+  font-size: 0.8rem;
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-fast), visibility var(--transition-fast);
+  z-index: var(--z-tooltip);
+  pointer-events: none;
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--gray-900);
+}
+
+.tooltip-trigger:hover .tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ===========================================================================
+   REDUCED MOTION
+   =========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .skeleton,
+  .hover-lift,
+  .hover-scale,
+  .spinner,
+  .loading-pulse,
+  .loading-dots span,
+  .ripple::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  .hover-lift:hover,
+  .hover-scale:hover {
+    transform: none;
+  }
+}

@@ -1,0 +1,326 @@
+/**
+ * DESIGN TOKENS ENHANCED
+ * Sistema completo de variables CSS para VitaRaizPlus
+ * Versión: 2.0 - Marzo 2026
+ */
+
+:root {
+  /* =========================================================================
+     SPACING SYSTEM - Sistema de espaciado de 8pt
+     ========================================================================= */
+  --space-0: 0;
+  --space-1: 0.25rem;    /* 4px */
+  --space-2: 0.5rem;     /* 8px */
+  --space-3: 0.75rem;    /* 12px */
+  --space-4: 1rem;       /* 16px */
+  --space-5: 1.25rem;    /* 20px */
+  --space-6: 1.5rem;     /* 24px */
+  --space-8: 2rem;       /* 32px */
+  --space-10: 2.5rem;    /* 40px */
+  --space-12: 3rem;      /* 48px */
+  --space-16: 4rem;      /* 64px */
+  --space-20: 5rem;      /* 80px */
+  --space-24: 6rem;      /* 96px */
+
+  /* =========================================================================
+     COLORES - Sistema completo de colores
+     ========================================================================= */
+  
+  /* Colores Base (existentes) */
+  --vr-color-bg: #f4f7fb;
+  --vr-color-surface: rgba(255, 255, 255, 0.94);
+  --vr-color-surface-strong: #ffffff;
+  --vr-color-surface-soft: #f8fbff;
+  --vr-color-text: #203149;
+  --vr-color-text-soft: #65758b;
+  --vr-color-brand: #1f66d1;
+  --vr-color-brand-2: #5f9cff;
+  --vr-color-brand-3: #dfe9ff;
+  --vr-color-success: #1f8a5b;
+  --vr-color-warning: #c37a1f;
+  --vr-color-danger: #c54455;
+  --vr-color-border: #dbe5f0;
+  --vr-color-shell: rgba(255, 255, 255, 0.78);
+  --vr-color-backdrop: rgba(15, 29, 51, 0.38);
+
+  /* Escala de Grises Completa */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* Colores Semánticos Expandidos */
+  --success-50: #ecfdf5;
+  --success-100: #d1fae5;
+  --success-500: #10b981;
+  --success-600: #059669;
+  --success-700: #047857;
+
+  --warning-50: #fffbeb;
+  --warning-100: #fef3c7;
+  --warning-500: #f59e0b;
+  --warning-600: #d97706;
+  --warning-700: #b45309;
+
+  --danger-50: #fef2f2;
+  --danger-100: #fee2e2;
+  --danger-500: #ef4444;
+  --danger-600: #dc2626;
+  --danger-700: #b91c1c;
+
+  --info-50: #eff6ff;
+  --info-100: #dbeafe;
+  --info-500: #3b82f6;
+  --info-600: #2563eb;
+  --info-700: #1d4ed8;
+
+  /* Estados Interactivos */
+  --hover-overlay: rgba(0, 0, 0, 0.04);
+  --active-overlay: rgba(0, 0, 0, 0.08);
+  --disabled-overlay: rgba(0, 0, 0, 0.38);
+
+  /* =========================================================================
+     SOMBRAS - Sistema de elevación
+     ========================================================================= */
+  --vr-shadow-soft: 0 10px 24px rgba(18, 35, 58, 0.08);
+  --vr-shadow-strong: 0 18px 38px rgba(17, 31, 52, 0.16);
+  
+  /* Sombras Expandidas */
+  --shadow-xs: 0 1px 2px rgba(18, 35, 58, 0.06);
+  --shadow-sm: 0 2px 8px rgba(18, 35, 58, 0.08);
+  --shadow-md: 0 4px 16px rgba(18, 35, 58, 0.10);
+  --shadow-lg: 0 8px 24px rgba(18, 35, 58, 0.12);
+  --shadow-xl: 0 16px 40px rgba(18, 35, 58, 0.16);
+  --shadow-2xl: 0 24px 56px rgba(18, 35, 58, 0.20);
+
+  /* Sombras con Color */
+  --shadow-brand: 0 8px 24px rgba(31, 102, 209, 0.24);
+  --shadow-success: 0 8px 24px rgba(31, 138, 91, 0.24);
+  --shadow-danger: 0 8px 24px rgba(197, 68, 85, 0.24);
+  --shadow-warning: 0 8px 24px rgba(195, 122, 31, 0.24);
+
+  /* =========================================================================
+     BORDER RADIUS - Sistema de redondeo
+     ========================================================================= */
+  --vr-radius-sm: 14px;
+  --vr-radius-md: 18px;
+  --vr-radius-lg: 22px;
+
+  /* Radius Expandido */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-3xl: 32px;
+  --radius-full: 9999px;
+
+  /* =========================================================================
+     TRANSICIONES Y ANIMACIONES
+     ========================================================================= */
+  --vr-speed-fast: 150ms;
+  --vr-speed-base: 210ms;
+
+  /* Transiciones Expandidas */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 500ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Easing Functions */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* =========================================================================
+     Z-INDEX SCALE - Capas de elevación
+     ========================================================================= */
+  --z-base: 0;
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-notification: 1080;
+
+  /* =========================================================================
+     BREAKPOINTS - Media query values
+     ========================================================================= */
+  --bp-mobile-xs: 360px;
+  --bp-mobile-sm: 430px;
+  --bp-mobile-md: 640px;
+  --bp-tablet-sm: 768px;
+  --bp-tablet-md: 991px;
+  --bp-desktop-sm: 1200px;
+  --bp-desktop-md: 1400px;
+  --bp-desktop-lg: 1920px;
+  --bp-desktop-xl: 2560px;
+
+  /* =========================================================================
+     TIPOGRAFÍA
+     ========================================================================= */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
+
+  /* Tamaños de Fuente */
+  --text-xs: 0.75rem;      /* 12px */
+  --text-sm: 0.875rem;     /* 14px */
+  --text-base: 1rem;       /* 16px */
+  --text-lg: 1.125rem;     /* 18px */
+  --text-xl: 1.25rem;      /* 20px */
+  --text-2xl: 1.5rem;      /* 24px */
+  --text-3xl: 1.875rem;    /* 30px */
+  --text-4xl: 2.25rem;     /* 36px */
+  --text-5xl: 3rem;        /* 48px */
+
+  /* Pesos de Fuente */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+
+  /* Line Heights */
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose: 2;
+
+  /* =========================================================================
+     SIZING - Tamaños comunes
+     ========================================================================= */
+  --touch-target-min: 44px;
+  --touch-target-comfortable: 48px;
+  --touch-target-spacing: 8px;
+
+  --header-height: 64px;
+  --sidebar-width: 280px;
+  --sidebar-width-collapsed: 64px;
+  --bottom-nav-height: 64px;
+
+  /* =========================================================================
+     FOCUS RING - Outline para accesibilidad
+     ========================================================================= */
+  --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  --focus-ring-offset: 2px;
+}
+
+/* ===========================================================================
+   TEMAS POR ROL (Mantener compatibilidad)
+   =========================================================================== */
+
+[data-role-theme="root"] {
+  --vr-color-bg: #f2f5f8;
+  --vr-color-surface: rgba(255, 255, 255, 0.94);
+  --vr-color-surface-soft: #f8fafc;
+  --vr-color-brand: #516176;
+  --vr-color-brand-2: #95a6bc;
+  --vr-color-brand-3: #dfe6ed;
+  --vr-color-border: #d7dfe8;
+  --vr-color-shell: rgba(242, 245, 248, 0.84);
+}
+
+[data-role-theme="sales"] {
+  --vr-color-bg: #eff7ff;
+  --vr-color-surface-soft: #f7fbff;
+  --vr-color-brand: #2f7dff;
+  --vr-color-brand-2: #8bc2ff;
+  --vr-color-brand-3: #dff0ff;
+  --vr-color-border: #d4e6fb;
+  --vr-color-shell: rgba(239, 247, 255, 0.84);
+}
+
+[data-role-theme="collections"] {
+  --vr-color-bg: #f3efff;
+  --vr-color-surface-soft: #faf8ff;
+  --vr-color-brand: #6d4fd5;
+  --vr-color-brand-2: #b39afc;
+  --vr-color-brand-3: #e8e1ff;
+  --vr-color-border: #ddd6f7;
+  --vr-color-shell: rgba(243, 239, 255, 0.84);
+}
+
+[data-role-theme="forest"] {
+  --vr-color-bg: #edf9f3;
+  --vr-color-surface-soft: #f6fcf8;
+  --vr-color-brand: #1f8a63;
+  --vr-color-brand-2: #64d2a2;
+  --vr-color-brand-3: #dbf5ea;
+  --vr-color-border: #cfe9dd;
+  --vr-color-shell: rgba(237, 249, 243, 0.84);
+}
+
+[data-role-theme="sunset"] {
+  --vr-color-bg: #fff0f7;
+  --vr-color-surface-soft: #fff8fb;
+  --vr-color-brand: #c64d83;
+  --vr-color-brand-2: #f59bc5;
+  --vr-color-brand-3: #ffe0ef;
+  --vr-color-border: #f2d3e1;
+  --vr-color-shell: rgba(255, 240, 247, 0.84);
+}
+
+[data-role-theme="graphite"] {
+  --vr-color-bg: #f2f5f8;
+  --vr-color-surface-soft: #f8fafc;
+  --vr-color-brand: #516176;
+  --vr-color-brand-2: #95a6bc;
+  --vr-color-brand-3: #dfe6ed;
+  --vr-color-border: #d7dfe8;
+  --vr-color-shell: rgba(242, 245, 248, 0.84);
+}
+
+/* ===========================================================================
+   BACKGROUND GRADIENT
+   =========================================================================== */
+
+body {
+  color: var(--vr-color-text);
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--vr-color-brand-2) 14%, transparent) 0%, transparent 34%),
+    linear-gradient(180deg, var(--vr-color-bg) 0%, color-mix(in srgb, var(--vr-color-surface-soft) 85%, #ffffff) 100%);
+  background-color: var(--vr-color-bg);
+  background-attachment: fixed;
+}
+
+/* ===========================================================================
+   RESPONSIVE OVERRIDES - Ajustes por tamaño de pantalla
+   =========================================================================== */
+
+/* Móvil pequeño */
+@media (max-width: 430px) {
+  :root {
+    --text-xs: 0.68rem;
+    --text-sm: 0.75rem;
+    --text-base: 0.875rem;
+    --text-lg: 1rem;
+  }
+}
+
+/* Desktop grande */
+@media (min-width: 1920px) {
+  :root {
+    --text-base: 1.0625rem;  /* Ligeramente más grande en 4K */
+  }
+}
+
+/* ===========================================================================
+   DARK MODE SUPPORT (Preparado para futuro)
+   =========================================================================== */
+
+/* @media (prefers-color-scheme: dark) {
+  :root {
+    Variables para modo oscuro - Implementar en futuro
+  }
+} */
