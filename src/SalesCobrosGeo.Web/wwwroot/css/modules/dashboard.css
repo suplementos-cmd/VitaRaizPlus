@@ -62,3 +62,194 @@
     position: static;
   }
 }
+
+/* ===================================================
+   FILTER SIDEBAR — richer card
+   =================================================== */
+.dashboard-filter-panel {
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--vr-color-brand-3, #e8f0fb) 42%, #ffffff) 0%,
+    #ffffff 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--vr-color-brand, #2f7dff) 14%, #dce6f1);
+  box-shadow: 0 4px 18px rgba(30, 50, 90, 0.08), 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+.dashboard-filter-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--vr-color-brand, #2f7dff);
+}
+
+.dashboard-filter-title::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--vr-color-brand, #2f7dff);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vr-color-brand, #2f7dff) 18%, transparent);
+}
+
+/* ===================================================
+   PANEL HEADER ICON + WRAPPER
+   =================================================== */
+.dashboard-panel-header-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.dashboard-panel-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.dashboard-panel-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.dashboard-panel-icon--sales {
+  background: linear-gradient(135deg, #1656b8 0%, #4a8fff 100%);
+  box-shadow: 0 4px 14px rgba(42, 109, 216, 0.36);
+}
+
+.dashboard-panel-icon--collections {
+  background: linear-gradient(135deg, #0e6e4e 0%, #3fd49e 100%);
+  box-shadow: 0 4px 14px rgba(22, 138, 104, 0.36);
+}
+
+.dashboard-panel-icon--collector {
+  background: linear-gradient(135deg, #5535cc 0%, #9b7bff 100%);
+  box-shadow: 0 4px 14px rgba(109, 79, 224, 0.36);
+}
+
+/* ===================================================
+   PANEL HEAD — subtle brand-tinted gradient
+   =================================================== */
+.admin-panel.dashboard-chart-panel .admin-panel-head {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--vr-color-brand-3, #e8f0fb) 52%, #ffffff) 0%,
+    #ffffff 100%
+  );
+  border-bottom: 1px solid color-mix(in srgb, var(--vr-color-brand, #2f7dff) 10%, #d8e4f0);
+}
+
+.dashboard-panel-total-label {
+  font-size: 0.79rem;
+  font-weight: 800;
+  color: #607590;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dashboard-panel-total-value {
+  display: block;
+  margin-top: 3px;
+  font-size: 1.26rem;
+  font-weight: 800;
+  color: #1b2f48;
+}
+
+/* ===================================================
+   BAR TRACK — glass tint
+   =================================================== */
+.dashboard-bars-fit .dashboard-bar-track {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.78) 0%,
+    color-mix(in srgb, var(--vr-color-brand-3, #e8f0fb) 38%, #f0f5fb) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(3px);
+}
+
+/* ===================================================
+   BAR ENTRY ANIMATION
+   =================================================== */
+@keyframes bar-grow {
+  from {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.dashboard-bar-fill {
+  transform-origin: bottom;
+  animation: bar-grow 0.52s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.dashboard-bar-card:nth-child(1)  .dashboard-bar-fill { animation-delay: 0.04s; }
+.dashboard-bar-card:nth-child(2)  .dashboard-bar-fill { animation-delay: 0.08s; }
+.dashboard-bar-card:nth-child(3)  .dashboard-bar-fill { animation-delay: 0.12s; }
+.dashboard-bar-card:nth-child(4)  .dashboard-bar-fill { animation-delay: 0.16s; }
+.dashboard-bar-card:nth-child(5)  .dashboard-bar-fill { animation-delay: 0.20s; }
+.dashboard-bar-card:nth-child(6)  .dashboard-bar-fill { animation-delay: 0.24s; }
+.dashboard-bar-card:nth-child(7)  .dashboard-bar-fill { animation-delay: 0.28s; }
+.dashboard-bar-card:nth-child(8)  .dashboard-bar-fill { animation-delay: 0.32s; }
+.dashboard-bar-card:nth-child(9)  .dashboard-bar-fill { animation-delay: 0.36s; }
+.dashboard-bar-card:nth-child(10) .dashboard-bar-fill { animation-delay: 0.40s; }
+.dashboard-bar-card:nth-child(11) .dashboard-bar-fill { animation-delay: 0.44s; }
+.dashboard-bar-card:nth-child(12) .dashboard-bar-fill { animation-delay: 0.48s; }
+
+/* ===================================================
+   BAR HOVER — lift + glow
+   =================================================== */
+.dashboard-bar-card {
+  padding-top: 8px;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+              filter 0.18s ease;
+}
+
+.dashboard-bar-card:hover {
+  transform: translateY(-7px) scale(1.04);
+  filter: brightness(1.07) saturate(1.14);
+}
+
+.dashboard-bar-card:active {
+  transform: translateY(-2px) scale(0.97);
+}
+
+.dashboard-bar-card:hover .dashboard-bar-fill.sales {
+  box-shadow: 0 22px 36px rgba(42, 109, 216, 0.42);
+}
+
+.dashboard-bar-card:hover .dashboard-bar-fill.collections {
+  box-shadow: 0 22px 36px rgba(22, 138, 104, 0.42);
+}
+
+.dashboard-bar-card:hover .dashboard-bar-fill.collector {
+  box-shadow: 0 22px 36px rgba(109, 79, 224, 0.42);
+}
+
+/* ===================================================
+   DETAIL BUTTON — icon + text
+   =================================================== */
+.dashboard-detail-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.dashboard-detail-btn svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
