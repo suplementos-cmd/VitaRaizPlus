@@ -18,14 +18,20 @@ public sealed class SalesController : Controller
         _sessionTracker = sessionTracker;
     }
 
-    public IActionResult Index()
+    public IActionResult Index(DateTime? from = null, DateTime? to = null, string? day = null, string? zone = null, string? seller = null)
     {
+        // Parse and validate filters from Dashboard
+        var filterContext = BuildSalesFilterContext(from, to, day, zone, seller);
+        
         var today = DateTime.Today;
         var currentWeekStart = StartOfWeek(today);
         var currentWeekEnd = currentWeekStart.AddDays(6);
-        var sales = _repository.GetAll().ToList();
+        
+        // Apply filters to sales data
+        var allSales = _repository.GetAll().ToList();
+        var filteredSales = ApplySalesFilters(allSales, filterContext);
 
-        var weeks = sales
+        var weeks = filteredSales
             .GroupBy(x => StartOfWeek(x.FechaVenta.Date))
             .OrderByDescending(g => g.Key)
             .Select(g => new SalesWeekGroup
@@ -47,7 +53,8 @@ public sealed class SalesController : Controller
         var model = new SalesListViewModel
         {
             Weeks = weeks,
-            WeeklyCount = sales.Count(x => x.FechaVenta.Date >= currentWeekStart && x.FechaVenta.Date <= currentWeekEnd)
+            WeeklyCount = filteredSales.Count(x => x.FechaVenta.Date >= currentWeekStart && x.FechaVenta.Date <= currentWeekEnd),
+            FilterContext = filterContext
         };
 
         return View(model);
@@ -277,4 +284,102 @@ public sealed class SalesController : Controller
 
         return ModelState.IsValid;
     }
-}
+
+    #region Sales Filtering - Dashboard Integration
+
+    /// <summary>
+    /// Builds a filter context from Dashboard parameters
+    /// </summary>
+    private static SalesFilterContext BuildSalesFilterContext(DateTime? from, DateTime? to, string? day, string? zone, string? seller)
+    {
+        var context = new SalesFilterContext
+        {
+            HasFilters = from.HasValue || to.HasValue || !string.IsNullOrWhiteSpace(day) || !string.IsNullOrWhiteSpace(zone) || !string.IsNullOrWhiteSpace(seller)
+        };
+
+        // Date range filter
+        if (from.HasValue)
+        {
+            context.DateFrom = from.Value.Date;
+        }
+
+        if (to.HasValue)
+        {
+            context.DateTo = to.Value.Date;
+        }
+
+        // Single day filter (overrides date range if provided)
+        if (!string.IsNullOrWhiteSpace(day) && DateTime.TryParse(day, out var dayDate))
+        {
+            context.DateFrom = dayDate.Date;
+            context.DateTo = dayDate.Date;
+            context.FilteredDay = dayDate.Date;
+        }
+
+        // Zone filter
+        if (!string.IsNullOrWhiteSpace(zone))
+        {
+            context.Zone = zone.Trim();
+        }
+
+        // Seller filter
+        if (!string.IsNullOrWhiteSpace(seller))
+        {
+            context.Seller = seller.Trim();
+        }
+
+        return context;
+    }
+
+    /// <summary>
+    /// Applies filters to sales collection
+    /// </summary>
+    private static List<SaleRecord> ApplySalesFilters(List<SaleRecord> sales, SalesFilterContext context)
+    {
+        if (!context.HasFilters)
+        {
+            return sales;
+        }
+
+        var filtered = sales.AsEnumerable();
+
+        // Apply date range filter
+        if (context.DateFrom.HasValue)
+        {
+            filtered = filtered.Where(x => x.FechaVenta.Date >= context.DateFrom.Value);
+        }
+
+        if (context.DateTo.HasValue)
+        {
+            filtered = filtered.Where(x => x.FechaVenta.Date <= context.DateTo.Value);
+        }
+
+        // Apply zone filter
+        if (!string.IsNullOrWhiteSpace(context.Zone))
+        {
+            filtered = filtered.Where(x => string.Equals(x.Zona, context.Zone, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Apply seller filter
+        if (!string.IsNullOrWhiteSpace(context.Seller))
+        {
+            filtered = filtered.Where(x => string.Equals(x.Vendedor, context.Seller, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return filtered.ToList();
+    }
+
+    /// <summary>
+    /// Filter context for sales data
+    /// </summary>
+    private sealed class SalesFilterContext
+    {
+        public bool HasFilters { get; set; }
+        public DateTime? DateFrom { get; set; }
+        public DateTime? DateTo { get; set; }
+        public DateTime? FilteredDay { get; set; }
+        public string? Zone { get; set; }
+        public string? Seller { get; set; }
+    }
+
+    #endregion
