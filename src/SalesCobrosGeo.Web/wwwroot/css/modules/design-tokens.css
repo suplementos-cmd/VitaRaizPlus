@@ -244,6 +244,16 @@ textarea.form-control:focus {
 
 .app-empty-state.compact {
   min-height: auto;
+  padding: 18px;
+  gap: 4px;
+}
+
+.app-empty-state.compact strong {
+  font-size: 0.88rem;
+}
+
+.app-empty-state.compact span {
+  font-size: 0.78rem;
 }
 
 .app-skeleton {

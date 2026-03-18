@@ -3786,6 +3786,15 @@ textarea.form-control {
   .collector-register-history {
     padding: 0.9rem;
   }
+
+  .collector-register-history .card-header {
+    padding: 0.75rem 0.9rem;
+    font-size: 0.92rem;
+  }
+
+  .collector-register-history .card-body {
+    padding: 0.75rem 0.9rem;
+  }
 }
 
 @media (max-width: 640px) {
@@ -3866,6 +3875,15 @@ textarea.form-control {
     padding: 0.75rem;
   }
 
+  .collector-register-history .card-header {
+    padding: 0.65rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .collector-register-history .card-body {
+    padding: 0.65rem 0.75rem;
+  }
+
   .mobile-bottom-nav {
     width: calc(100vw - 8px);
     bottom: 4px;
@@ -3895,6 +3913,15 @@ textarea.form-control {
   .sale-touch-card.compact,
   .collector-sale-card.compact {
     padding: 6px;
+  }
+
+  .collector-register-history .card-header {
+    padding: 0.55rem 0.65rem;
+    font-size: 0.88rem;
+  }
+
+  .collector-register-history .card-body {
+    padding: 0.55rem 0.65rem;
   }
 
   .sales-week-body {
