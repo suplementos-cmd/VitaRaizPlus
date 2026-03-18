@@ -19,12 +19,14 @@
             </div>
         </div>
         <div class="sales-desktop-header-actions">
-            <div class="sales-desktop-search-modern">
+            <form method="get" asp-controller="Sales" asp-action="Index" class="sales-desktop-search-modern">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                 </svg>
-                <input id="salesDesktopSearch" type="search" placeholder="Buscar cliente, zona, vendedora..." autocomplete="off" />
-            </div>
+                <input name="q" id="salesDesktopSearch" type="search"
+                       value="@Model.Query.SearchText"
+                       placeholder="Buscar cliente, zona, vendedora..." autocomplete="off" />
+            </form>
             <a class="btn-modern-primary" asp-controller="Sales" asp-action="Create">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M12 5v14M5 12h14"/>
@@ -84,9 +86,8 @@
                                 @foreach (var sale in group.Sales)
                                 {
                                     var firstProduct = sale.Productos.FirstOrDefault()?.ProductCode ?? sale.Producto;
-                                    var saleSearch = $"{sale.NombreCliente} {sale.Zona} {sale.DiaCobro} {sale.Vendedor} {firstProduct}".ToLowerInvariant();
                                     var mapsUrl = $"https://maps.google.com/?q={sale.Coordenadas}";
-                                    <article class="sales-desktop-item-compact" data-sales-search="@saleSearch">
+                                    <article class="sales-desktop-item-compact">
                                         <div class="sales-desktop-item-image">
                                             <img class="image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoFachada, "https://placehold.co/80x80?text=V")" alt="Fachada" loading="lazy" decoding="async" />
                                         </div>

@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using SalesCobrosGeo.Shared;
 using SalesCobrosGeo.Web.Data;
 using SalesCobrosGeo.Web.Models.Maintenance;
 using SalesCobrosGeo.Web.Models.Sales;
@@ -127,6 +128,69 @@ public sealed class SqliteSalesRepository : ISalesRepository
             .OrderByDescending(x => x.FechaActu)
             .Select(MapSale)
             .ToArray();
+    }
+
+    public PagedResult<SaleRecord> GetPaged(SalesQuery query, int page, int pageSize = 25)
+    {
+        var safePage = Math.Max(1, page);
+        var safeSize = Math.Clamp(pageSize, 1, 200);
+
+        // Build queryable — EF Core translates these to SQL WHERE clauses
+        IQueryable<SaleEntity> q = _dbContext.Sales.AsNoTracking();
+
+        if (query.DateFrom.HasValue)
+        {
+            q = q.Where(x => x.FechaVenta >= query.DateFrom.Value);
+        }
+
+        if (query.DateTo.HasValue)
+        {
+            var toInclusive = query.DateTo.Value.Date.AddDays(1);
+            q = q.Where(x => x.FechaVenta < toInclusive);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Zone))
+        {
+            q = q.Where(x => x.Zona == query.Zone);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Seller))
+        {
+            q = q.Where(x => x.Vendedor == query.Seller);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Estado))
+        {
+            q = q.Where(x => x.Estado == query.Estado);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.SearchText))
+        {
+            var term = $"%{query.SearchText.Trim()}%";
+            // SQLite LIKE is case-insensitive for ASCII — no .ToUpper() needed
+            q = q.Where(x =>
+                EF.Functions.Like(x.NombreCliente, term) ||
+                EF.Functions.Like(x.Zona, term) ||
+                EF.Functions.Like(x.Vendedor, term) ||
+                EF.Functions.Like(x.Celular, term));
+        }
+
+        var totalCount = q.Count();
+        var items = q
+            .OrderByDescending(x => x.FechaVenta)
+            .ThenBy(x => x.NombreCliente)
+            .Skip((safePage - 1) * safeSize)
+            .Take(safeSize)
+            .Select(MapSale)
+            .ToArray();
+
+        return new PagedResult<SaleRecord>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = safePage,
+            PageSize = safeSize
+        };
     }
 
     public SaleRecord? GetById(string idV)

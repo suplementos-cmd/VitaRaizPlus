@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -19,6 +20,11 @@ builder.Services.AddControllersWithViews(options =>
 });
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<ISalesRepository, SqliteSalesRepository>();
+builder.Services.AddScoped<ISalesQueryService, SalesQueryService>();
+builder.Services.AddScoped<IPhotoStorage, LocalDiskPhotoStorage>();
+
+// FluentValidation — scans current assembly for all AbstractValidator<T> implementations
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 var dataPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data");
 Directory.CreateDirectory(dataPath);

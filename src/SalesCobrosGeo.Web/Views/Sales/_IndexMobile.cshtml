@@ -26,12 +26,13 @@
     </div>
 
     <section class="sales-app-search" data-sales-search-shell="true" hidden>
-        <div class="sales-search-compact">
+        <form method="get" asp-controller="Sales" asp-action="Index" class="sales-search-compact">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
-            <input id="salesAppSearch" type="search" placeholder="Buscar cliente, zona, vendedora..." autocomplete="off" />
-        </div>
+            <input name="q" id="salesAppSearch" type="search" placeholder="Buscar cliente, zona, vendedora..." autocomplete="off" />
+            <button type="submit" class="visually-hidden" aria-label="Buscar">Buscar</button>
+        </form>
     </section>
 
     @if (TempData["SalesMessage"] is string msg)
@@ -79,9 +80,8 @@
                         foreach (var sale in group.Sales)
                         {
                             var firstProduct = sale.Productos.FirstOrDefault()?.ProductCode ?? sale.Producto;
-                            var saleSearch = $"{sale.NombreCliente} {sale.Zona} {sale.DiaCobro} {sale.Vendedor} {firstProduct}".ToLowerInvariant();
                             var mapsUrl = $"https://maps.google.com/?q={sale.Coordenadas}";
-                            <article class="sales-card-compact" data-sales-search="@saleSearch">
+                            <article class="sales-card-compact">
                                 <a class="sales-card-link" asp-controller="Sales" asp-action="Details" asp-route-id="@sale.IdV">
                                     <div class="sales-card-image">
                                         <img class="image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoFachada, "https://placehold.co/64x64?text=V")" alt="Fachada" loading="lazy" decoding="async" />

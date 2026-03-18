@@ -1,7 +1,7 @@
 @model SalesCobrosGeo.Web.Models.Sales.SalesListViewModel
 @using SalesCobrosGeo.Web.Models.Shared
 @{
-    ViewData["Title"] = "Perfil ventas";
+    ViewData["Title"] = "Ventas";
     ViewData["MobileContextBar"] = new MobileContextBarModel(
         "Ventas",
         "Semana actual",
@@ -12,6 +12,75 @@
         });
 }
 
+@* ── Filter bar (shared between mobile and desktop) ──────────────────────── *@
+<form id="salesFilterForm" method="get" asp-action="Index" class="sales-filter-bar" role="search" aria-label="Filtrar ventas">
+    <div class="sales-filter-row">
+        <input type="search" name="q" value="@Model.Query.SearchText" placeholder="Buscar cliente, zona…"
+               class="sales-filter-input sales-filter-search" id="salesFilterQ" autocomplete="off" />
+
+        <input type="date" name="from" value="@(Model.Query.DateFrom?.ToString("yyyy-MM-dd"))"
+               class="sales-filter-input" title="Desde" />
+        <input type="date" name="to" value="@(Model.Query.DateTo?.ToString("yyyy-MM-dd"))"
+               class="sales-filter-input" title="Hasta" />
+
+        <select name="zone" class="sales-filter-select">
+            <option value="">Zona</option>
+            @if (Model.Weeks.SelectMany(w => w.Days).SelectMany(d => d.Sales)
+                    .Select(s => s.Zona).Distinct().OrderBy(z => z) is var zones)
+            {
+                foreach (var z in zones)
+                {
+                    <option value="@z" selected="@(z == Model.Query.Zone)">@z</option>
+                }
+            }
+        </select>
+
+        <select name="seller" class="sales-filter-select">
+            <option value="">Vendedor</option>
+            @{
+                var sellers = Model.Weeks.SelectMany(w => w.Days).SelectMany(d => d.Sales)
+                    .Select(s => s.Vendedor).Distinct().OrderBy(s => s).ToList();
+            }
+            @foreach (var s in sellers)
+            {
+                <option value="@s" selected="@(s == Model.Query.Seller)">@s</option>
+            }
+        </select>
+
+        <button type="submit" class="sales-filter-btn-apply">Filtrar</button>
+        @if (Model.Query.HasFilters)
+        {
+            <a asp-action="Index" class="sales-filter-btn-clear" title="Quitar filtros">&#10005;</a>
+        }
+    </div>
+
+    @if (Model.Query.HasFilters)
+    {
+        <div class="sales-filter-active-summary">
+            @Model.TotalCount resultado(s) encontrado(s)
+            @if (!string.IsNullOrWhiteSpace(Model.Query.SearchText))
+            {
+                <span class="sales-filter-chip">«@Model.Query.SearchText»</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.Query.Zone))
+            {
+                <span class="sales-filter-chip">Zona: @Model.Query.Zone</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.Query.Seller))
+            {
+                <span class="sales-filter-chip">Vendedor: @Model.Query.Seller</span>
+            }
+            @if (Model.Query.DateFrom.HasValue || Model.Query.DateTo.HasValue)
+            {
+                <span class="sales-filter-chip">
+                    @(Model.Query.DateFrom?.ToString("dd/MM") ?? "…") — @(Model.Query.DateTo?.ToString("dd/MM") ?? "…")
+                </span>
+            }
+        </div>
+    }
+</form>
+
+@* ── Responsive viewports ─────────────────────────────────────────────────── *@
 <div class="app-viewport-mobile">
     <partial name="_IndexMobile" model="Model" />
 </div>
@@ -19,3 +88,33 @@
 <div class="app-viewport-desktop">
     <partial name="_IndexDesktop" model="Model" />
 </div>
+
+@* ── Pagination footer ────────────────────────────────────────────────────── *@
+@if (Model.TotalPages > 1)
+{
+    <nav class="sales-pagination" aria-label="Paginación de ventas">
+        @if (Model.HasPreviousPage)
+        {
+            <a asp-action="Index"
+               asp-route-page="@(Model.CurrentPage - 1)"
+               asp-route-q="@Model.Query.SearchText"
+               asp-route-zone="@Model.Query.Zone"
+               asp-route-seller="@Model.Query.Seller"
+               asp-route-from="@Model.Query.DateFrom?.ToString("yyyy-MM-dd")"
+               asp-route-to="@Model.Query.DateTo?.ToString("yyyy-MM-dd")"
+               class="sales-page-btn">&#8592; Anterior</a>
+        }
+        <span class="sales-page-info">Página @Model.CurrentPage de @Model.TotalPages (@Model.TotalCount total)</span>
+        @if (Model.HasNextPage)
+        {
+            <a asp-action="Index"
+               asp-route-page="@(Model.CurrentPage + 1)"
+               asp-route-q="@Model.Query.SearchText"
+               asp-route-zone="@Model.Query.Zone"
+               asp-route-seller="@Model.Query.Seller"
+               asp-route-from="@Model.Query.DateFrom?.ToString("yyyy-MM-dd")"
+               asp-route-to="@Model.Query.DateTo?.ToString("yyyy-MM-dd")"
+               class="sales-page-btn">Siguiente &#8594;</a>
+        }
+    </nav>
+}

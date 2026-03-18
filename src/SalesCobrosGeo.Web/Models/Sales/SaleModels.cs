@@ -1,4 +1,52 @@
+using SalesCobrosGeo.Shared;
+
 namespace SalesCobrosGeo.Web.Models.Sales;
+
+// ---------------------------------------------------------------------------
+// Query / paging types
+// ---------------------------------------------------------------------------
+
+/// <summary>
+/// Immutable filter bag for server-side sale queries.
+/// All fields are optional; null means "no filter on this dimension".
+/// </summary>
+public sealed record SalesQuery(
+    DateTime? DateFrom = null,
+    DateTime? DateTo = null,
+    string? Zone = null,
+    string? Seller = null,
+    string? SearchText = null,
+    string? Estado = null)
+{
+    /// <summary>True when at least one filter dimension is non-null / non-empty.</summary>
+    public bool HasFilters =>
+        DateFrom.HasValue || DateTo.HasValue ||
+        !string.IsNullOrWhiteSpace(Zone) ||
+        !string.IsNullOrWhiteSpace(Seller) ||
+        !string.IsNullOrWhiteSpace(SearchText) ||
+        !string.IsNullOrWhiteSpace(Estado);
+
+    /// <summary>Convenience: a query that matches everything.</summary>
+    public static SalesQuery Empty => new();
+}
+
+/// <summary>
+/// Generic paged result envelope returned by server-side paginated queries.
+/// </summary>
+public sealed class PagedResult<T>
+{
+    public IReadOnlyList<T> Items { get; init; } = [];
+    public int TotalCount { get; init; }
+    public int Page { get; init; }
+    public int PageSize { get; init; }
+    public int TotalPages => TotalCount == 0 ? 0 : (int)Math.Ceiling((double)TotalCount / PageSize);
+    public bool HasPreviousPage => Page > 1;
+    public bool HasNextPage => Page < TotalPages;
+}
+
+// ---------------------------------------------------------------------------
+// Catalog / option types
+// ---------------------------------------------------------------------------
 
 public sealed record CatalogOption(string Code, string Name);
 public sealed record ProductOption(string Code, string Name, decimal Price);
@@ -105,7 +153,14 @@ public sealed class SalesListViewModel
 {
     public IReadOnlyList<SalesWeekGroup> Weeks { get; set; } = [];
     public int WeeklyCount { get; set; }
-    public object? FilterContext { get; set; }
+
+    // Paging & filter context (populated by SalesQueryService)
+    public SalesQuery Query { get; set; } = SalesQuery.Empty;
+    public int CurrentPage { get; set; } = 1;
+    public int TotalPages { get; set; } = 1;
+    public int TotalCount { get; set; }
+    public bool HasPreviousPage => CurrentPage > 1;
+    public bool HasNextPage => CurrentPage < TotalPages;
 }
 
 public sealed class SaleDetailViewModel
@@ -243,4 +298,33 @@ public sealed class CollectionHistoryViewModel
     public string Outcome { get; set; } = string.Empty;
     public IReadOnlyList<CollectionHistorySummaryCard> SummaryCards { get; set; } = [];
     public IReadOnlyList<CollectionRecord> Records { get; set; } = [];
+}
+
+// ---------------------------------------------------------------------------
+// Server-side search DTO  (returned by GET /Sales/Search?q=...)
+// ---------------------------------------------------------------------------
+
+/// <summary>
+/// Lightweight DTO returned by the JSON search endpoint.
+/// Designed to be rendered client-side or replaced via HTMX partial.
+/// </summary>
+public sealed record SalesSearchItem(
+    string IdV,
+    string NombreCliente,
+    string Zona,
+    string DiaCobro,
+    string FormaPago,
+    string Vendedor,
+    string FirstProduct,
+    decimal ImporteTotal,
+    string? Coordenadas,
+    string? Celular,
+    string? FotoFachada,
+    string Estado);
+
+public sealed class SalesSearchResult
+{
+    public IReadOnlyList<SalesSearchItem> Items { get; init; } = [];
+    public int TotalCount { get; init; }
+    public bool IsTruncated { get; init; }
 }

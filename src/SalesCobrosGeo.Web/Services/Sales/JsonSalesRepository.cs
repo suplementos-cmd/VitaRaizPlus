@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using SalesCobrosGeo.Shared;
 using SalesCobrosGeo.Web.Models.Maintenance;
 using SalesCobrosGeo.Web.Models.Sales;
 
@@ -12,6 +13,12 @@ public interface ISalesRepository
     MaintenanceCatalogRecord SaveMaintenanceCatalogItem(MaintenanceCatalogSaveInput input);
     bool DeleteMaintenanceCatalogItem(string section, long id);
     IReadOnlyList<SaleRecord> GetAll();
+    /// <summary>
+    /// Server-side paged + filtered query.
+    /// All filtering and ordering happen in this method; the caller receives
+    /// only the requested page and a total count for pagination controls.
+    /// </summary>
+    PagedResult<SaleRecord> GetPaged(SalesQuery query, int page, int pageSize = 25);
     SaleRecord? GetById(string idV);
     SaleRecord Create(SaleFormInput input);
     SaleRecord Update(string idV, SaleFormInput input);
@@ -144,6 +151,77 @@ public sealed class JsonSalesRepository : ISalesRepository
         {
             return LoadSales().OrderByDescending(x => x.FechaActu).ToArray();
         }
+    }
+
+    public PagedResult<SaleRecord> GetPaged(SalesQuery query, int page, int pageSize = 25)
+    {
+        lock (_sync)
+        {
+            var filtered = ApplyQuery(LoadSales().AsEnumerable(), query)
+                .OrderByDescending(x => x.FechaVenta)
+                .ThenBy(x => x.NombreCliente)
+                .ToArray();
+
+            var totalCount = filtered.Length;
+            var safePage = Math.Max(1, page);
+            var safeSize = Math.Clamp(pageSize, 1, 200);
+            var items = filtered.Skip((safePage - 1) * safeSize).Take(safeSize).ToArray();
+
+            return new PagedResult<SaleRecord>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = safePage,
+                PageSize = safeSize
+            };
+        }
+    }
+
+    private static IEnumerable<SaleRecord> ApplyQuery(IEnumerable<SaleRecord> source, SalesQuery query)
+    {
+        if (!query.HasFilters)
+        {
+            return source;
+        }
+
+        var q = source;
+        if (query.DateFrom.HasValue)
+        {
+            q = q.Where(x => x.FechaVenta.Date >= query.DateFrom.Value);
+        }
+
+        if (query.DateTo.HasValue)
+        {
+            q = q.Where(x => x.FechaVenta.Date <= query.DateTo.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Zone))
+        {
+            q = q.Where(x => string.Equals(x.Zona, query.Zone, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Seller))
+        {
+            q = q.Where(x => string.Equals(x.Vendedor, query.Seller, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Estado))
+        {
+            q = q.Where(x => string.Equals(x.Estado, query.Estado, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.SearchText))
+        {
+            var term = query.SearchText.Trim().ToUpperInvariant();
+            q = q.Where(x =>
+                x.NombreCliente.ToUpperInvariant().Contains(term) ||
+                x.Zona.ToUpperInvariant().Contains(term) ||
+                x.Vendedor.ToUpperInvariant().Contains(term) ||
+                x.Celular.Contains(term) ||
+                x.Productos.Any(p => p.ProductCode.ToUpperInvariant().Contains(term)));
+        }
+
+        return q;
     }
 
     public SaleRecord? GetById(string idV)
