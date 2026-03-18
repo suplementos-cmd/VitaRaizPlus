@@ -2418,15 +2418,15 @@
 .collector-history-summarygrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .collector-history-summarycard,
 .collector-mobile-historycard {
   display: grid;
-  gap: 2px;
-  padding: 12px 14px;
-  border-radius: 18px;
+  gap: 1px;
+  padding: 10px 12px;
+  border-radius: 16px;
   background: rgba(255,255,255,0.96);
   border: 1px solid rgba(50, 78, 128, 0.08);
   color: #183864;
@@ -2436,21 +2436,21 @@
 
 .collector-history-summarycard span,
 .collector-mobile-historycard strong {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 800;
   line-height: 1.05;
 }
 
 .collector-history-summarycard strong,
 .collector-mobile-historycard b {
-  font-size: 1.25rem;
+  font-size: 1.18rem;
   color: #153561;
 }
 
 .collector-history-summarycard small,
 .collector-mobile-historycard span {
   color: #6f819a;
-  font-size: 0.72rem;
+  font-size: 0.69rem;
 }
 
 .collector-history-summarycard.active,
@@ -2485,6 +2485,10 @@
   gap: 12px;
 }
 
+.collector-history-shell {
+  gap: 10px;
+}
+
 .collector-history-panel {
   padding: 16px;
   border-radius: 22px;
@@ -2494,8 +2498,8 @@
 }
 
 .collector-history-panel-compact {
-  padding: 12px;
-  border-radius: 18px;
+  padding: 10px;
+  border-radius: 16px;
 }
 
 .collector-history-panelhead {
@@ -2509,11 +2513,11 @@
 .collector-history-panelhead span { color: #6f819a; font-size: 0.8rem; }
 
 .collector-history-panelhead.compact strong {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .collector-history-panelhead.compact span {
-  font-size: 0.74rem;
+  font-size: 0.72rem;
 }
 
 .collector-history-record {
@@ -2528,14 +2532,15 @@
 }
 
 .collector-history-records-compact {
-  gap: 8px;
+  gap: 6px;
 }
 
 .collector-history-recordlink {
   grid-template-columns: minmax(0, 1.5fr) auto auto;
   text-decoration: none;
-  padding: 10px 12px;
-  border-radius: 16px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  gap: 10px;
   transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 
@@ -2550,7 +2555,7 @@
 .collector-history-recordactions,
 .collector-history-recordaside {
   display: grid;
-  gap: 3px;
+  gap: 2px;
 }
 
 .collector-history-recordcopy strong,
@@ -2567,13 +2572,13 @@
 
 .collector-history-recordcopy.compact strong,
 .collector-history-recordmeta.compact strong {
-  font-size: 0.88rem;
+  font-size: 0.85rem;
 }
 
 .collector-history-recordcopy.compact span,
 .collector-history-recordcopy.compact small,
 .collector-history-recordmeta.compact span {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
 }
 
 .collector-history-recordaside {
@@ -2582,7 +2587,7 @@
 }
 
 .collector-history-recordstate {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2649,16 +2654,16 @@
 
 .collector-history-list.compact-rows {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .collector-history-row {
   display: grid;
   grid-template-columns: 1.1fr .85fr .85fr .95fr 20px;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
-  padding: 10px 12px;
-  border-radius: 16px;
+  padding: 8px 10px;
+  border-radius: 14px;
   border: 1px solid rgba(50, 78, 128, 0.08);
   background: #fff;
   text-decoration: none;
@@ -2673,18 +2678,18 @@
 
 .collector-history-rowcell {
   display: grid;
-  gap: 2px;
+  gap: 1px;
 }
 
 .collector-history-rowcell span,
 .collector-history-rowcell small {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: #6f819a;
 }
 
 .collector-history-rowcell strong {
   color: #163864;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
 }
 
 .collector-history-rowmoney strong.is-positive { color: #177246; }
@@ -2696,8 +2701,8 @@
 }
 
 .collector-history-rowstatus .status-chip {
-  font-size: 0.67rem;
-  padding: 4px 8px;
+  font-size: 0.65rem;
+  padding: 3px 7px;
 }
 
 .collector-history-rowarrow {
@@ -2705,7 +2710,7 @@
 }
 
 .collector-history-rowarrow span {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   color: #5f7395;
 }
 
@@ -2779,8 +2784,8 @@
 
   .collector-history-row {
     grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 10px;
+    gap: 6px;
+    padding: 8px;
   }
 
   .collector-history-rowstatus,
@@ -3399,8 +3404,8 @@
 }
 
 .collector-mobile-treearrow svg {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   display: block;
 }
 
