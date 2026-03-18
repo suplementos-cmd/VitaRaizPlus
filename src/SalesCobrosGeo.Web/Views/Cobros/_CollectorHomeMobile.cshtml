@@ -73,11 +73,20 @@
                 </div>
                 <div class="collector-mobile-treeaside">
                     <span class="collector-mobile-treecount">@card.Count</span>
-                    <span class="collector-mobile-treearrow">&rsaquo;</span>
+                    <span class="collector-mobile-treearrow">
+                        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8.22 5.22a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 010-1.06z" clip-rule="evenodd"/></svg>
+                    </span>
                 </div>
             </a>
         }
     </div>
+    @if (Model.TodayClients.Any())
+    {
+        <div class="collector-mobile-section-label">
+            <span>Clientes de hoy</span>
+            <span class="cmsl-count">@Model.TodayClients.Count</span>
+        </div>
+    }
     <div class="collector-mobile-compactlist">
         @foreach (var item in Model.TodayClients)
         {
