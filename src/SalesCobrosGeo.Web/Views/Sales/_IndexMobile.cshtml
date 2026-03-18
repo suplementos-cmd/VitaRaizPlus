@@ -7,52 +7,73 @@
             : "/" + path);
 }
 
-<div class="ventas-mobile">
-    <div class="ventas-toolbar">
-        <div class="ventas-toolbar-copy">
-            <div class="ventas-title">Perfil ventas</div>
-            <div class="ventas-subtitle">Ventas agrupadas por semana y dia</div>
+<div class="ventas-mobile sales-modern-mobile">
+    <div class="sales-compact-toolbar">
+        <div class="sales-toolbar-header">
+            <svg class="sales-header-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/>
+            </svg>
+            <div class="sales-toolbar-text">
+                <h1 class="sales-toolbar-title">Ventas</h1>
+                <span class="sales-toolbar-subtitle">@Model.Weeks.SelectMany(w => w.Days).SelectMany(d => d.Sales).Count() registros totales</span>
+            </div>
         </div>
-        <button type="button" class="sales-toolbar-searchbtn" data-sales-search-toggle="true" aria-label="Buscar ventas">
-            <span aria-hidden="true">&#8981;</span>
+        <button type="button" class="sales-search-toggle" data-sales-search-toggle="true" aria-label="Buscar ventas">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
         </button>
     </div>
 
     <section class="sales-app-search" data-sales-search-shell="true" hidden>
-        <div class="sales-app-search-box">
-            <span class="sales-app-search-icon" aria-hidden="true">&#8981;</span>
-            <input id="salesAppSearch" type="search" placeholder="Buscar cliente, zona, producto o vendedora" autocomplete="off" />
+        <div class="sales-search-compact">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input id="salesAppSearch" type="search" placeholder="Buscar cliente, zona, vendedora..." autocomplete="off" />
         </div>
     </section>
 
     @if (TempData["SalesMessage"] is string msg)
     {
-        <div class="alert alert-success mt-2">@msg</div>
+        <div class="alert alert-success alert-compact">@msg</div>
     }
 
     @if (Model.Weeks.Count == 0)
     {
-        <div class="card mt-3"><div class="card-body text-center text-muted">No hay ventas registradas.</div></div>
+        <div class="sales-empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/>
+            </svg>
+            <p>No hay ventas registradas</p>
+        </div>
     }
     else
     {
         foreach (var week in Model.Weeks)
         {
-            <details class="sales-week-accordion" @(week.IsCurrentWeek ? "open" : null)>
-                <summary class="sales-week-summary">
-                    <div>
-                        <div class="sales-week-title">Semana @week.WeekStart.ToString("dd/MM") - @week.WeekEnd.ToString("dd/MM")</div>
-                        <div class="sales-week-meta">@week.Days.Sum(x => x.Sales.Count) ventas</div>
+            <details class="sales-week-compact" @(week.IsCurrentWeek ? "open" : null)>
+                <summary class="sales-week-header-compact">
+                    <div class="sales-week-info">
+                        <span class="sales-week-label">@week.WeekStart.ToString("dd/MM") - @week.WeekEnd.ToString("dd/MM")</span>
+                        <span class="sales-week-badge">@week.Days.Sum(x => x.Sales.Count)</span>
+                        @if (week.IsCurrentWeek)
+                        {
+                            <span class="sales-current-badge">Actual</span>
+                        }
                     </div>
-                    <span class="sales-week-toggle">+</span>
+                    <svg class="sales-week-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="m6 9 6 6 6-6"/>
+                    </svg>
                 </summary>
 
-                <div class="sales-week-body">
+                <div class="sales-week-content">
                     @foreach (var group in week.Days)
                     {
-                        <div class="day-header compact sales-app-dayhead">
-                            <span>@group.Day.ToString("ddd dd/MM")</span>
-                            <span class="day-count">@group.Sales.Count</span>
+                        <div class="sales-day-separator">
+                            <span class="sales-day-label">@group.Day.ToString("ddd dd/MM")</span>
+                            <div class="sales-day-line"></div>
+                            <span class="sales-day-count">@group.Sales.Count</span>
                         </div>
 
                         foreach (var sale in group.Sales)
@@ -60,35 +81,42 @@
                             var firstProduct = sale.Productos.FirstOrDefault()?.ProductCode ?? sale.Producto;
                             var saleSearch = $"{sale.NombreCliente} {sale.Zona} {sale.DiaCobro} {sale.Vendedor} {firstProduct}".ToLowerInvariant();
                             var mapsUrl = $"https://maps.google.com/?q={sale.Coordenadas}";
-                            <article class="sales-app-record" data-sales-search="@saleSearch">
-                                <a class="sales-app-record-link" asp-controller="Sales" asp-action="Details" asp-route-id="@sale.IdV">
-                                    <div class="sales-app-record-photo">
-                                        <img class="image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoFachada, "https://placehold.co/96x96?text=Venta")" alt="Fachada" loading="lazy" decoding="async" />
+                            <article class="sales-card-compact" data-sales-search="@saleSearch">
+                                <a class="sales-card-link" asp-controller="Sales" asp-action="Details" asp-route-id="@sale.IdV">
+                                    <div class="sales-card-image">
+                                        <img class="image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoFachada, "https://placehold.co/64x64?text=V")" alt="Fachada" loading="lazy" decoding="async" />
                                     </div>
-                                    <div class="sales-app-record-body">
-                                        <div class="sales-app-record-top">
-                                            <strong class="sales-app-record-client">@sale.NombreCliente</strong>
-                                            <span class="sales-app-record-amount">@sale.ImporteTotal.ToString("0,0")</span>
+                                    <div class="sales-card-content">
+                                        <div class="sales-card-row1">
+                                            <strong class="sales-client-name">@sale.NombreCliente</strong>
+                                            <span class="sales-amount">$@sale.ImporteTotal.ToString("N0")</span>
                                         </div>
-                                        <div class="sales-app-record-line">
-                                            <span class="sales-app-record-zone">@sale.Zona</span>
-                                            <span>@sale.DiaCobro</span>
+                                        <div class="sales-card-row2">
+                                            <span class="sales-zone-tag">@sale.Zona</span>
+                                            <span class="sales-day-tag">@sale.DiaCobro</span>
+                                            <span class="sales-payment-tag">@sale.FormaPago</span>
                                         </div>
-                                        <div class="sales-app-record-line muted">
-                                            <span>@sale.Vendedor</span>
-                                            <span>@sale.FormaPago</span>
+                                        <div class="sales-card-row3">
+                                            <span class="sales-product-name">@firstProduct</span>
                                         </div>
-                                        <div class="sales-app-record-product">@firstProduct</div>
                                     </div>
                                 </a>
-                                <div class="sales-app-record-actions">
+                                <div class="sales-card-actions">
                                     @if (!string.IsNullOrWhiteSpace(sale.Coordenadas))
                                     {
-                                        <a class="sales-app-actionbtn" href="@mapsUrl" target="_blank" rel="noopener noreferrer">GPS</a>
+                                        <a class="sales-action-icon" href="@mapsUrl" target="_blank" rel="noopener noreferrer" aria-label="Ver mapa">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/>
+                                            </svg>
+                                        </a>
                                     }
                                     @if (!string.IsNullOrWhiteSpace(sale.Celular))
                                     {
-                                        <a class="sales-app-actionbtn" href="tel:@sale.Celular">TEL</a>
+                                        <a class="sales-action-icon" href="tel:@sale.Celular" aria-label="Llamar">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                                            </svg>
+                                        </a>
                                     }
                                 </div>
                             </article>
@@ -99,5 +127,9 @@
         }
     }
 
-    <a class="sales-app-fab" asp-controller="Sales" asp-action="Create" aria-label="Agregar venta">+</a>
+    <a class="sales-fab-compact" asp-controller="Sales" asp-action="Create" aria-label="Agregar venta">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 5v14M5 12h14"/>
+        </svg>
+    </a>
 </div>
