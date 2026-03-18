@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using SalesCobrosGeo.Web.Data;
 using SalesCobrosGeo.Web.Models.Maintenance;
 using SalesCobrosGeo.Web.Models.Sales;
@@ -11,30 +12,39 @@ namespace SalesCobrosGeo.Web.Services.Sales;
 public sealed class SqliteSalesRepository : ISalesRepository
 {
     private readonly AppSecurityDbContext _dbContext;
+    private readonly IMemoryCache _cache;
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
+    private const string CatalogsCacheKey = "SalesCatalogs";
+    private static readonly TimeSpan CatalogsCacheDuration = TimeSpan.FromHours(1);
 
-    public SqliteSalesRepository(AppSecurityDbContext dbContext)
+    public SqliteSalesRepository(AppSecurityDbContext dbContext, IMemoryCache cache)
     {
         _dbContext = dbContext;
+        _cache = cache;
     }
 
     public SalesCatalogs GetCatalogs()
     {
-        var items = _dbContext.CatalogItems
-            .AsNoTracking()
-            .Where(x => x.IsActive)
-            .OrderBy(x => x.SortOrder)
-            .ThenBy(x => x.Name)
-            .ToList();
+        return _cache.GetOrCreate(CatalogsCacheKey, entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CatalogsCacheDuration;
+            
+            var items = _dbContext.CatalogItems
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.SortOrder)
+                .ThenBy(x => x.Name)
+                .ToList();
 
-        return new SalesCatalogs(
-            items.Where(x => x.Category == "zone").Select(x => new CatalogOption(x.Code, x.Name)).ToArray(),
-            items.Where(x => x.Category == "payment").Select(x => new CatalogOption(x.Code, x.Name)).ToArray(),
-            items.Where(x => x.Category == "collection_day").Select(x => new CatalogOption(x.Code, x.Name)).ToArray(),
-            items.Where(x => x.Category == "product").Select(x => new ProductOption(x.Code, x.Name, x.Price ?? 0m)).ToArray(),
-            items.Where(x => x.Category == "seller").Select(x => new CatalogOption(x.Code, x.Name)).ToArray(),
-            items.Where(x => x.Category == "collector").Select(x => new CatalogOption(x.Code, x.Name)).ToArray(),
-            items.Where(x => x.Category == "sale_status").Select(x => new CatalogOption(x.Code, x.Name)).ToArray());
+            return new SalesCatalogs(
+                items.Where(x => x.Category == "zone").Select(x => new CatalogOption(x.Code, x.Name)).ToArray(),
+                items.Where(x => x.Category == "payment").Select(x => new CatalogOption(x.Code, x.Name)).ToArray(),
+                items.Where(x => x.Category == "collection_day").Select(x => new CatalogOption(x.Code, x.Name)).ToArray(),
+                items.Where(x => x.Category == "product").Select(x => new ProductOption(x.Code, x.Name, x.Price ?? 0m)).ToArray(),
+                items.Where(x => x.Category == "seller").Select(x => new CatalogOption(x.Code, x.Name)).ToArray(),
+                items.Where(x => x.Category == "collector").Select(x => new CatalogOption(x.Code, x.Name)).ToArray(),
+                items.Where(x => x.Category == "sale_status").Select(x => new CatalogOption(x.Code, x.Name)).ToArray());
+        })!;
     }
 
     public IReadOnlyList<MaintenanceCatalogRecord> GetMaintenanceCatalog(string section)
@@ -73,7 +83,7 @@ public sealed class SqliteSalesRepository : ISalesRepository
             entity = new CatalogItemEntity
             {
                 Category = category,
-                SortOrder = _dbContext.CatalogItems.Where(x => x.Category == category).Select(x => (int?)x.SortOrder).Max() ?? 0
+                SortOrder = _dbContext.CatalogItems.AsNoTracking().Where(x => x.Category == category).Select(x => (int?)x.SortOrder).Max() ?? 0
             };
             _dbContext.CatalogItems.Add(entity);
         }
@@ -85,6 +95,9 @@ public sealed class SqliteSalesRepository : ISalesRepository
         entity.IsActive = input.IsActive;
         entity.SortOrder = entity.SortOrder == 0 ? 1 : entity.SortOrder;
         _dbContext.SaveChanges();
+        
+        // Invalidate catalogs cache
+        _cache.Remove(CatalogsCacheKey);
 
         return new MaintenanceCatalogRecord(entity.Id, input.Section, entity.Code, entity.Name, entity.Price, entity.IsActive);
     }
@@ -100,6 +113,10 @@ public sealed class SqliteSalesRepository : ISalesRepository
 
         _dbContext.CatalogItems.Remove(entity);
         _dbContext.SaveChanges();
+        
+        // Invalidate catalogs cache
+        _cache.Remove(CatalogsCacheKey);
+        
         return true;
     }
 
@@ -120,7 +137,7 @@ public sealed class SqliteSalesRepository : ISalesRepository
 
     public SaleRecord Create(SaleFormInput input)
     {
-        var nextNum = (_dbContext.Sales.Select(x => (int?)x.NumVenta).Max() ?? 0) + 1;
+        var nextNum = (_dbContext.Sales.AsNoTracking().Select(x => (int?)x.NumVenta).Max() ?? 0) + 1;
         var entity = MapSaleEntity(input, Guid.NewGuid().ToString("N")[..8], nextNum);
         _dbContext.Sales.Add(entity);
         _dbContext.SaveChanges();

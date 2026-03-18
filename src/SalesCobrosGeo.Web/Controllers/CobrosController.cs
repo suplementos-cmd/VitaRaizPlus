@@ -1141,7 +1141,7 @@ public sealed class CobrosController : Controller
     private IActionResult RedirectToCollectorQueueWithFilters(string? profile, CollectionFilterContext context)
     {
         var activeProfile = ResolveCollectorProfile(profile);
-        
+
         // Build route parameters
         var routeParams = new Dictionary<string, object?>
         {
@@ -1177,6 +1177,6 @@ public sealed class CobrosController : Controller
         public string? DayKey { get; set; }
         public string? Zone { get; set; }
     }
-
+}
     #endregion
 

@@ -147,6 +147,11 @@ CREATE TABLE IF NOT EXISTS Sales (
 );");
             _dbContext.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Sales_FechaVenta ON Sales (FechaVenta);");
             _dbContext.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Sales_Zona ON Sales (Zona);");
+            
+            // Quick Win #1: Additional performance indexes
+            _dbContext.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Sales_Vendedor ON Sales (Vendedor);");
+            _dbContext.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Sales_Estado ON Sales (Estado);");
+            _dbContext.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Sales_FechaVenta_Zona ON Sales (FechaVenta, Zona);");
         }
 
         if (!TableExists("Collections"))
@@ -176,6 +181,11 @@ CREATE TABLE IF NOT EXISTS Collections (
             _dbContext.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Collections_FechaCobro ON Collections (FechaCobro);");
             _dbContext.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Collections_Usuario ON Collections (Usuario);");
             _dbContext.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Collections_IdV ON Collections (IdV);");
+            
+            // Quick Win #1: Additional performance indexes
+            _dbContext.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Collections_Zona ON Collections (Zona);");
+            _dbContext.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Collections_Estatus ON Collections (Estatus);");
+            _dbContext.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_Collections_FechaCobro_Zona ON Collections (FechaCobro, Zona);");
         }
     }
 

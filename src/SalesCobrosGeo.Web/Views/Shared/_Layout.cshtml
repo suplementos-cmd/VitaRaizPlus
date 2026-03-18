@@ -73,7 +73,12 @@
     
     @* Layout & Responsive *@
     <link rel="stylesheet" href="~/css/layout/responsive-layouts.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <environment include="Development">
+        <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    </environment>
+    <environment exclude="Development">
+        <link rel="stylesheet" href="~/css/site.min.css" asp-append-version="true" />
+    </environment>
     <link rel="stylesheet" href="~/css/modules/layout.css" asp-append-version="true" />
     
     @* Components *@
