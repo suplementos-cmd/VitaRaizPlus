@@ -1,0 +1,587 @@
+/**
+ * ============================================================================
+ * THEME VARIANTS - Temas por Rol/Perfil
+ * Versión: 3.0 - Marzo 2026
+ * ============================================================================
+ * 
+ * Sistema de temas escalable para diferentes roles y perfiles
+ * Cada tema incluye:
+ * - Colores de marca (brand)
+ * - Colores de superficie
+ * - Colores de fondo
+ * - Bordes
+ * - Sombras personalizadas
+ * 
+ * USO:
+ * <body data-role-theme="nombre-tema">
+ * 
+ * TEMAS DISPONIBLES:
+ * - default (azul corporativo)
+ * - sales (azul brillante)
+ * - collections (púrpura)
+ * - forest (verde)
+ * - sunset (rosa)
+ * - graphite (gris)
+ * - admin (índigo oscuro)
+ * - operations (naranja)
+ * - finance (verde azulado)
+ * - customer-service (cyan)
+ * ============================================================================
+ */
+
+:root {
+  /* ===========================================================================
+     VARIABLES DE TEMA - Default (Azul Corporativo)
+     =========================================================================== */
+  
+  /* Colores de Marca */
+  --theme-brand-50: #eff6ff;
+  --theme-brand-100: #dbeafe;
+  --theme-brand-200: #bfdbfe;
+  --theme-brand-300: #93c5fd;
+  --theme-brand-400: #60a5fa;
+  --theme-brand-500: #3b82f6;
+  --theme-brand-600: #2563eb;
+  --theme-brand-700: #1d4ed8;
+  --theme-brand-800: #1e40af;
+  --theme-brand-900: #1e3a8a;
+  --theme-brand: var(--theme-brand-600);
+  
+  /* Superficies y Fondos */
+  --theme-bg-base: #f8fafc;
+  --theme-bg-soft: #f1f5f9;
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #f8fafc;
+  --theme-surface-active: #f1f5f9;
+  
+  /* Textos */
+  --theme-text-primary: #0f172a;
+  --theme-text-secondary: #475569;
+  --theme-text-tertiary: #94a3b8;
+  --theme-text-on-brand: #ffffff;
+  
+  /* Bordes */
+  --theme-border: #e2e8f0;
+  --theme-border-strong: #cbd5e1;
+  
+  /* Sombras */
+  --theme-shadow-sm: 0 1px 3px 0 rgba(59, 130, 246, 0.05);
+  --theme-shadow-md: 0 4px 12px 0 rgba(59, 130, 246, 0.08);
+  --theme-shadow-lg: 0 12px 28px 0 rgba(59, 130, 246, 0.12);
+  
+  /* Estados */
+  --theme-hover: rgba(59, 130, 246, 0.08);
+  --theme-active: rgba(59, 130, 246, 0.16);
+  --theme-focus: rgba(59, 130, 246, 0.24);
+  
+  /* Overlay para Shell/Modal */
+  --theme-shell: rgba(255, 255, 255, 0.82);
+  --theme-backdrop: rgba(15, 23, 42, 0.5);
+  
+  /* Gradientes */
+  --theme-gradient-start: var(--theme-brand-400);
+  --theme-gradient-end: var(--theme-brand-600);
+  --theme-gradient: linear-gradient(135deg, var(--theme-gradient-start) 0%, var(--theme-gradient-end) 100%);
+  
+  /* Background Pattern */
+  --theme-bg-pattern: 
+    radial-gradient(circle at 20% 10%, rgba(59, 130, 246, 0.06) 0%, transparent 32%),
+    radial-gradient(circle at 80% 80%, rgba(147, 197, 253, 0.04) 0%, transparent 28%),
+    linear-gradient(180deg, var(--theme-bg-base) 0%, var(--theme-bg-soft) 100%);
+}
+
+/* ===========================================================================
+   TEMA: SALES (Azul Brillante - Vendedores)
+   =========================================================================== */
+[data-role-theme="sales"] {
+  --theme-brand-50: #eff6ff;
+  --theme-brand-100: #dbeafe;
+  --theme-brand-200: #bfdbfe;
+  --theme-brand-300: #93c5fd;
+  --theme-brand-400: #60a5fa;
+  --theme-brand-500: #2f7dff;
+  --theme-brand-600: #1d6ff2;
+  --theme-brand-700: #1d58d8;
+  --theme-brand-800: #1e4ba8;
+  --theme-brand-900: #1e3a7a;
+  --theme-brand: var(--theme-brand-500);
+  
+  --theme-bg-base: #eff7ff;
+  --theme-bg-soft: #e0f0ff;
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #f7fbff;
+  --theme-surface-active: #e0f0ff;
+  
+  --theme-text-primary: #1e3a7a;
+  --theme-text-secondary: #3d5a8f;
+  --theme-text-tertiary: #7a98c4;
+  --theme-text-on-brand: #ffffff;
+  
+  --theme-border: #d4e6fb;
+  --theme-border-strong: #b8d5f7;
+  
+  --theme-shadow-sm: 0 1px 3px 0 rgba(47, 125, 255, 0.08);
+  --theme-shadow-md: 0 4px 12px 0 rgba(47, 125, 255, 0.12);
+  --theme-shadow-lg: 0 12px 28px 0 rgba(47, 125, 255, 0.16);
+  
+  --theme-hover: rgba(47, 125, 255, 0.08);
+  --theme-active: rgba(47, 125, 255, 0.16);
+  --theme-focus: rgba(47, 125, 255, 0.24);
+  
+  --theme-shell: rgba(239, 247, 255, 0.88);
+  --theme-backdrop: rgba(30, 58, 122, 0.4);
+  
+  --theme-gradient-start: #60a5fa;
+  --theme-gradient-end: #1d58d8;
+  --theme-gradient: linear-gradient(135deg, var(--theme-gradient-start) 0%, var(--theme-gradient-end) 100%);
+  
+  --theme-bg-pattern: 
+    radial-gradient(circle at 25% 15%, rgba(47, 125, 255, 0.08) 0%, transparent 35%),
+    radial-gradient(circle at 75% 85%, rgba(139, 194, 255, 0.06) 0%, transparent 30%),
+    linear-gradient(180deg, var(--theme-bg-base) 0%, var(--theme-bg-soft) 100%);
+}
+
+/* ===========================================================================
+   TEMA: COLLECTIONS (Púrpura - Cobradores)
+   =========================================================================== */
+[data-role-theme="collections"] {
+  --theme-brand-50: #faf5ff;
+  --theme-brand-100: #f3e8ff;
+  --theme-brand-200: #e9d5ff;
+  --theme-brand-300: #d8b4fe;
+  --theme-brand-400: #c084fc;
+  --theme-brand-500: #a855f7;
+  --theme-brand-600: #6d4fd5;
+  --theme-brand-700: #7c3aed;
+  --theme-brand-800: #6b21a8;
+  --theme-brand-900: #581c87;
+  --theme-brand: var(--theme-brand-600);
+  
+  --theme-bg-base: #f3efff;
+  --theme-bg-soft: #ebe4ff;
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #faf8ff;
+  --theme-surface-active: #f3efff;
+  
+  --theme-text-primary: #581c87;
+  --theme-text-secondary: #6b21a8;
+  --theme-text-tertiary: #a78bca;
+  --theme-text-on-brand: #ffffff;
+  
+  --theme-border: #ddd6f7;
+  --theme-border-strong: #c7bbf0;
+  
+  --theme-shadow-sm: 0 1px 3px 0 rgba(109, 79, 213, 0.08);
+  --theme-shadow-md: 0 4px 12px 0 rgba(109, 79, 213, 0.12);
+  --theme-shadow-lg: 0 12px 28px 0 rgba(109, 79, 213, 0.16);
+  
+  --theme-hover: rgba(109, 79, 213, 0.08);
+  --theme-active: rgba(109, 79, 213, 0.16);
+  --theme-focus: rgba(109, 79, 213, 0.24);
+  
+  --theme-shell: rgba(243, 239, 255, 0.88);
+  --theme-backdrop: rgba(88, 28, 135, 0.4);
+  
+  --theme-gradient-start: #c084fc;
+  --theme-gradient-end: #7c3aed;
+  --theme-gradient: linear-gradient(135deg, var(--theme-gradient-start) 0%, var(--theme-gradient-end) 100%);
+  
+  --theme-bg-pattern: 
+    radial-gradient(circle at 18% 12%, rgba(109, 79, 213, 0.08) 0%, transparent 33%),
+    radial-gradient(circle at 82% 88%, rgba(179, 154, 252, 0.06) 0%, transparent 28%),
+    linear-gradient(180deg, var(--theme-bg-base) 0%, var(--theme-bg-soft) 100%);
+}
+
+/* ===========================================================================
+   TEMA: FOREST (Verde - Operaciones/Logística)
+   =========================================================================== */
+[data-role-theme="forest"] {
+  --theme-brand-50: #ecfdf5;
+  --theme-brand-100: #d1fae5;
+  --theme-brand-200: #a7f3d0;
+  --theme-brand-300: #6ee7b7;
+  --theme-brand-400: #34d399;
+  --theme-brand-500: #10b981;
+  --theme-brand-600: #1f8a63;
+  --theme-brand-700: #047857;
+  --theme-brand-800: #065f46;
+  --theme-brand-900: #064e3b;
+  --theme-brand: var(--theme-brand-600);
+  
+  --theme-bg-base: #edf9f3;
+  --theme-bg-soft: #d6f3e5;
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #f6fcf8;
+  --theme-surface-active: #edf9f3;
+  
+  --theme-text-primary: #064e3b;
+  --theme-text-secondary: #065f46;
+  --theme-text-tertiary: #6b9982;
+  --theme-text-on-brand: #ffffff;
+  
+  --theme-border: #cfe9dd;
+  --theme-border-strong: #a7d4c0;
+  
+  --theme-shadow-sm: 0 1px 3px 0 rgba(31, 138, 99, 0.08);
+  --theme-shadow-md: 0 4px 12px 0 rgba(31, 138, 99, 0.12);
+  --theme-shadow-lg: 0 12px 28px 0 rgba(31, 138, 99, 0.16);
+  
+  --theme-hover: rgba(31, 138, 99, 0.08);
+  --theme-active: rgba(31, 138, 99, 0.16);
+  --theme-focus: rgba(31, 138, 99, 0.24);
+  
+  --theme-shell: rgba(237, 249, 243, 0.88);
+  --theme-backdrop: rgba(6, 78, 59, 0.4);
+  
+  --theme-gradient-start: #34d399;
+  --theme-gradient-end: #047857;
+  --theme-gradient: linear-gradient(135deg, var(--theme-gradient-start) 0%, var(--theme-gradient-end) 100%);
+  
+  --theme-bg-pattern: 
+    radial-gradient(circle at 22% 14%, rgba(31, 138, 99, 0.08) 0%, transparent 34%),
+    radial-gradient(circle at 78% 86%, rgba(100, 210, 162, 0.06) 0%, transparent 30%),
+    linear-gradient(180deg, var(--theme-bg-base) 0%, var(--theme-bg-soft) 100%);
+}
+
+/* ===========================================================================
+   TEMA: SUNSET (Rosa - Marketing/Soporte)
+   =========================================================================== */
+[data-role-theme="sunset"] {
+  --theme-brand-50: #fdf2f8;
+  --theme-brand-100: #fce7f3;
+  --theme-brand-200: #fbcfe8;
+  --theme-brand-300: #f9a8d4;
+  --theme-brand-400: #f472b6;
+  --theme-brand-500: #ec4899;
+  --theme-brand-600: #c64d83;
+  --theme-brand-700: #be185d;
+  --theme-brand-800: #9f1239;
+  --theme-brand-900: #831843;
+  --theme-brand: var(--theme-brand-600);
+  
+  --theme-bg-base: #fff0f7;
+  --theme-bg-soft: #ffe0ee;
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #fff8fb;
+  --theme-surface-active: #fff0f7;
+  
+  --theme-text-primary: #831843;
+  --theme-text-secondary: #9f1239;
+  --theme-text-tertiary: #c98aa9;
+  --theme-text-on-brand: #ffffff;
+  
+  --theme-border: #f2d3e1;
+  --theme-border-strong: #e5b8d0;
+  
+  --theme-shadow-sm: 0 1px 3px 0 rgba(198, 77, 131, 0.08);
+  --theme-shadow-md: 0 4px 12px 0 rgba(198, 77, 131, 0.12);
+  --theme-shadow-lg: 0 12px 28px 0 rgba(198, 77, 131, 0.16);
+  
+  --theme-hover: rgba(198, 77, 131, 0.08);
+  --theme-active: rgba(198, 77, 131, 0.16);
+  --theme-focus: rgba(198, 77, 131, 0.24);
+  
+  --theme-shell: rgba(255, 240, 247, 0.88);
+  --theme-backdrop: rgba(131, 24, 67, 0.4);
+  
+  --theme-gradient-start: #f472b6;
+  --theme-gradient-end: #be185d;
+  --theme-gradient: linear-gradient(135deg, var(--theme-gradient-start) 0%, var(--theme-gradient-end) 100%);
+  
+  --theme-bg-pattern: 
+    radial-gradient(circle at 24% 16%, rgba(198, 77, 131, 0.08) 0%, transparent 36%),
+    radial-gradient(circle at 76% 84%, rgba(245, 155, 197, 0.06) 0%, transparent 32%),
+    linear-gradient(180deg, var(--theme-bg-base) 0%, var(--theme-bg-soft) 100%);
+}
+
+/* ===========================================================================
+   TEMA: GRAPHITE (Gris - Supervisores/Gerentes)
+   =========================================================================== */
+[data-role-theme="graphite"] {
+  --theme-brand-50: #f8fafc;
+  --theme-brand-100: #f1f5f9;
+  --theme-brand-200: #e2e8f0;
+  --theme-brand-300: #cbd5e1;
+  --theme-brand-400: #94a3b8;
+  --theme-brand-500: #64748b;
+  --theme-brand-600: #516176;
+  --theme-brand-700: #334155;
+  --theme-brand-800: #1e293b;
+  --theme-brand-900: #0f172a;
+  --theme-brand: var(--theme-brand-600);
+  
+  --theme-bg-base: #f2f5f8;
+  --theme-bg-soft: #e8ecf1;
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #f8fafc;
+  --theme-surface-active: #f1f5f9;
+  
+  --theme-text-primary: #0f172a;
+  --theme-text-secondary: #334155;
+  --theme-text-tertiary: #64748b;
+  --theme-text-on-brand: #ffffff;
+  
+  --theme-border: #d7dfe8;
+  --theme-border-strong: #cbd5e1;
+  
+  --theme-shadow-sm: 0 1px 3px 0 rgba(81, 97, 118, 0.08);
+  --theme-shadow-md: 0 4px 12px 0 rgba(81, 97, 118, 0.12);
+  --theme-shadow-lg: 0 12px 28px 0 rgba(81, 97, 118, 0.16);
+  
+  --theme-hover: rgba(81, 97, 118, 0.08);
+  --theme-active: rgba(81, 97, 118, 0.16);
+  --theme-focus: rgba(81, 97, 118, 0.24);
+  
+  --theme-shell: rgba(242, 245, 248, 0.88);
+  --theme-backdrop: rgba(15, 23, 42, 0.4);
+  
+  --theme-gradient-start: #94a3b8;
+  --theme-gradient-end: #334155;
+  --theme-gradient: linear-gradient(135deg, var(--theme-gradient-start) 0%, var(--theme-gradient-end) 100%);
+  
+  --theme-bg-pattern: 
+    radial-gradient(circle at 26% 18%, rgba(81, 97, 118, 0.06) 0%, transparent 38%),
+    radial-gradient(circle at 74% 82%, rgba(148, 163, 184, 0.05) 0%, transparent 34%),
+    linear-gradient(180deg, var(--theme-bg-base) 0%, var(--theme-bg-soft) 100%);
+}
+
+/* ===========================================================================
+   TEMA: ADMIN (Índigo Oscuro - Administradores)
+   =========================================================================== */
+[data-role-theme="admin"] {
+  --theme-brand-50: #eef2ff;
+  --theme-brand-100: #e0e7ff;
+  --theme-brand-200: #c7d2fe;
+  --theme-brand-300: #a5b4fc;
+  --theme-brand-400: #818cf8;
+  --theme-brand-500: #6366f1;
+  --theme-brand-600: #4f46e5;
+  --theme-brand-700: #4338ca;
+  --theme-brand-800: #3730a3;
+  --theme-brand-900: #312e81;
+  --theme-brand: var(--theme-brand-600);
+  
+  --theme-bg-base: #eff1ff;
+  --theme-bg-soft: #e0e4ff;
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #f7f8ff;
+  --theme-surface-active: #eff1ff;
+  
+  --theme-text-primary: #312e81;
+  --theme-text-secondary: #3730a3;
+  --theme-text-tertiary: #8b8bc8;
+  --theme-text-on-brand: #ffffff;
+  
+  --theme-border: #d4d7f5;
+  --theme-border-strong: #b8bde8;
+  
+  --theme-shadow-sm: 0 1px 3px 0 rgba(79, 70, 229, 0.08);
+  --theme-shadow-md: 0 4px 12px 0 rgba(79, 70, 229, 0.12);
+  --theme-shadow-lg: 0 12px 28px 0 rgba(79, 70, 229, 0.16);
+  
+  --theme-hover: rgba(79, 70, 229, 0.08);
+  --theme-active: rgba(79, 70, 229, 0.16);
+  --theme-focus: rgba(79, 70, 229, 0.24);
+  
+  --theme-shell: rgba(239, 241, 255, 0.88);
+  --theme-backdrop: rgba(49, 46, 129, 0.4);
+  
+  --theme-gradient-start: #818cf8;
+  --theme-gradient-end: #4338ca;
+  --theme-gradient: linear-gradient(135deg, var(--theme-gradient-start) 0%, var(--theme-gradient-end) 100%);
+  
+  --theme-bg-pattern: 
+    radial-gradient(circle at 20% 12%, rgba(79, 70, 229, 0.08) 0%, transparent 36%),
+    radial-gradient(circle at 80% 88%, rgba(165, 180, 252, 0.06) 0%, transparent 32%),
+    linear-gradient(180deg, var(--theme-bg-base) 0%, var(--theme-bg-soft) 100%);
+}
+
+/* ===========================================================================
+   TEMA: OPERATIONS (Naranja - Operaciones)
+   =========================================================================== */
+[data-role-theme="operations"] {
+  --theme-brand-50: #fff7ed;
+  --theme-brand-100: #ffedd5;
+  --theme-brand-200: #fed7aa;
+  --theme-brand-300: #fdba74;
+  --theme-brand-400: #fb923c;
+  --theme-brand-500: #f97316;
+  --theme-brand-600: #ea580c;
+  --theme-brand-700: #c2410c;
+  --theme-brand-800: #9a3412;
+  --theme-brand-900: #7c2d12;
+  --theme-brand: var(--theme-brand-600);
+  
+  --theme-bg-base: #fff8f0;
+  --theme-bg-soft: #fff0e0;
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #fffcf7;
+  --theme-surface-active: #fff8f0;
+  
+  --theme-text-primary: #7c2d12;
+  --theme-text-secondary: #9a3412;
+  --theme-text-tertiary: #c28865;
+  --theme-text-on-brand: #ffffff;
+  
+  --theme-border: #fcdcc4;
+  --theme-border-strong: #f4c4a0;
+  
+  --theme-shadow-sm: 0 1px 3px 0 rgba(234, 88, 12, 0.08);
+  --theme-shadow-md: 0 4px 12px 0 rgba(234, 88, 12, 0.12);
+  --theme-shadow-lg: 0 12px 28px 0 rgba(234, 88, 12, 0.16);
+  
+  --theme-hover: rgba(234, 88, 12, 0.08);
+  --theme-active: rgba(234, 88, 12, 0.16);
+  --theme-focus: rgba(234, 88, 12, 0.24);
+  
+  --theme-shell: rgba(255, 248, 240, 0.88);
+  --theme-backdrop: rgba(124, 45, 18, 0.4);
+  
+  --theme-gradient-start: #fb923c;
+  --theme-gradient-end: #c2410c;
+  --theme-gradient: linear-gradient(135deg, var(--theme-gradient-start) 0%, var(--theme-gradient-end) 100%);
+  
+  --theme-bg-pattern: 
+    radial-gradient(circle at 28% 20%, rgba(234, 88, 12, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 72% 80%, rgba(253, 186, 116, 0.06) 0%, transparent 36%),
+    linear-gradient(180deg, var(--theme-bg-base) 0%, var(--theme-bg-soft) 100%);
+}
+
+/* ===========================================================================
+   TEMA: FINANCE (Verde Azulado - Finanzas/Contabilidad)
+   =========================================================================== */
+[data-role-theme="finance"] {
+  --theme-brand-50: #f0fdfa;
+  --theme-brand-100: #ccfbf1;
+  --theme-brand-200: #99f6e4;
+  --theme-brand-300: #5eead4;
+  --theme-brand-400: #2dd4bf;
+  --theme-brand-500: #14b8a6;
+  --theme-brand-600: #0d9488;
+  --theme-brand-700: #0f766e;
+  --theme-brand-800: #115e59;
+  --theme-brand-900: #134e4a;
+  --theme-brand: var(--theme-brand-600);
+  
+  --theme-bg-base: #f0fdfb;
+  --theme-bg-soft: #e0f9f4;
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #f7fffe;
+  --theme-surface-active: #f0fdfb;
+  
+  --theme-text-primary: #134e4a;
+  --theme-text-secondary: #115e59;
+  --theme-text-tertiary: #6b9894;
+  --theme-text-on-brand: #ffffff;
+  
+  --theme-border: #cfeee9;
+  --theme-border-strong: #a7ddd5;
+  
+  --theme-shadow-sm: 0 1px 3px 0 rgba(13, 148, 136, 0.08);
+  --theme-shadow-md: 0 4px 12px 0 rgba(13, 148, 136, 0.12);
+  --theme-shadow-lg: 0 12px 28px 0 rgba(13, 148, 136, 0.16);
+  
+  --theme-hover: rgba(13, 148, 136, 0.08);
+  --theme-active: rgba(13, 148, 136, 0.16);
+  --theme-focus: rgba(13, 148, 136, 0.24);
+  
+  --theme-shell: rgba(240, 253, 251, 0.88);
+  --theme-backdrop: rgba(19, 78, 74, 0.4);
+  
+  --theme-gradient-start: #2dd4bf;
+  --theme-gradient-end: #0f766e;
+  --theme-gradient: linear-gradient(135deg, var(--theme-gradient-start) 0%, var(--theme-gradient-end) 100%);
+  
+  --theme-bg-pattern: 
+    radial-gradient(circle at 30% 22%, rgba(13, 148, 136, 0.08) 0%, transparent 42%),
+    radial-gradient(circle at 70% 78%, rgba(94, 234, 212, 0.06) 0%, transparent 38%),
+    linear-gradient(180deg, var(--theme-bg-base) 0%, var(--theme-bg-soft) 100%);
+}
+
+/* ===========================================================================
+   TEMA: CUSTOMER-SERVICE (Cyan - Servicio al Cliente)
+   =========================================================================== */
+[data-role-theme="customer-service"] {
+  --theme-brand-50: #ecfeff;
+  --theme-brand-100: #cffafe;
+  --theme-brand-200: #a5f3fc;
+  --theme-brand-300: #67e8f9;
+  --theme-brand-400: #22d3ee;
+  --theme-brand-500: #06b6d4;
+  --theme-brand-600: #0891b2;
+  --theme-brand-700: #0e7490;
+  --theme-brand-800: #155e75;
+  --theme-brand-900: #164e63;
+  --theme-brand: var(--theme-brand-600);
+  
+  --theme-bg-base: #f0fcff;
+  --theme-bg-soft: #e0f7fd;
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #f7feff;
+  --theme-surface-active: #f0fcff;
+  
+  --theme-text-primary: #164e63;
+  --theme-text-secondary: #155e75;
+  --theme-text-tertiary: #7a9aa7;
+  --theme-text-on-brand: #ffffff;
+  
+  --theme-border: #d0ecf3;
+  --theme-border-strong: #a7d8e7;
+  
+  --theme-shadow-sm: 0 1px 3px 0 rgba(8, 145, 178, 0.08);
+  --theme-shadow-md: 0 4px 12px 0 rgba(8, 145, 178, 0.12);
+  --theme-shadow-lg: 0 12px 28px 0 rgba(8, 145, 178, 0.16);
+  
+  --theme-hover: rgba(8, 145, 178, 0.08);
+  --theme-active: rgba(8, 145, 178, 0.16);
+  --theme-focus: rgba(8, 145, 178, 0.24);
+  
+  --theme-shell: rgba(240, 252, 255, 0.88);
+  --theme-backdrop: rgba(22, 78, 99, 0.4);
+  
+  --theme-gradient-start: #22d3ee;
+  --theme-gradient-end: #0e7490;
+  --theme-gradient: linear-gradient(135deg, var(--theme-gradient-start) 0%, var(--theme-gradient-end) 100%);
+  
+  --theme-bg-pattern: 
+    radial-gradient(circle at 32% 24%, rgba(8, 145, 178, 0.08) 0%, transparent 44%),
+    radial-gradient(circle at 68% 76%, rgba(103, 232, 249, 0.06) 0%, transparent 40%),
+    linear-gradient(180deg, var(--theme-bg-base) 0%, var(--theme-bg-soft) 100%);
+}
+
+/* ===========================================================================
+   APLICACIÓN DE FONDOS POR TEMA
+   =========================================================================== */
+
+/* Aplicar fondo con patrón a todos los temas */
+:root,
+[data-role-theme] {
+  background: var(--theme-bg-pattern);
+  background-color: var(--theme-bg-base);
+  background-attachment: fixed;
+}
+
+body {
+  color: var(--theme-text-primary);
+  min-height: 100vh;
+}
+
+/* ===========================================================================
+   RETROCOMPATIBILIDAD - Alias para variables antiguas
+   =========================================================================== */
+:root {
+  /* Mantener compatibilidad con variables VR existentes */
+  --vr-color-brand: var(--theme-brand);
+  --vr-color-brand-2: var(--theme-brand-400);
+  --vr-color-brand-3: var(--theme-brand-100);
+  --vr-color-bg: var(--theme-bg-base);
+  --vr-color-surface: var(--theme-surface);
+  --vr-color-surface-soft: var(--theme-surface-hover);
+  --vr-color-text: var(--theme-text-primary);
+  --vr-color-text-soft: var(--theme-text-secondary);
+  --vr-color-border: var(--theme-border);
+  --vr-color-shell: var(--theme-shell);
+  --vr-color-backdrop: var(--theme-backdrop);
+  --vr-shadow-soft: var(--theme-shadow-sm);
+  --vr-shadow-strong: var(--theme-shadow-lg);
+}

@@ -1,0 +1,639 @@
+/**
+ * ============================================================================
+ * THEME BUTTONS - Sistema de Botones
+ * Versión: 3.0 - Marzo 2026
+ * ============================================================================
+ * 
+ * Sistema completo de botones con:
+ * - Variantes: primary, secondary, outline, ghost, danger, success
+ * - Tamaños: xs, sm, base, lg, xl
+ * - Estados: hover, active, focus, disabled, loading
+ * - Grupos de botones
+ * - Botones con iconos
+ * 
+ * USO:
+ * <button class="btn btn-primary">Botón</button>
+ * <button class="btn btn-outline btn-lg">Botón Grande</button>
+ * <button class="btn btn-ghost btn-sm">Botón Pequeño</button>
+ * ============================================================================
+ */
+
+/* ===========================================================================
+   BOTÓN BASE
+   =========================================================================== */
+
+.btn {
+  /* Reset */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  
+  /* Tamaño base */
+  min-height: var(--touch-target-min);
+  padding: var(--space-2\.5) var(--space-4);
+  
+  /* Tipografía */
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  line-height: var(--leading-tight);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  
+  /* Bordes y Apariencia */
+  border: var(--border-width-1) solid transparent;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  
+  /* Transiciones */
+  transition: 
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+  
+  /* Comportamiento */
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  
+  /* Accesibilidad */
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:focus {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled,
+.btn[disabled] {
+  cursor: not-allowed;
+  opacity: var(--opacity-50);
+  pointer-events: none;
+}
+
+/* ===========================================================================
+   VARIANTE: PRIMARY
+   =========================================================================== */
+
+.btn-primary {
+  background-color: var(--theme-brand);
+  border-color: var(--theme-brand);
+  color: var(--theme-text-on-brand);
+  box-shadow: var(--theme-shadow-sm);
+}
+
+.btn-primary:hover {
+  background-color: var(--theme-brand-700);
+  border-color: var(--theme-brand-700);
+  box-shadow: var(--theme-shadow-md);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  background-color: var(--theme-brand-800);
+  border-color: var(--theme-brand-800);
+  box-shadow: var(--theme-shadow-sm);
+  transform: translateY(0);
+}
+
+.btn-primary:focus {
+  box-shadow: var(--focus-ring), var(--theme-shadow-md);
+}
+
+/* ===========================================================================
+   VARIANTE: SECONDARY
+   =========================================================================== */
+
+.btn-secondary {
+  background-color: var(--theme-surface);
+  border-color: var(--theme-border);
+  color: var(--theme-text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover {
+  background-color: var(--theme-surface-hover);
+  border-color: var(--theme-border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary:active {
+  background-color: var(--theme-surface-active);
+  box-shadow: var(--shadow-xs);
+}
+
+/* ===========================================================================
+   VARIANTE: OUTLINE
+   =========================================================================== */
+
+.btn-outline {
+  background-color: transparent;
+  border-color: var(--theme-brand);
+  color: var(--theme-brand);
+}
+
+.btn-outline:hover {
+  background-color: var(--theme-brand-50);
+  border-color: var(--theme-brand-700);
+  color: var(--theme-brand-700);
+}
+
+.btn-outline:active {
+  background-color: var(--theme-brand-100);
+  border-color: var(--theme-brand-800);
+  color: var(--theme-brand-800);
+}
+
+/* ===========================================================================
+   VARIANTE: GHOST
+   =========================================================================== */
+
+.btn-ghost {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--theme-text-primary);
+}
+
+.btn-ghost:hover {
+  background-color: var(--theme-hover);
+  color: var(--theme-brand);
+}
+
+.btn-ghost:active {
+  background-color: var(--theme-active);
+}
+
+/* ===========================================================================
+   VARIANTE: SOFT
+   =========================================================================== */
+
+.btn-soft {
+  background-color: var(--theme-brand-100);
+  border-color: transparent;
+  color: var(--theme-brand-700);
+}
+
+.btn-soft:hover {
+  background-color: var(--theme-brand-200);
+  color: var(--theme-brand-800);
+}
+
+.btn-soft:active {
+  background-color: var(--theme-brand-300);
+}
+
+/* ===========================================================================
+   VARIANTES DE COLOR SEMÁNTICO
+   =========================================================================== */
+
+/* Success */
+.btn-success {
+  background-color: var(--success-600);
+  border-color: var(--success-600);
+  color: var(--color-white);
+  box-shadow: var(--shadow-success);
+}
+
+.btn-success:hover {
+  background-color: var(--success-700);
+  border-color: var(--success-700);
+  box-shadow: 0 8px 24px -4px rgba(16, 185, 129, 0.36);
+}
+
+.btn-success:active {
+  background-color: var(--success-800);
+  border-color: var(--success-800);
+}
+
+/* Warning */
+.btn-warning {
+  background-color: var(--warning-500);
+  border-color: var(--warning-500);
+  color: var(--color-white);
+  box-shadow: var(--shadow-warning);
+}
+
+.btn-warning:hover {
+  background-color: var(--warning-600);
+  border-color: var(--warning-600);
+  box-shadow: 0 8px 24px -4px rgba(245, 158, 11, 0.36);
+}
+
+.btn-warning:active {
+  background-color: var(--warning-700);
+  border-color: var(--warning-700);
+}
+
+/* Danger */
+.btn-danger {
+  background-color: var(--danger-600);
+  border-color: var(--danger-600);
+  color: var(--color-white);
+  box-shadow: var(--shadow-danger);
+}
+
+.btn-danger:hover {
+  background-color: var(--danger-700);
+  border-color: var(--danger-700);
+  box-shadow: 0 8px 24px -4px rgba(239, 68, 68, 0.36);
+}
+
+.btn-danger:active {
+  background-color: var(--danger-800);
+  border-color: var(--danger-800);
+}
+
+/* Info */
+.btn-info {
+  background-color: var(--info-600);
+  border-color: var(--info-600);
+  color: var(--color-white);
+  box-shadow: var(--shadow-info);
+}
+
+.btn-info:hover {
+  background-color: var(--info-700);
+  border-color: var(--info-700);
+  box-shadow: 0 8px 24px -4px rgba(59, 130, 246, 0.36);
+}
+
+.btn-info:active {
+  background-color: var(--info-800);
+  border-color: var(--info-800);
+}
+
+/* ===========================================================================
+   VARIANTES OUTLINE DE COLORES SEMÁNTICOS
+   =========================================================================== */
+
+.btn-outline-success {
+  background-color: transparent;
+  border-color: var(--success-600);
+  color: var(--success-600);
+}
+
+.btn-outline-success:hover {
+  background-color: var(--success-50);
+  border-color: var(--success-700);
+  color: var(--success-700);
+}
+
+.btn-outline-warning {
+  background-color: transparent;
+  border-color: var(--warning-500);
+  color: var(--warning-600);
+}
+
+.btn-outline-warning:hover {
+  background-color: var(--warning-50);
+  border-color: var(--warning-600);
+  color: var(--warning-700);
+}
+
+.btn-outline-danger {
+  background-color: transparent;
+  border-color: var(--danger-600);
+  color: var(--danger-600);
+}
+
+.btn-outline-danger:hover {
+  background-color: var(--danger-50);
+  border-color: var(--danger-700);
+  color: var(--danger-700);
+}
+
+.btn-outline-info {
+  background-color: transparent;
+  border-color: var(--info-600);
+  color: var(--info-600);
+}
+
+.btn-outline-info:hover {
+  background-color: var(--info-50);
+  border-color: var(--info-700);
+  color: var(--info-700);
+}
+
+/* ===========================================================================
+   TAMAÑOS DE BOTONES
+   =========================================================================== */
+
+.btn-xs {
+  min-height: 32px;
+  padding: var(--space-1\.5) var(--space-3);
+  font-size: var(--text-xs);
+  border-radius: var(--radius-md);
+  gap: var(--space-1);
+}
+
+.btn-sm {
+  min-height: 36px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: var(--space-1\.5);
+}
+
+/* .btn-base ya está definido en .btn principal */
+
+.btn-lg {
+  min-height: var(--touch-target-comfortable);
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--text-base);
+  border-radius: var(--radius-xl);
+  gap: var(--space-2\.5);
+}
+
+.btn-xl {
+  min-height: var(--touch-target-large);
+  padding: var(--space-4) var(--space-8);
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  border-radius: var(--radius-xl);
+  gap: var(--space-3);
+}
+
+/* ===========================================================================
+   BOTONES DE ANCHO COMPLETO
+   =========================================================================== */
+
+.btn-block {
+  display: flex;
+  width: 100%;
+}
+
+/* ===========================================================================
+   BOTONES CON ICONOS
+   =========================================================================== */
+
+.btn-icon {
+  min-width: var(--touch-target-min);
+  padding: var(--space-2\.5);
+  aspect-ratio: 1;
+}
+
+.btn-icon.btn-xs {
+  min-width: 32px;
+  padding: var(--space-2);
+}
+
+.btn-icon.btn-sm {
+  min-width: 36px;
+  padding: var(--space-2);
+}
+
+.btn-icon.btn-lg {
+  min-width: var(--touch-target-comfortable);
+  padding: var(--space-3);
+}
+
+.btn-icon.btn-xl {
+  min-width: var(--touch-target-large);
+  padding: var(--space-4);
+}
+
+.btn svg {
+  width: 1.25em;
+  height: 1.25em;
+  flex-shrink: 0;
+}
+
+.btn-icon svg {
+  width: 1.5em;
+  height: 1.5em;
+}
+
+/* ===========================================================================
+   ESTADOS ESPECIALES
+   =========================================================================== */
+
+/* Loading */
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.btn-loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1em;
+  height: 1em;
+  margin-top: -0.5em;
+  margin-left: -0.5em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: btn-spinner 0.6s linear infinite;
+}
+
+@keyframes btn-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===========================================================================
+   GRUPOS DE BOTONES
+   =========================================================================== */
+
+.btn-group {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.btn-group > .btn {
+  position: relative;
+  flex: 1 1 auto;
+  border-radius: 0;
+}
+
+.btn-group > .btn:not(:last-child) {
+  border-right-width: 0;
+}
+
+.btn-group > .btn:first-child {
+  border-top-left-radius: var(--radius-lg);
+  border-bottom-left-radius: var(--radius-lg);
+}
+
+.btn-group > .btn:last-child {
+  border-top-right-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+  border-right-width: var(--border-width-1);
+}
+
+.btn-group > .btn:hover,
+.btn-group > .btn:focus {
+  z-index: 1;
+}
+
+/* ===========================================================================
+   BOTONES CON BADGE
+   =========================================================================== */
+
+.btn-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: var(--font-semibold);
+  line-height: 1;
+  color: var(--color-white);
+  background-color: var(--danger-600);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--theme-surface);
+}
+
+.btn-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* ===========================================================================
+   BOTONES CIRCULARES
+   =========================================================================== */
+
+.btn-circle {
+  border-radius: var(--radius-full);
+  padding: var(--space-2\.5);
+  aspect-ratio: 1;
+}
+
+.btn-circle.btn-sm {
+  padding: var(--space-2);
+}
+
+.btn-circle.btn-lg {
+  padding: var(--space-3\.5);
+}
+
+.btn-circle.btn-xl {
+  padding: var(--space-5);
+}
+
+/* ===========================================================================
+   LINK BUTTONS
+   =========================================================================== */
+
+.btn-link {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--theme-brand);
+  text-decoration: underline;
+  box-shadow: none;
+  padding: 0;
+  height: auto;
+  min-height: 0;
+}
+
+.btn-link:hover {
+  color: var(--theme-brand-700);
+  background-color: transparent;
+  text-decoration: none;
+}
+
+.btn-link:active {
+  color: var(--theme-brand-800);
+  transform: none;
+}
+
+/* ===========================================================================
+   BOTONES CON GRADIENTE
+   =========================================================================== */
+
+.btn-gradient {
+  background: var(--theme-gradient);
+  border-color: transparent;
+  color: var(--color-white);
+  box-shadow: var(--theme-shadow-md);
+}
+
+.btn-gradient:hover {
+  opacity: 0.9;
+  box-shadow: var(--theme-shadow-lg);
+  transform: translateY(-1px);
+}
+
+.btn-gradient:active {
+  opacity: 0.85;
+  box-shadow: var(--theme-shadow-md);
+  transform: translateY(0);
+}
+
+/* ===========================================================================
+   BOTONES ELEVADOS (RAISED)
+   =========================================================================== */
+
+.btn-raised {
+  box-shadow: var(--shadow-md);
+}
+
+.btn-raised:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.btn-raised:active {
+  box-shadow: var(--shadow-sm);
+  transform: translateY(0);
+}
+
+/* ===========================================================================
+   RESPONSIVE
+   =========================================================================== */
+
+@media (max-width: 640px) {
+  .btn-sm-block {
+    display: flex;
+    width: 100%;
+  }
+  
+  .btn-sm-full {
+    width: 100%;
+  }
+}
+
+/* ===========================================================================
+   ACCESSIBILITY - Alto Contraste
+   =========================================================================== */
+
+@media (prefers-contrast: high) {
+  .btn {
+    border-width: var(--border-width-2);
+  }
+  
+  .btn-ghost,
+  .btn-link {
+    text-decoration: underline;
+  }
+}
+
+/* ===========================================================================
+   PRINT STYLES
+   =========================================================================== */
+
+@media print {
+  .btn {
+    border: 1px solid var(--gray-900);
+    box-shadow: none !important;
+  }
+}
