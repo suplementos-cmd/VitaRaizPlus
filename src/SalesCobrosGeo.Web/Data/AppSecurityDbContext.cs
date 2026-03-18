@@ -84,8 +84,14 @@ public sealed class AppSecurityDbContext : DbContext
             entity.Property(x => x.Vendedor).HasMaxLength(128);
             entity.Property(x => x.Usuario).HasMaxLength(128);
             entity.Property(x => x.Cobrador).HasMaxLength(128);
+            
+            // Performance indexes - Quick Win #1
             entity.HasIndex(x => x.FechaVenta);
             entity.HasIndex(x => x.Zona);
+            entity.HasIndex(x => x.Vendedor);
+            entity.HasIndex(x => x.Estado);
+            entity.HasIndex(x => new { x.FechaVenta, x.Zona }); // Composite for dashboard
+            
             entity.HasMany(x => x.Collections)
                 .WithOne(x => x.Sale)
                 .HasForeignKey(x => x.IdV)
@@ -98,8 +104,13 @@ public sealed class AppSecurityDbContext : DbContext
             entity.Property(x => x.IdCc).HasMaxLength(32);
             entity.Property(x => x.Usuario).HasMaxLength(128);
             entity.Property(x => x.Zona).HasMaxLength(128);
+            
+            // Performance indexes - Quick Win #1
             entity.HasIndex(x => x.FechaCobro);
             entity.HasIndex(x => x.Usuario);
+            entity.HasIndex(x => x.Zona);
+            entity.HasIndex(x => x.Estatus);
+            entity.HasIndex(x => new { x.FechaCobro, x.Zona }); // Composite for dashboard
         });
     }
 }

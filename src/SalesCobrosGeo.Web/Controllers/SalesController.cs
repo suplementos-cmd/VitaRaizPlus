@@ -22,11 +22,11 @@ public sealed class SalesController : Controller
     {
         // Parse and validate filters from Dashboard
         var filterContext = BuildSalesFilterContext(from, to, day, zone, seller);
-        
+
         var today = DateTime.Today;
         var currentWeekStart = StartOfWeek(today);
         var currentWeekEnd = currentWeekStart.AddDays(6);
-        
+
         // Apply filters to sales data
         var allSales = _repository.GetAll().ToList();
         var filteredSales = ApplySalesFilters(allSales, filterContext);
@@ -381,5 +381,5 @@ public sealed class SalesController : Controller
         public string? Zone { get; set; }
         public string? Seller { get; set; }
     }
-
+}
     #endregion

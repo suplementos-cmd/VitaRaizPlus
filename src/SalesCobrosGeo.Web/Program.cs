@@ -17,6 +17,7 @@ builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
 });
+builder.Services.AddMemoryCache();
 builder.Services.AddScoped<ISalesRepository, SqliteSalesRepository>();
 
 var dataPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data");

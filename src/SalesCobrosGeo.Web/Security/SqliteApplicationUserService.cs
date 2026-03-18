@@ -55,6 +55,7 @@ public sealed class SqliteApplicationUserService : IApplicationUserService
     public IReadOnlyList<ApplicationUserSummary> GetUsers()
     {
         return _dbContext.Users
+            .AsNoTracking()
             .Include(x => x.Permissions)
             .OrderBy(x => x.DisplayName)
             .AsEnumerable()
@@ -93,7 +94,7 @@ public sealed class SqliteApplicationUserService : IApplicationUserService
 
     public ApplicationUserSummary? GetUser(string username)
     {
-        var user = _dbContext.Users.Include(x => x.Permissions).FirstOrDefault(x => x.Username == username);
+        var user = _dbContext.Users.AsNoTracking().Include(x => x.Permissions).FirstOrDefault(x => x.Username == username);
         return user is null ? null : MapSummary(user);
     }
 
@@ -175,7 +176,7 @@ public sealed class SqliteApplicationUserService : IApplicationUserService
         });
 
         _dbContext.SaveChanges();
-        return MapSummary(_dbContext.Users.Include(x => x.Permissions).First(x => x.Username == username));
+        return MapSummary(_dbContext.Users.AsNoTracking().Include(x => x.Permissions).First(x => x.Username == username));
     }
 
     public bool ResetPassword(string username, string newPassword)
