@@ -40,11 +40,16 @@
         <section class="dashboard-chart-grid">
             <article class="card admin-panel dashboard-chart-panel">
                 <div class="card-header admin-panel-head dashboard-chart-head">
-                    <div>
-                        <div class="dashboard-panel-total-label">Total ventas</div>
-                        <strong class="dashboard-panel-total-value">Bs @Model.WeeklySales.Sum(x => x.Amount).ToString("0,0.##")</strong>
+                    <div class="dashboard-panel-header-wrap">
+                        <span class="dashboard-panel-icon dashboard-panel-icon--sales" aria-hidden="true">
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M15.5 2A1.5 1.5 0 0014 3.5v13a1.5 1.5 0 003 0v-13A1.5 1.5 0 0015.5 2zM9.5 6A1.5 1.5 0 008 7.5v9a1.5 1.5 0 003 0v-9A1.5 1.5 0 009.5 6zM3.5 10A1.5 1.5 0 002 11.5v5a1.5 1.5 0 003 0v-5A1.5 1.5 0 003.5 10z"/></svg>
+                        </span>
+                        <div>
+                            <div class="dashboard-panel-total-label">Total ventas</div>
+                            <strong class="dashboard-panel-total-value">Bs @Model.WeeklySales.Sum(x => x.Amount).ToString("0,0.##")</strong>
+                        </div>
                     </div>
-                    <a class="btn btn-sm btn-outline-primary" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")"><span class="btn-icon-mobile">IR</span><span class="btn-text-mobile">Ver detalle</span></a>
+                    <a class="btn btn-sm btn-outline-primary dashboard-detail-btn" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg><span class="btn-text-mobile">Ver detalle</span></a>
                 </div>
                 <div class="card-body">
                     <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.WeeklySales.Count)">
@@ -65,11 +70,16 @@
 
             <article class="card admin-panel dashboard-chart-panel">
                 <div class="card-header admin-panel-head dashboard-chart-head">
-                    <div>
-                        <div class="dashboard-panel-total-label">Total cobros</div>
-                        <strong class="dashboard-panel-total-value">Bs @Model.WeeklyCollections.Sum(x => x.Amount).ToString("0,0.##")</strong>
+                    <div class="dashboard-panel-header-wrap">
+                        <span class="dashboard-panel-icon dashboard-panel-icon--collections" aria-hidden="true">
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v.67l-.046.008C7.472 7.696 6.25 9.048 6.25 10.7c0 1.68 1.25 3.02 3 3.26v1.29a.75.75 0 001.5 0v-1.29c1.75-.24 3-1.58 3-3.26v-.007c0-1.652-1.222-3.004-2.954-3.272L10.75 7.42v-.67zm-1.5 1.726l-.092.015C7.846 8.687 7.25 9.608 7.25 10.7c0 1.09.6 2.013 1.908 2.21l.092.014V9.476zm1.5.04v3.01l.092-.015C12.15 12.713 12.75 11.79 12.75 10.7v-.007c0-1.086-.597-2.007-1.908-2.21l-.092-.016z" clip-rule="evenodd"/></svg>
+                        </span>
+                        <div>
+                            <div class="dashboard-panel-total-label">Total cobros</div>
+                            <strong class="dashboard-panel-total-value">Bs @Model.WeeklyCollections.Sum(x => x.Amount).ToString("0,0.##")</strong>
+                        </div>
                     </div>
-                    <a class="btn btn-sm btn-outline-primary" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="day"><span class="btn-icon-mobile">IR</span><span class="btn-text-mobile">Ver detalle</span></a>
+                    <a class="btn btn-sm btn-outline-primary dashboard-detail-btn" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="day"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg><span class="btn-text-mobile">Ver detalle</span></a>
                 </div>
                 <div class="card-body">
                     <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.WeeklyCollections.Count)">
@@ -90,11 +100,16 @@
 
             <article class="card admin-panel dashboard-chart-panel">
                 <div class="card-header admin-panel-head dashboard-chart-head">
-                    <div>
-                        <div class="dashboard-panel-total-label">Total ventas por zona</div>
-                        <strong class="dashboard-panel-total-value">@Model.SalesByZone.Sum(x => x.Count) ventas</strong>
+                    <div class="dashboard-panel-header-wrap">
+                        <span class="dashboard-panel-icon dashboard-panel-icon--sales" aria-hidden="true">
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.273 1.765 11.842 11.842 0 00.976.544l.062.029.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clip-rule="evenodd"/></svg>
+                        </span>
+                        <div>
+                            <div class="dashboard-panel-total-label">Total ventas por zona</div>
+                            <strong class="dashboard-panel-total-value">@Model.SalesByZone.Sum(x => x.Count) ventas</strong>
+                        </div>
                     </div>
-                    <a class="btn btn-sm btn-outline-primary" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")"><span class="btn-icon-mobile">IR</span><span class="btn-text-mobile">Ver detalle</span></a>
+                    <a class="btn btn-sm btn-outline-primary dashboard-detail-btn" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg><span class="btn-text-mobile">Ver detalle</span></a>
                 </div>
                 <div class="card-body">
                     <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.SalesByZone.Count)">
@@ -115,11 +130,16 @@
 
             <article class="card admin-panel dashboard-chart-panel">
                 <div class="card-header admin-panel-head dashboard-chart-head">
-                    <div>
-                        <div class="dashboard-panel-total-label">Total cobros por zona</div>
-                        <strong class="dashboard-panel-total-value">Bs @Model.CollectionsByZone.Sum(x => x.Amount).ToString("0,0.##")</strong>
+                    <div class="dashboard-panel-header-wrap">
+                        <span class="dashboard-panel-icon dashboard-panel-icon--collections" aria-hidden="true">
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.273 1.765 11.842 11.842 0 00.976.544l.062.029.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clip-rule="evenodd"/></svg>
+                        </span>
+                        <div>
+                            <div class="dashboard-panel-total-label">Total cobros por zona</div>
+                            <strong class="dashboard-panel-total-value">Bs @Model.CollectionsByZone.Sum(x => x.Amount).ToString("0,0.##")</strong>
+                        </div>
                     </div>
-                    <a class="btn btn-sm btn-outline-primary" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="zone"><span class="btn-icon-mobile">IR</span><span class="btn-text-mobile">Ver detalle</span></a>
+                    <a class="btn btn-sm btn-outline-primary dashboard-detail-btn" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="zone"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg><span class="btn-text-mobile">Ver detalle</span></a>
                 </div>
                 <div class="card-body">
                     <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.CollectionsByZone.Count)">
@@ -140,11 +160,16 @@
 
             <article class="card admin-panel dashboard-chart-panel dashboard-chart-panel-full">
                 <div class="card-header admin-panel-head dashboard-chart-head">
-                    <div>
-                        <div class="dashboard-panel-total-label">Total cobros por cobrador</div>
-                        <strong class="dashboard-panel-total-value">Bs @Model.CollectionsByCollector.Sum(x => x.Amount).ToString("0,0.##")</strong>
+                    <div class="dashboard-panel-header-wrap">
+                        <span class="dashboard-panel-icon dashboard-panel-icon--collector" aria-hidden="true">
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 8a3 3 0 100-6 3 3 0 000 6zM14.5 9a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM1.615 16.428a1.224 1.224 0 01-.569-1.175 6.002 6.002 0 0111.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 017 17a9.953 9.953 0 01-5.385-1.572zM14.5 16h-.106c.07-.297.088-.611.048-.933a7.47 7.47 0 00-1.588-3.755 4.502 4.502 0 015.874 2.636.818.818 0 01-.36.98A7.465 7.465 0 0114.5 16z"/></svg>
+                        </span>
+                        <div>
+                            <div class="dashboard-panel-total-label">Total cobros por cobrador</div>
+                            <strong class="dashboard-panel-total-value">Bs @Model.CollectionsByCollector.Sum(x => x.Amount).ToString("0,0.##")</strong>
+                        </div>
                     </div>
-                    <a class="btn btn-sm btn-outline-primary" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="collector"><span class="btn-icon-mobile">IR</span><span class="btn-text-mobile">Ver detalle</span></a>
+                    <a class="btn btn-sm btn-outline-primary dashboard-detail-btn" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="collector"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg><span class="btn-text-mobile">Ver detalle</span></a>
                 </div>
                 <div class="card-body">
                     <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.CollectionsByCollector.Count)">
