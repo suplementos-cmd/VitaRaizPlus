@@ -24,8 +24,16 @@ public sealed class CobrosController : Controller
         _userService = userService;
     }
 
-    public IActionResult Index(string? profile = null)
+    public IActionResult Index(string? profile = null, DateTime? from = null, DateTime? to = null, string? day = null, string? zone = null)
     {
+        // If filters are provided from Dashboard, redirect to appropriate view with filters
+        if (from.HasValue || to.HasValue || !string.IsNullOrWhiteSpace(day) || !string.IsNullOrWhiteSpace(zone))
+        {
+            var filterContext = BuildCollectionFilterContext(from, to, day, zone);
+            return RedirectToCollectorQueueWithFilters(profile, filterContext);
+        }
+
+        // Default behavior: redirect based on role
         return IsSupervisor()
             ? RedirectToAction(nameof(SupervisorDashboard), new { profile })
             : RedirectToAction(nameof(CollectorQueue), new { profile = ResolveCollectorProfile(profile), day = GetTodayKey(), filter = "all", groupBy = "status" });
@@ -1087,6 +1095,88 @@ public sealed class CobrosController : Controller
 
         return builder.ToString().Normalize(NormalizationForm.FormC);
     }
-}
 
+    #region Collection Filtering - Dashboard Integration
+
+    /// <summary>
+    /// Builds a filter context from Dashboard parameters for collections
+    /// </summary>
+    private static CollectionFilterContext BuildCollectionFilterContext(DateTime? from, DateTime? to, string? day, string? zone)
+    {
+        var context = new CollectionFilterContext
+        {
+            HasFilters = from.HasValue || to.HasValue || !string.IsNullOrWhiteSpace(day) || !string.IsNullOrWhiteSpace(zone)
+        };
+
+        // Date range filter
+        if (from.HasValue)
+        {
+            context.DateFrom = from.Value.Date;
+        }
+
+        if (to.HasValue)
+        {
+            context.DateTo = to.Value.Date;
+        }
+
+        // Single day filter (overrides date range if provided)
+        if (!string.IsNullOrWhiteSpace(day) && DateTime.TryParse(day, out var dayDate))
+        {
+            context.FilteredDay = dayDate.Date;
+            context.DayKey = dayDate.ToString("yyyy-MM-dd");
+        }
+
+        // Zone filter
+        if (!string.IsNullOrWhiteSpace(zone))
+        {
+            context.Zone = zone.Trim();
+        }
+
+        return context;
+    }
+
+    /// <summary>
+    /// Redirects to CollectorQueue with appropriate filters from Dashboard
+    /// </summary>
+    private IActionResult RedirectToCollectorQueueWithFilters(string? profile, CollectionFilterContext context)
+    {
+        var activeProfile = ResolveCollectorProfile(profile);
+        
+        // Build route parameters
+        var routeParams = new Dictionary<string, object?>
+        {
+            ["profile"] = activeProfile,
+            ["groupBy"] = "status",
+            ["filter"] = "all"
+        };
+
+        // Add day filter if provided
+        if (!string.IsNullOrWhiteSpace(context.DayKey))
+        {
+            routeParams["day"] = context.DayKey;
+        }
+
+        // Add zone filter if provided
+        if (!string.IsNullOrWhiteSpace(context.Zone))
+        {
+            routeParams["zone"] = context.Zone;
+        }
+
+        return RedirectToAction(nameof(CollectorQueue), routeParams);
+    }
+
+    /// <summary>
+    /// Filter context for collection data
+    /// </summary>
+    private sealed class CollectionFilterContext
+    {
+        public bool HasFilters { get; set; }
+        public DateTime? DateFrom { get; set; }
+        public DateTime? DateTo { get; set; }
+        public DateTime? FilteredDay { get; set; }
+        public string? DayKey { get; set; }
+        public string? Zone { get; set; }
+    }
+
+    #endregion
 

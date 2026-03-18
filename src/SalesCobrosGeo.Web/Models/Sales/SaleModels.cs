@@ -105,6 +105,7 @@ public sealed class SalesListViewModel
 {
     public IReadOnlyList<SalesWeekGroup> Weeks { get; set; } = [];
     public int WeeklyCount { get; set; }
+    public object? FilterContext { get; set; }
 }
 
 public sealed class SaleDetailViewModel
