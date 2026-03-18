@@ -49,14 +49,14 @@
                             <strong class="dashboard-panel-total-value">Bs @Model.WeeklySales.Sum(x => x.Amount).ToString("0,0.##")</strong>
                         </div>
                     </div>
-                    <a class="btn btn-sm btn-outline-primary dashboard-detail-btn" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg><span class="btn-text-mobile">Ver detalle</span></a>
+                    <a class="btn btn-sm btn-outline-primary dashboard-detail-btn" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" title="Ver todas las ventas"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/><path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg><span class="btn-text-mobile">Ventas</span></a>
                 </div>
                 <div class="card-body">
                     <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.WeeklySales.Count)">
                         @foreach (var item in Model.WeeklySales)
                         {
                             var pct = item.Count <= 0 ? 8m : Math.Max(10m, ((decimal)item.Count / salesDayPeak) * 100m);
-                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-day="@item.Key">
+                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-day="@item.Key" title="Ver ventas del @item.Label">
                                 <div class="dashboard-bar-track">
                                     <span class="dashboard-bar-tag plain">@item.Count</span>
                                     <div class="dashboard-bar-fill sales" style="height:@pct%"></div>
@@ -79,14 +79,14 @@
                             <strong class="dashboard-panel-total-value">Bs @Model.WeeklyCollections.Sum(x => x.Amount).ToString("0,0.##")</strong>
                         </div>
                     </div>
-                    <a class="btn btn-sm btn-outline-primary dashboard-detail-btn" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="day"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg><span class="btn-text-mobile">Ver detalle</span></a>
+                    <a class="btn btn-sm btn-outline-primary dashboard-detail-btn" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="day" title="Ver todos los cobros"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/><path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg><span class="btn-text-mobile">Cobros</span></a>
                 </div>
                 <div class="card-body">
                     <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.WeeklyCollections.Count)">
                         @foreach (var item in Model.WeeklyCollections)
                         {
                             var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / collectionDayPeak) * 100m);
-                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="day" asp-route-day="@item.Key">
+                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="day" asp-route-day="@item.Key" title="Ver cobros del @item.Label">
                                 <div class="dashboard-bar-track">
                                     <span class="dashboard-bar-tag plain money">@item.Amount.ToString("0")</span>
                                     <div class="dashboard-bar-fill collections" style="height:@pct%"></div>
@@ -109,14 +109,14 @@
                             <strong class="dashboard-panel-total-value">@Model.SalesByZone.Sum(x => x.Count) ventas</strong>
                         </div>
                     </div>
-                    <a class="btn btn-sm btn-outline-primary dashboard-detail-btn" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg><span class="btn-text-mobile">Ver detalle</span></a>
+                    <a class="btn btn-sm btn-outline-primary dashboard-detail-btn" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" title="Ver ventas por zona"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/><path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg><span class="btn-text-mobile">Ventas</span></a>
                 </div>
                 <div class="card-body">
                     <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.SalesByZone.Count)">
                         @foreach (var item in Model.SalesByZone)
                         {
                             var pct = item.Count <= 0 ? 8m : Math.Max(10m, ((decimal)item.Count / salesZonePeak) * 100m);
-                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-zone="@item.Key">
+                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Sales" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-zone="@item.Key" title="Ver ventas en @item.Label">
                                 <div class="dashboard-bar-track">
                                     <span class="dashboard-bar-tag plain">@item.Count</span>
                                     <div class="dashboard-bar-fill sales" style="height:@pct%"></div>
@@ -139,14 +139,14 @@
                             <strong class="dashboard-panel-total-value">Bs @Model.CollectionsByZone.Sum(x => x.Amount).ToString("0,0.##")</strong>
                         </div>
                     </div>
-                    <a class="btn btn-sm btn-outline-primary dashboard-detail-btn" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="zone"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg><span class="btn-text-mobile">Ver detalle</span></a>
+                    <a class="btn btn-sm btn-outline-primary dashboard-detail-btn" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="zone" title="Ver cobros por zona"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/><path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg><span class="btn-text-mobile">Cobros</span></a>
                 </div>
                 <div class="card-body">
                     <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.CollectionsByZone.Count)">
                         @foreach (var item in Model.CollectionsByZone)
                         {
                             var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / collectionsZonePeak) * 100m);
-                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="zone" asp-route-value="@item.Key">
+                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="zone" asp-route-value="@item.Key" title="Ver cobros en @item.Label">
                                 <div class="dashboard-bar-track">
                                     <span class="dashboard-bar-tag plain money">@item.Amount.ToString("0")</span>
                                     <div class="dashboard-bar-fill collections" style="height:@pct%"></div>
@@ -169,14 +169,14 @@
                             <strong class="dashboard-panel-total-value">Bs @Model.CollectionsByCollector.Sum(x => x.Amount).ToString("0,0.##")</strong>
                         </div>
                     </div>
-                    <a class="btn btn-sm btn-outline-primary dashboard-detail-btn" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="collector"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg><span class="btn-text-mobile">Ver detalle</span></a>
+                    <a class="btn btn-sm btn-outline-primary dashboard-detail-btn" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="collector" title="Ver cobros por vendedor"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/><path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg><span class="btn-text-mobile">Cobros</span></a>
                 </div>
                 <div class="card-body">
                     <div class="dashboard-bars-fit" style="--bar-count:@Math.Max(1, Model.CollectionsByCollector.Count)">
                         @foreach (var item in Model.CollectionsByCollector)
                         {
                             var pct = item.Amount <= 0 ? 8m : Math.Max(10m, (item.Amount / collectionsCollectorPeak) * 100m);
-                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="collector" asp-route-value="@item.Key">
+                            <a class="dashboard-bar-item dashboard-bar-card" asp-action="Collections" asp-route-from="@Model.Period.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.Period.End.ToString("yyyy-MM-dd")" asp-route-collectionsBy="collector" asp-route-value="@item.Key" title="Ver cobros de @item.Label">
                                 <div class="dashboard-bar-track">
                                     <span class="dashboard-bar-tag plain money">@item.Amount.ToString("0")</span>
                                     <div class="dashboard-bar-fill collector" style="height:@pct%"></div>
