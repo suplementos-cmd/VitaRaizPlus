@@ -4,14 +4,17 @@
     var value = Context.Request.Query["value"].ToString();
     var day = Context.Request.Query["day"].ToString();
 
-    string StatusClass(string status) => status.ToUpperInvariant() switch
+    // Catálogo dinámico desde ViewBag
+    var collectionStatuses = (ViewBag.CollectionStatuses as IReadOnlyDictionary<string, (string DisplayText, string CssClass, string Icon)>) 
+        ?? new Dictionary<string, (string, string, string)>();
+
+    string StatusClass(string status)
     {
-        "LIQUIDADO" => "status-chip status-done",
-        "AL CORRIENTE" => "status-chip status-current",
-        "ATRASADO" => "status-chip status-late",
-        "POR INICIAR" => "status-chip status-start",
-        _ => "status-chip"
-    };
+        var statusCode = status.ToUpperInvariant();
+        if (collectionStatuses.TryGetValue(statusCode, out var statusInfo))
+            return $"status-chip {statusInfo.CssClass}";
+        return "status-chip";
+    }
 
     string GroupLabel(string grouping) => grouping switch
     {
@@ -59,3 +62,7 @@
         }
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/modules/dashboard-state.js" asp-append-version="true"></script>
+}

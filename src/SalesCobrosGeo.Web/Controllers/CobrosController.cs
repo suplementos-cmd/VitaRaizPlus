@@ -4,6 +4,7 @@ using SalesCobrosGeo.Web.Models.Collections;
 using SalesCobrosGeo.Web.Models.Sales;
 using SalesCobrosGeo.Web.Models.Shared;
 using SalesCobrosGeo.Web.Security;
+using SalesCobrosGeo.Web.Services.Catalogs;
 using SalesCobrosGeo.Web.Services.Sales;
 using System.Globalization;
 using System.Text;
@@ -11,13 +12,18 @@ using System.Text;
 namespace SalesCobrosGeo.Web.Controllers;
 
 [Authorize(Policy = AppPolicies.CollectionsAccess)]
-public sealed class CobrosController : Controller
+public sealed class CobrosController : BaseController
 {
     private readonly ISalesRepository _repository;
     private readonly IUserSessionTracker _sessionTracker;
     private readonly IApplicationUserService _userService;
 
-    public CobrosController(ISalesRepository repository, IUserSessionTracker sessionTracker, IApplicationUserService userService)
+    public CobrosController(
+        ISalesRepository repository, 
+        IUserSessionTracker sessionTracker, 
+        IApplicationUserService userService,
+        ICatalogViewService catalogViewService)
+        : base(catalogViewService)
     {
         _repository = repository;
         _sessionTracker = sessionTracker;

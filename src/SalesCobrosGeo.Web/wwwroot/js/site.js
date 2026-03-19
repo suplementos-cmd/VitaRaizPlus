@@ -205,6 +205,7 @@
         const searchShell = root.querySelector('[data-sales-search-shell="true"]');
         const searchToggle = root.querySelector('[data-sales-search-toggle="true"]');
         const searchInput = root.querySelector('#salesAppSearch');
+        const desktopSearchInput = root.querySelector('#salesDesktopSearch');
         const records = Array.from(root.querySelectorAll('[data-sales-search]'));
 
         if (searchToggle && searchShell && searchToggle.dataset.bound !== 'true') {
@@ -230,6 +231,20 @@
             };
 
             searchInput.addEventListener('input', applySalesFilter);
+        }
+
+        // Desktop search for ultra-compact layout
+        if (desktopSearchInput && desktopSearchInput.dataset.bound !== 'true') {
+            desktopSearchInput.dataset.bound = 'true';
+            const applyDesktopFilter = () => {
+                const term = String(desktopSearchInput.value || '').trim().toLowerCase();
+                records.forEach((record) => {
+                    const haystack = String(record.getAttribute('data-sales-search') || '');
+                    record.hidden = term.length > 0 && !haystack.includes(term);
+                });
+            };
+
+            desktopSearchInput.addEventListener('input', applyDesktopFilter);
         }
     }
 

@@ -2,17 +2,22 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SalesCobrosGeo.Web.Models.Sales;
 using SalesCobrosGeo.Web.Security;
+using SalesCobrosGeo.Web.Services.Catalogs;
 using SalesCobrosGeo.Web.Services.Sales;
 
 namespace SalesCobrosGeo.Web.Controllers;
 
 [Authorize(Policy = AppPolicies.SalesAccess)]
-public sealed class SalesController : Controller
+public sealed class SalesController : BaseController
 {
     private readonly ISalesRepository _repository;
     private readonly IUserSessionTracker _sessionTracker;
 
-    public SalesController(ISalesRepository repository, IUserSessionTracker sessionTracker)
+    public SalesController(
+        ISalesRepository repository, 
+        IUserSessionTracker sessionTracker,
+        ICatalogViewService catalogViewService) 
+        : base(catalogViewService)
     {
         _repository = repository;
         _sessionTracker = sessionTracker;

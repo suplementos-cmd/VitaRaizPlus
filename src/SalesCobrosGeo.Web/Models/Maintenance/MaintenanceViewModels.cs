@@ -24,6 +24,7 @@ public sealed record MaintenancePageViewModel(
     IReadOnlyList<MaintenanceSection> Sections,
     MaintenanceEditorInput Editor,
     bool ShowEditor,
+    long? ViewItemId = null,
     string? Message = null);
 
 public sealed class MaintenanceEditorInput

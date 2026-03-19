@@ -6,184 +6,646 @@
     var editableSection = new[] { "zonas", "dias-cobro", "formas-pago", "productos", "vendedores", "cobradores", "estatus-venta", "estatus-cobro-grupos" }
         .Contains(Model.SelectedSection, StringComparer.OrdinalIgnoreCase);
     var readonlyCodeSection = Model.SelectedSection.Equals("estatus-cobro-grupos", StringComparison.OrdinalIgnoreCase);
-    ViewData["MobileContextBar"] = editableSection
-        ? new MobileContextBarModel("Mantenimiento", current.Title, null, new[] { new MobileContextAction("Agregar", "add", Url: Url.Action("Index", "Maintenance", new { section = Model.SelectedSection, create = true }), AriaLabel: "Agregar registro", CssClass: "is-primary") })
-        : new MobileContextBarModel("Mantenimiento", current.Title);
 
-    string ToneClass(string tone) => tone switch
+    // Resolve the item being viewed (detail panel)
+    var viewItem = Model.ViewItemId.HasValue
+        ? current.Items.FirstOrDefault(x => x.Id == Model.ViewItemId.Value)
+        : null;
+
+    // ─── State machine flags ────────────────────────────────────────
+    var isAtRoot   = Model.SelectedSection == "catalogos";
+    var isAtList   = !isAtRoot && viewItem == null && !Model.ShowEditor;
+    var isAtDetail = !isAtRoot && viewItem != null && !Model.ShowEditor;
+    var isAtEditor = !isAtRoot && Model.ShowEditor;
+    var desktopSplit = !isAtRoot && (Model.ViewItemId.HasValue || Model.ShowEditor);
+
+    // ─── Prev/Next navigation (for detail/editor aside) ────────────
+    int currentIndex = -1;
+    long? prevItemId = null;
+    long? nextItemId = null;
+    if ((isAtDetail || isAtEditor) && !isAtRoot && current.Items.Count > 1)
     {
-        "success" => "maintenance-badge success",
-        "warning" => "maintenance-badge warning",
-        "danger" => "maintenance-badge danger",
-        _ => "maintenance-badge brand"
-    };
-
-    string RowClass(bool active) => active ? "maintenance-row" : "maintenance-row inactive";
-}
-
-<div class="maintenance-compact-page">
-    <section class="maintenance-titlebar">
-        <div>
-            <h1 class="maintenance-compact-title">Mantenimiento</h1>
-            <div class="maintenance-compact-subtitle">Gestion compacta de catalogos y equipo operativo.</div>
-        </div>
-        @if (editableSection)
+        var targetId = isAtDetail ? viewItem?.Id : Model.Editor.Id;
+        if (targetId.HasValue && targetId.Value > 0)
         {
-            <a class="btn btn-primary maintenance-add-btn" asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-create="true" data-ajax-link="true" data-ajax-target=".maintenance-compact-page">Agregar</a>
+            var itemWithIndex = current.Items
+                .Select((item, idx) => new { item, idx })
+                .FirstOrDefault(x => x.item.Id == targetId.Value);
+            
+            if (itemWithIndex != null)
+            {
+                currentIndex = itemWithIndex.idx;
+                if (currentIndex > 0)
+                    prevItemId = current.Items[currentIndex - 1].Id;
+                if (currentIndex < current.Items.Count - 1)
+                    nextItemId = current.Items[currentIndex + 1].Id;
+            }
         }
-    </section>
-
-    @if (!string.IsNullOrWhiteSpace(Model.Message))
-    {
-        <div class="app-toast-inline success">@Model.Message</div>
     }
 
-    <section class="maintenance-summary-cards">
-        @foreach (var stat in Model.Stats)
-        {
-            <article class="maintenance-summary-card @stat.Tone">
-                <small>@stat.Title</small>
-                <strong>@stat.Value</strong>
-            </article>
-        }
-    </section>
+    // ─── Catalog section map (for overview → section nav) ──────────
+    var catalogSectionMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["ZON"]  = "zonas",     ["DIA"]  = "dias-cobro",         ["PAG"]  = "formas-pago",
+        ["PRO"]  = "productos", ["VEN"]  = "vendedores",         ["COB"]  = "cobradores",
+        ["ESTV"] = "estatus-venta", ["ESTC"] = "estatus-cobro-grupos", ["EMP"] = "empleados"
+    };
 
-    <nav class="maintenance-top-tabs" aria-label="Catalogos">
-        @foreach (var navItem in Model.Sections)
-        {
-            <a class="maintenance-tab @(navItem.Key == Model.SelectedSection ? "active" : string.Empty)"
-               asp-action="Index"
-               asp-route-section="@navItem.Key"
-               data-ajax-link="true"
-               data-ajax-target=".maintenance-compact-page">
-                <span>@navItem.Title</span>
-                <small>@navItem.Items.Count</small>
-            </a>
-        }
-    </nav>
+    // ─── Cancel URL for editor (desktop + mobile) ──────────────────
+    var cancelUrl = Model.Editor.Id is > 0
+        ? Url.Action("Index", "Maintenance", new { section = Model.SelectedSection, viewId = Model.Editor.Id })
+        : Url.Action("Index", "Maintenance", new { section = Model.SelectedSection });
 
-    <section class="maintenance-section-strip">
-        <div>
-            <h2 class="maintenance-section-title compact">@current.Title</h2>
-            <div class="maintenance-section-subtitle compact">@current.Subtitle</div>
-        </div>
-        <div class="maintenance-section-summary compact">@current.Summary</div>
-    </section>
+    // ─── Mobile layout bar setup ────────────────────────────────────
+    string? mobileBackUrl =
+        isAtList   ? Url.Action("Index", "Maintenance", new { section = "catalogos" })
+        : isAtDetail ? Url.Action("Index", "Maintenance", new { section = Model.SelectedSection })
+        : isAtEditor  ? cancelUrl
+        : null;
 
-    <section class="maintenance-rows-layout @(Model.ShowEditor ? "with-editor" : string.Empty)">
-        <div class="maintenance-rows-panel">
-            @if (current.Items.Count == 0)
+    MobileContextAction[]? mobileActions =
+        isAtList && editableSection
+            ? new[] { new MobileContextAction("Agregar", "add",
+                Url: Url.Action("Index", "Maintenance", new { section = Model.SelectedSection, create = true }),
+                AriaLabel: "Agregar registro", CssClass: "is-primary") }
+        : isAtDetail && editableSection && viewItem != null
+            ? new[] { new MobileContextAction("Editar", "edit",
+                Url: Url.Action("Index", "Maintenance", new { section = Model.SelectedSection, editId = viewItem.Id }),
+                AriaLabel: "Editar registro") }
+        : null;
+
+    ViewData["MobileContextBar"] = new MobileContextBarModel(
+        isAtRoot ? "Mantenimiento" : current.Title,
+        isAtRoot ? "Catálogos"
+            : isAtDetail && viewItem != null ? viewItem.Name
+            : isAtEditor ? (Model.Editor.Id is > 0 ? "Editar registro" : "Nuevo registro")
+            : current.Subtitle,
+        mobileBackUrl,
+        mobileActions);
+
+    string BadgeClass(string tone) => tone switch
+    {
+        "success" => "maint-badge success",
+        "warning" => "maint-badge warning",
+        "danger"  => "maint-badge danger",
+        _         => "maint-badge brand"
+    };
+
+    string SectionIcon(string key) => key switch
+    {
+        "zonas"               => """<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C14.97 15.69 17 13.311 17 10c0-3.866-3.134-7-7-7-3.866 0-7 3.134-7 7 0 3.311 2.03 5.69 3.354 6.985.83.799 1.654 1.381 2.274 1.765.311.193.571.337.757.433a5.741 5.741 0 00.281.14l.018.008.006.003zM10 11.25a1.25 1.25 0 100-2.5 1.25 1.25 0 000 2.5z" clip-rule="evenodd"/></svg>""",
+        "dias-cobro"          => """<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clip-rule="evenodd"/></svg>""",
+        "formas-pago"         => """<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2.5 4A1.5 1.5 0 001 5.5V6h18v-.5A1.5 1.5 0 0017.5 4h-15zM19 8.5H1v6A1.5 1.5 0 002.5 16h15a1.5 1.5 0 001.5-1.5v-6zM3 13.25a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zm4.75-.75a.75.75 0 000 1.5h3.5a.75.75 0 000-1.5h-3.5z" clip-rule="evenodd"/></svg>""",
+        "productos"           => """<svg viewBox="0 0 20 20" fill="currentColor"><path d="M3.75 3A1.75 1.75 0 002 4.75v3.26a3.235 3.235 0 011.75-.51c.474 0 .931.092 1.354.26V4.75A1.75 1.75 0 003.75 3zM7.25 3h9A1.75 1.75 0 0118 4.75v5a1.75 1.75 0 01-1.75 1.75h-9A1.75 1.75 0 014.75 9.75v-5A1.75 1.75 0 016.5 3h.75zM3.75 9a1.75 1.75 0 100 3.5 1.75 1.75 0 000-3.5zM2 14.25v.75A1.75 1.75 0 003.75 16.75h.5A1.75 1.75 0 006 15V14.25A3.226 3.226 0 013.75 13a3.226 3.226 0 01-1.75 1.25z"/></svg>""",
+        "vendedores"          => """<svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 8a3 3 0 100-6 3 3 0 000 6zM14.5 9a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM1.615 16.428a1.224 1.224 0 01-.569-1.175 6.002 6.002 0 0111.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 017 17a9.953 9.953 0 01-5.385-1.572zM14.5 16h-.106c.07-.297.088-.611.048-.933a7.47 7.47 0 00-1.588-3.755 4.502 4.502 0 015.874 2.636.818.818 0 01-.36.98A7.465 7.465 0 0114.5 16z"/></svg>""",
+        "cobradores"          => """<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v.67l-.046.008C7.472 7.696 6.25 9.048 6.25 10.7c0 1.68 1.25 3.02 3 3.26v1.29a.75.75 0 001.5 0v-1.29c1.75-.24 3-1.58 3-3.26v-.007c0-1.652-1.222-3.004-2.954-3.272L10.75 7.42v-.67zm-1.5 1.726l-.092.015C7.846 8.687 7.25 9.608 7.25 10.7c0 1.09.6 2.013 1.908 2.21l.092.014V9.476zm1.5.04v3.01l.092-.015C12.15 12.713 12.75 11.79 12.75 10.7v-.007c0-1.086-.597-2.007-1.908-2.21l-.092-.016z" clip-rule="evenodd"/></svg>""",
+        "estatus-venta"       => """<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2c-2.236 0-4.43.18-6.57.524C1.993 2.755 1 4.014 1 5.426v5.148c0 1.413.993 2.67 2.43 2.902.848.137 1.705.248 2.57.331v3.443a.75.75 0 001.28.53l3.58-3.579a.78.78 0 01.527-.224 41.202 41.202 0 005.183-.5c1.437-.232 2.43-1.49 2.43-2.903V5.426c0-1.413-.993-2.67-2.43-2.902A41.289 41.289 0 0010 2z" clip-rule="evenodd"/></svg>""",
+        "estatus-cobro-grupos"=> """<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 4.25A2.25 2.25 0 014.25 2h11.5A2.25 2.25 0 0118 4.25v8.5A2.25 2.25 0 0115.75 15h-3.105a3.501 3.501 0 001.1 1.677A.75.75 0 0113.26 18H6.74a.75.75 0 01-.484-1.323A3.501 3.501 0 007.355 15H4.25A2.25 2.25 0 012 12.75v-8.5zm1.5 0a.75.75 0 01.75-.75h11.5a.75.75 0 01.75.75v7.5a.75.75 0 01-.75.75H4.25a.75.75 0 01-.75-.75v-7.5z" clip-rule="evenodd"/></svg>""",
+        "empleados"           => """<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zM1.49 15.326a.78.78 0 01-.358-.442 3 3 0 014.308-3.516 6.484 6.484 0 00-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 01-2.07-.655zM16.44 15.98a4.97 4.97 0 002.07-.654.78.78 0 00.357-.442 3 3 0 00-4.308-3.517 6.484 6.484 0 011.907 3.96 2.32 2.32 0 01-.026.654zM18 8a2 2 0 11-4 0 2 2 0 014 0zM5.304 16.19a.844.844 0 01-.277-.71 5 5 0 019.947 0 .843.843 0 01-.277.71A6.975 6.975 0 0110 18a6.974 6.974 0 01-4.696-1.81z"/></svg>""",
+        _                     => """<svg viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM14 11a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z"/></svg>"""
+    };
+
+    string StatIcon(int i) => i switch
+    {
+        0 => """<svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 00-1 1v1a1 1 0 001 1h14a1 1 0 001-1V5a1 1 0 00-1-1H3zM3 9a1 1 0 00-1 1v1a1 1 0 001 1h14a1 1 0 001-1v-1a1 1 0 00-1-1H3zM3 14a1 1 0 00-1 1v1a1 1 0 001 1h14a1 1 0 001-1v-1a1 1 0 00-1-1H3z"/></svg>""",
+        1 => """<svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>""",
+        2 => """<svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4zM3 8h14l-.865 9.534A2 2 0 0114.144 19H5.856a2 2 0 01-1.991-1.466L3 8z"/></svg>""",
+        3 => """<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>""",
+        _ => """<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v.67l-.046.008C7.472 7.696 6.25 9.048 6.25 10.7c0 1.68 1.25 3.02 3 3.26v1.29a.75.75 0 001.5 0v-1.29c1.75-.24 3-1.58 3-3.26v-.007c0-1.652-1.222-3.004-2.954-3.272L10.75 7.42v-.67zm-1.5 1.726l-.092.015C7.846 8.687 7.25 9.608 7.25 10.7c0 1.09.6 2.013 1.908 2.21l.092.014V9.476zm1.5.04v3.01l.092-.015C12.15 12.713 12.75 11.79 12.75 10.7v-.007c0-1.086-.597-2.007-1.908-2.21l-.092-.016z" clip-rule="evenodd"/></svg>"""
+    };
+}
+
+<div class="maint-page">
+
+@if (!string.IsNullOrWhiteSpace(Model.Message))
+{
+    <div class="app-toast-inline success">@Model.Message</div>
+}
+
+@*
+ ═══════════════════════════════════════════════════════════════
+ MOBILE / TABLET SHELL  (hidden ≥992px via CSS)
+ State:  catalogos → list → detail → editor
+ ═══════════════════════════════════════════════════════════════
+*@
+<div class="maint-m">
+
+    @* State 0 — Section picker *@
+    @if (isAtRoot)
+    {
+        <div class="maint-m-sections">
+            @foreach (var sec in Model.Sections.Where(x => x.Key != "catalogos"))
             {
-                <div class="app-empty-state compact">
-                    <strong>Sin registros todavia</strong>
-                    <span>Cuando agregues registros apareceran aqui en formato compacto.</span>
+                <a class="maint-m-scard"
+                   asp-action="Index" asp-route-section="@sec.Key"
+                   data-ajax-link="true" data-ajax-target=".maint-page">
+                    <span class="maint-m-scard-icon @sec.Key" aria-hidden="true">@Html.Raw(SectionIcon(sec.Key))</span>
+                    <span class="maint-m-scard-text">
+                        <strong>@sec.Title</strong>
+                        <small>@sec.Subtitle</small>
+                    </span>
+                    <span class="maint-m-scard-count">@sec.Items.Count</span>
+                    <svg class="maint-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/>
+                    </svg>
+                </a>
+            }
+        </div>
+    }
+
+    @* State 1 — Compact item rows list *@
+    else if (isAtList)
+    {
+        if (current.Items.Count == 0)
+        {
+            <div class="maint-empty">
+                <svg class="maint-empty-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                    <circle cx="24" cy="24" r="22" fill="currentColor" opacity=".06"/>
+                    <path d="M15 18h18M15 24h12M15 30h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <strong>Sin registros todavía</strong>
+                <span>Cuando agregues registros aparecerán aquí.</span>
+                @if (editableSection)
+                {
+                    <a class="btn btn-primary btn-sm"
+                       asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-create="true"
+                       data-ajax-link="true" data-ajax-target=".maint-page">Agregar primero</a>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="maint-m-list">
+                @foreach (var item in current.Items)
+                {
+                    <a class="maint-m-row @(!item.IsActive ? "inactive" : string.Empty)"
+                       asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-viewId="@item.Id"
+                       data-ajax-link="true" data-ajax-target=".maint-page">
+                        <span class="maint-code-pill">@item.Code</span>
+                        <span class="maint-m-row-body">
+                            <strong>@item.Name</strong>
+                            <small>@item.Detail</small>
+                        </span>
+                        <span class="@BadgeClass(item.Tone)">@item.Badge</span>
+                        <svg class="maint-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/>
+                        </svg>
+                    </a>
+                }
+            </div>
+        }
+    }
+
+    @* State 2 — Item detail *@
+    else if (isAtDetail && viewItem != null)
+    {
+        <div class="maint-m-detail">
+            <div class="maint-m-detail-card">
+                <div class="maint-m-detail-top">
+                    <span class="maint-m-detail-icon @current.Key" aria-hidden="true">@Html.Raw(SectionIcon(current.Key))</span>
+                    <div>
+                        <strong class="maint-m-detail-name">@viewItem.Name</strong>
+                        <span class="maint-code-pill">@viewItem.Code</span>
+                    </div>
+                    <span class="@BadgeClass(viewItem.Tone)">@viewItem.Badge</span>
+                </div>
+                <div class="maint-m-detail-fields">
+                    <div class="maint-m-detail-field"><label>Código</label><span>@viewItem.Code</span></div>
+                    <div class="maint-m-detail-field"><label>Nombre</label><span>@viewItem.Name</span></div>
+                    <div class="maint-m-detail-field"><label>Detalle</label><span>@viewItem.Detail</span></div>
+                    <div class="maint-m-detail-field">
+                        <label>Estado</label>
+                        <span class="@BadgeClass(viewItem.Tone)">@viewItem.Badge</span>
+                    </div>
+                </div>
+            </div>
+            <div class="maint-m-detail-actions">
+                @if (editableSection)
+                {
+                    <form asp-action="ToggleStatus" method="post"
+                          class="maintenance-toggle-form admin-inline-toggle-form"
+                          data-ajaxify="true" data-ajax-target=".maint-page">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="section"  value="@Model.SelectedSection" />
+                        <input type="hidden" name="id"       value="@viewItem.Id" />
+                        <input type="hidden" name="isActive" value="@(viewItem.IsActive ? "true" : "false")" />
+                        <label class="app-switch maintenance-status-switch" title="Cambiar estado">
+                            <input type="checkbox" class="app-switch-input"
+                                   @(viewItem.IsActive ? "checked" : null)
+                                   data-toggle-submit="true" data-working-label="Procesando..." />
+                            <span class="app-switch-track"></span>
+                            <span class="app-switch-label">@(viewItem.IsActive ? "Activo" : "Inactivo")</span>
+                        </label>
+                    </form>
+                    <a class="btn btn-primary"
+                       asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-editId="@viewItem.Id"
+                       data-ajax-link="true" data-ajax-target=".maint-page">
+                        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="width:15px;height:15px">
+                            <path d="M5.433 13.917l1.262-3.155A4 4 0 017.58 9.42l6.92-6.918a2.121 2.121 0 013 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 01-.65-.65z"/>
+                            <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0010 3H4.75A2.75 2.75 0 002 5.75v9.5A2.75 2.75 0 004.75 18h9.5A2.75 2.75 0 0017 15.25V10a.75.75 0 00-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5z"/>
+                        </svg>
+                        Editar
+                    </a>
+                }
+                else if (Model.SelectedSection == "empleados")
+                {
+                    <a class="btn btn-outline-secondary"
+                       asp-controller="Administration" asp-action="Users" asp-route-editUsername="@viewItem.Code">
+                        Ver usuario
+                    </a>
+                }
+            </div>
+        </div>
+    }
+
+    @* State 3 — Editor form *@
+    else if (isAtEditor)
+    {
+        <div class="maint-m-editor">
+            <div class="maint-m-editor-head">
+                <div class="maint-editor-caption">@(Model.Editor.Id is > 0 ? "Editar registro" : "Nuevo registro")</div>
+                <h2 class="maint-m-editor-title">@current.Title</h2>
+            </div>
+            <form asp-action="Save" method="post"
+                  class="maint-editor-form" data-ajaxify="true" data-ajax-target=".maint-page">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Section" value="@Model.SelectedSection" />
+                <input type="hidden" name="Id" value="@Model.Editor.Id" />
+                <div>
+                    <label class="form-label" for="mCode">Código</label>
+                    <input class="form-control" id="mCode" name="Code"
+                           value="@Model.Editor.Code" @(readonlyCodeSection ? "readonly" : null) />
+                </div>
+                <div>
+                    <label class="form-label" for="mName">Nombre</label>
+                    <input class="form-control" id="mName" name="Name" value="@Model.Editor.Name" />
+                </div>
+                @if (Model.SelectedSection == "productos")
+                {
+                    <div>
+                        <label class="form-label" for="mPrice">Precio base</label>
+                        <input class="form-control" id="mPrice" name="Price"
+                               type="number" step="0.01" min="0" value="@Model.Editor.Price" />
+                    </div>
+                }
+                <label class="admin-check-chip maintenance-check-chip">
+                    <input type="hidden" name="IsActive" value="false" />
+                    <input type="checkbox" name="IsActive" value="true" @(Model.Editor.IsActive ? "checked" : null) />
+                    <span>Activo para operación</span>
+                </label>
+                <div class="maint-editor-actions">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <a class="btn btn-outline-secondary" href="@cancelUrl"
+                       data-ajax-link="true" data-ajax-target=".maint-page">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    }
+
+</div>
+@* /maint-m *@
+
+@*
+ ═══════════════════════════════════════════════════════════════
+ DESKTOP SHELL  (hidden ≤991px via CSS)
+ Cards overview + main panel + optional sticky detail/editor aside
+ ═══════════════════════════════════════════════════════════════
+*@
+<div class="maint-d">
+
+    @* ── Content body: single panel or split ──────────────── *@
+    <div class="maint-d-body @(desktopSplit ? "split" : string.Empty)">
+
+        @* Main panel *@
+        <section class="maint-d-panel">
+            <div class="maint-d-panel-head maint-d-panel-head-enhanced">
+                <div class="maint-d-panel-head-left">
+                    <span class="maint-d-panel-icon @current.Key" aria-hidden="true">@Html.Raw(SectionIcon(current.Key))</span>
+                    <div class="maint-d-panel-text">
+                        <h2 class="maint-d-panel-title">@current.Title</h2>
+                        <p class="maint-d-panel-sub">@current.Subtitle</p>
+                    </div>
+                </div>
+                @if (editableSection)
+                {
+                    <a class="btn btn-sm btn-primary maint-d-add-btn"
+                       asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-create="true"
+                       data-ajax-link="true" data-ajax-target=".maint-page">
+                        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"/></svg>
+                        Agregar
+                    </a>
+                }
+            </div>
+
+            @if (isAtRoot)
+            {
+                @* Section overview ─ CARD GRID *@
+                <div class="maint-d-overview-grid">
+                    @foreach (var sec in Model.Sections.Where(x => x.Key != "catalogos"))
+                    {
+                        <a class="maint-d-overview-card @sec.Key"
+                           asp-action="Index" asp-route-section="@sec.Key"
+                           data-ajax-link="true" data-ajax-target=".maint-page">
+                            <div class="maint-d-overview-card-icon">
+                                <span class="maint-d-overview-icon-box @sec.Key" aria-hidden="true">@Html.Raw(SectionIcon(sec.Key))</span>
+                            </div>
+                            <div class="maint-d-overview-card-body">
+                                <h3 class="maint-d-overview-card-title">@sec.Title</h3>
+                                <p class="maint-d-overview-card-sub">@sec.Subtitle</p>
+                                <div class="maint-d-overview-card-count">
+                                    <span>@sec.Items.Count</span>
+                                    <small>registro@(sec.Items.Count != 1 ? "s" : "")</small>
+                                </div>
+                            </div>
+                        </a>
+                    }
+                </div>
+            }
+            else if (current.Items.Count == 0)
+            {
+                <div class="maint-empty">
+                    <svg class="maint-empty-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                        <circle cx="24" cy="24" r="22" fill="currentColor" opacity=".06"/>
+                        <path d="M15 18h18M15 24h12M15 30h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <strong>Sin registros todavía</strong>
+                    <span>Cuando agregues registros aparecerán aquí.</span>
+                    @if (editableSection)
+                    {
+                        <a class="btn btn-primary btn-sm"
+                           asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-create="true"
+                           data-ajax-link="true" data-ajax-target=".maint-page">Agregar primero</a>
+                    }
                 </div>
             }
             else
             {
-                <div class="maintenance-row-head">
-                    <span>Nombre</span>
-                    <span>Codigo</span>
-                    <span>Detalle</span>
-                    <span>Estatus</span>
-                    <span>Acciones</span>
-                </div>
-                <div class="maintenance-rows-grid">
+                @* Item cards grid – click body→detail, hover icon→edit *@
+                <div class="maint-d-cards">
                     @foreach (var item in current.Items)
                     {
-                        <article class="@RowClass(item.IsActive)">
-                            <div class="maintenance-row-main">
-                                <strong>@item.Name</strong>
-                                <small>@item.Code</small>
-                            </div>
-                            <div class="maintenance-row-code">@item.Code</div>
-                            <div class="maintenance-row-detail">@item.Detail</div>
-                            <div class="maintenance-row-status">
-                                <span class="@ToneClass(item.Tone)">@item.Badge</span>
-                            </div>
-                            <div class="maintenance-row-actions">
-                                @if (editableSection)
-                                {
-                                    <form asp-action="ToggleStatus" method="post" class="maintenance-toggle-form admin-inline-toggle-form" data-ajaxify="true" data-ajax-target=".maintenance-compact-page">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="section" value="@Model.SelectedSection" />
-                                        <input type="hidden" name="id" value="@item.Id" />
-                                        <input type="hidden" name="isActive" value="@(item.IsActive ? "true" : "false")" />
-                                        <label class="app-switch maintenance-status-switch" title="Cambiar estado del registro">
-                                            <input type="checkbox"
-                                                   class="app-switch-input"
-                                                   @(item.IsActive ? "checked" : null)
-                                                   data-toggle-submit="true"
-                                                   data-working-label="Procesando..." />
-                                            <span class="app-switch-track"></span>
-                                            <span class="app-switch-label">@(item.IsActive ? "Activo" : "Inactivo")</span>
-                                        </label>
-                                    </form>
-                                    <a class="btn btn-sm btn-outline-primary" asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-editId="@item.Id" data-ajax-link="true" data-ajax-target=".maintenance-compact-page">Editar</a>
-                                }
-                                else if (Model.SelectedSection == "empleados")
-                                {
-                                    <a class="btn btn-sm btn-outline-secondary" asp-controller="Administration" asp-action="Users" asp-route-editUsername="@item.Code">Usuario</a>
-                                }
-                                else
-                                {
-                                    <a class="btn btn-sm btn-outline-secondary" asp-action="Index" asp-route-section="productos">Ver</a>
-                                }
-                            </div>
+                        bool isSelected = Model.ViewItemId == item.Id || (Model.ShowEditor && Model.Editor.Id == item.Id);
+
+                        string cardBodyHref;
+                        bool cardBodyAjax;
+                        if (editableSection)
+                        {
+                            cardBodyHref = Url.Action("Index", "Maintenance", new { section = Model.SelectedSection, viewId = item.Id }) ?? "#";
+                            cardBodyAjax = true;
+                        }
+                        else if (Model.SelectedSection == "empleados")
+                        {
+                            cardBodyHref = Url.Action("Users", "Administration", new { editUsername = item.Code }) ?? "#";
+                            cardBodyAjax = false;
+                        }
+                        else if (catalogSectionMap.TryGetValue(item.Code, out var dSec))
+                        {
+                            cardBodyHref = Url.Action("Index", "Maintenance", new { section = dSec }) ?? "#";
+                            cardBodyAjax = true;
+                        }
+                        else
+                        {
+                            cardBodyHref = "#"; cardBodyAjax = false;
+                        }
+
+                        <article class="maint-d-card @(!item.IsActive ? "inactive" : string.Empty) @(isSelected ? "selected" : string.Empty)">
+                            <a class="maint-d-card-body" href="@cardBodyHref"
+                               @(cardBodyAjax ? Html.Raw("data-ajax-link=\"true\" data-ajax-target=\".maint-page\"") : null)>
+                                <div class="maint-d-card-top">
+                                    <span class="maint-code-pill">@item.Code</span>
+                                    <span class="@BadgeClass(item.Tone)">@item.Badge</span>
+                                </div>
+                                <strong class="maint-d-card-name">@item.Name</strong>
+                                <p class="maint-d-card-detail">@item.Detail</p>
+                            </a>
+                            @if (editableSection)
+                            {
+                                <a class="maint-d-card-editbtn"
+                                   asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-editId="@item.Id"
+                                   data-ajax-link="true" data-ajax-target=".maint-page"
+                                   title="Editar @item.Name" aria-label="Editar">
+                                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path d="M5.433 13.917l1.262-3.155A4 4 0 017.58 9.42l6.92-6.918a2.121 2.121 0 013 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 01-.65-.65z"/>
+                                        <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0010 3H4.75A2.75 2.75 0 002 5.75v9.5A2.75 2.75 0 004.75 18h9.5A2.75 2.75 0 0017 15.25V10a.75.75 0 00-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5z"/>
+                                    </svg>
+                                </a>
+                            }
                         </article>
                     }
                 </div>
             }
-        </div>
+        </section>
 
-        @if (editableSection && Model.ShowEditor)
+        @* Detail/editor aside – rendered only when desktopSplit *@
+        @if (desktopSplit)
         {
-            <aside class="maintenance-side-editor">
-                <div class="maintenance-editor-titlebar">
-                    <div>
-                        <div class="maintenance-editor-caption">@(Model.Editor.Id is > 0 ? "Editar registro" : "Nuevo registro")</div>
-                        <h3>@current.Title</h3>
-                    </div>
-                    <a class="btn btn-sm btn-outline-secondary" asp-action="Index" asp-route-section="@Model.SelectedSection" data-ajax-link="true" data-ajax-target=".maintenance-compact-page">Cerrar</a>
-                </div>
-
-                <form asp-action="Save" method="post" class="maintenance-editor-form compact" data-ajaxify="true" data-ajax-target=".maintenance-compact-page">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="Section" value="@Model.SelectedSection" />
-                    <input type="hidden" name="Id" value="@Model.Editor.Id" />
-
-                    <div>
-                        <label class="form-label" for="maintenanceCode">Codigo</label>
-                        <input class="form-control" id="maintenanceCode" name="Code" value="@Model.Editor.Code" @(readonlyCodeSection ? "readonly" : null) />
-                    </div>
-
-                    <div>
-                        <label class="form-label" for="maintenanceName">Nombre</label>
-                        <input class="form-control" id="maintenanceName" name="Name" value="@Model.Editor.Name" />
-                    </div>
-
-                    @if (Model.SelectedSection == "productos")
-                    {
+            <aside class="maint-d-detail">
+                @if (Model.ShowEditor)
+                {
+                    @* Editor pane *@
+                    <div class="maint-d-aside-head">
                         <div>
-                            <label class="form-label" for="maintenancePrice">Precio base</label>
-                            <input class="form-control" id="maintenancePrice" name="Price" type="number" step="0.01" min="0" value="@Model.Editor.Price" />
+                            <div class="maint-editor-caption">@(Model.Editor.Id is > 0 ? "Editar registro" : "Nuevo registro")</div>
+                            <h3 class="maint-d-aside-title">@current.Title</h3>
                         </div>
-                    }
-
-                    <label class="admin-check-chip maintenance-check-chip">
-                        <input type="hidden" name="IsActive" value="false" />
-                        <input type="checkbox" name="IsActive" value="true" @(Model.Editor.IsActive ? "checked" : null) />
-                        <span>Activo para operacion</span>
-                    </label>
-
-                    <div class="maintenance-editor-actions compact">
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                        <a class="btn btn-outline-secondary" asp-action="Index" asp-route-section="@Model.SelectedSection" data-ajax-link="true" data-ajax-target=".maintenance-compact-page">Cancelar</a>
+                        <div class="maint-d-aside-head-btns">
+                            @* Prev/Next navigation *@
+                            @if (prevItemId.HasValue || nextItemId.HasValue)
+                            {
+                                <div class="maint-d-nav-arrows">
+                                    @if (prevItemId.HasValue)
+                                    {
+                                        <a class="maint-d-nav-arrow"
+                                           asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-editId="@prevItemId"
+                                           data-ajax-link="true" data-ajax-target=".maint-page" aria-label="Anterior">
+                                            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd"/>
+                                            </svg>
+                                        </a>
+                                    }
+                                    else
+                                    { <span class="maint-d-nav-arrow disabled"></span> }
+                                    @if (nextItemId.HasValue)
+                                    {
+                                        <a class="maint-d-nav-arrow"
+                                           asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-editId="@nextItemId"
+                                           data-ajax-link="true" data-ajax-target=".maint-page" aria-label="Siguiente">
+                                            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/>
+                                            </svg>
+                                        </a>
+                                    }
+                                    else
+                                    { <span class="maint-d-nav-arrow disabled"></span> }
+                                </div>
+                            }
+                            <a class="maint-d-aside-close" href="@cancelUrl"
+                               data-ajax-link="true" data-ajax-target=".maint-page" aria-label="Cerrar">
+                                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
+                                </svg>
+                            </a>
+                        </div>
                     </div>
-                </form>
+                    @* Quick section navigator *@
+                    <div class="maint-d-quick-sections">
+                        @foreach (var sec in Model.Sections.Where(x => x.Key != "catalogos"))
+                        {
+                            <a class="maint-d-quick-sec @(sec.Key == Model.SelectedSection ? "active" : string.Empty) @sec.Key"
+                               asp-action="Index" asp-route-section="@sec.Key"
+                               data-ajax-link="true" data-ajax-target=".maint-page"
+                               title="@sec.Title">
+                                <span class="maint-d-quick-sec-icon" aria-hidden="true">@Html.Raw(SectionIcon(sec.Key))</span>
+                            </a>
+                        }
+                    </div>
+                    <form asp-action="Save" method="post"
+                          class="maint-editor-form" data-ajaxify="true" data-ajax-target=".maint-page">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Section" value="@Model.SelectedSection" />
+                        <input type="hidden" name="Id" value="@Model.Editor.Id" />
+                        <div>
+                            <label class="form-label" for="dCode">Código</label>
+                            <input class="form-control" id="dCode" name="Code"
+                                   value="@Model.Editor.Code" @(readonlyCodeSection ? "readonly" : null) />
+                        </div>
+                        <div>
+                            <label class="form-label" for="dName">Nombre</label>
+                            <input class="form-control" id="dName" name="Name" value="@Model.Editor.Name" />
+                        </div>
+                        @if (Model.SelectedSection == "productos")
+                        {
+                            <div>
+                                <label class="form-label" for="dPrice">Precio base</label>
+                                <input class="form-control" id="dPrice" name="Price"
+                                       type="number" step="0.01" min="0" value="@Model.Editor.Price" />
+                            </div>
+                        }
+                        <label class="admin-check-chip maintenance-check-chip">
+                            <input type="hidden" name="IsActive" value="false" />
+                            <input type="checkbox" name="IsActive" value="true" @(Model.Editor.IsActive ? "checked" : null) />
+                            <span>Activo para operación</span>
+                        </label>
+                        <div class="maint-editor-actions">
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                            <a class="btn btn-outline-secondary" href="@cancelUrl"
+                               data-ajax-link="true" data-ajax-target=".maint-page">Cancelar</a>
+                        </div>
+                    </form>
+                }
+                else if (viewItem != null)
+                {
+                    @* Detail pane *@
+                    <div class="maint-d-aside-head">
+                        <div>
+                            <div class="maint-editor-caption">Detalle</div>
+                            <h3 class="maint-d-aside-title">@viewItem.Name</h3>
+                        </div>
+                        <div class="maint-d-aside-head-btns">
+                            @* Prev/Next navigation *@
+                            @if (prevItemId.HasValue || nextItemId.HasValue)
+                            {
+                                <div class="maint-d-nav-arrows">
+                                    @if (prevItemId.HasValue)
+                                    {
+                                        <a class="maint-d-nav-arrow"
+                                           asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-viewId="@prevItemId"
+                                           data-ajax-link="true" data-ajax-target=".maint-page" aria-label="Anterior">
+                                            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd"/>
+                                            </svg>
+                                        </a>
+                                    }
+                                    else
+                                    { <span class="maint-d-nav-arrow disabled"></span> }
+                                    @if (nextItemId.HasValue)
+                                    {
+                                        <a class="maint-d-nav-arrow"
+                                           asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-viewId="@nextItemId"
+                                           data-ajax-link="true" data-ajax-target=".maint-page" aria-label="Siguiente">
+                                            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/>
+                                            </svg>
+                                        </a>
+                                    }
+                                    else
+                                    { <span class="maint-d-nav-arrow disabled"></span> }
+                                </div>
+                            }
+                            @if (editableSection)
+                            {
+                                <a class="btn btn-sm btn-primary"
+                                   asp-action="Index" asp-route-section="@Model.SelectedSection" asp-route-editId="@viewItem.Id"
+                                   data-ajax-link="true" data-ajax-target=".maint-page">
+                                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="width:14px;height:14px">
+                                        <path d="M5.433 13.917l1.262-3.155A4 4 0 017.58 9.42l6.92-6.918a2.121 2.121 0 013 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 01-.65-.65z"/>
+                                        <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0010 3H4.75A2.75 2.75 0 002 5.75v9.5A2.75 2.75 0 004.75 18h9.5A2.75 2.75 0 0017 15.25V10a.75.75 0 00-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5z"/>
+                                    </svg>
+                                    Editar
+                                </a>
+                            }
+                            <a class="maint-d-aside-close"
+                               asp-action="Index" asp-route-section="@Model.SelectedSection"
+                               data-ajax-link="true" data-ajax-target=".maint-page" aria-label="Cerrar">
+                                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="maint-d-detail-body">
+                        <div class="maint-d-detail-fields">
+                            <div class="maint-d-detail-field"><label>Código</label><span class="maint-code-pill">@viewItem.Code</span></div>
+                            <div class="maint-d-detail-field"><label>Nombre</label><span>@viewItem.Name</span></div>
+                            <div class="maint-d-detail-field"><label>Detalle</label><span>@viewItem.Detail</span></div>
+                            <div class="maint-d-detail-field">
+                                <label>Estado</label>
+                                <span class="@BadgeClass(viewItem.Tone)">@viewItem.Badge</span>
+                            </div>
+                        </div>
+                        @if (editableSection)
+                        {
+                            <div class="maint-d-detail-toggle">
+                                <form asp-action="ToggleStatus" method="post"
+                                      class="maintenance-toggle-form admin-inline-toggle-form"
+                                      data-ajaxify="true" data-ajax-target=".maint-page">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="section"  value="@Model.SelectedSection" />
+                                    <input type="hidden" name="id"       value="@viewItem.Id" />
+                                    <input type="hidden" name="isActive" value="@(viewItem.IsActive ? "true" : "false")" />
+                                    <label class="app-switch maintenance-status-switch" title="Cambiar estado">
+                                        <input type="checkbox" class="app-switch-input"
+                                               @(viewItem.IsActive ? "checked" : null)
+                                               data-toggle-submit="true" data-working-label="Procesando..." />
+                                        <span class="app-switch-track"></span>
+                                        <span class="app-switch-label">@(viewItem.IsActive ? "Activo" : "Inactivo")</span>
+                                    </label>
+                                </form>
+                            </div>
+                        }
+                        else if (Model.SelectedSection == "empleados")
+                        {
+                            <div class="maint-d-detail-toggle">
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   asp-controller="Administration" asp-action="Users" asp-route-editUsername="@viewItem.Code">
+                                    Ver usuario
+                                </a>
+                            </div>
+                        }
+                    </div>
+                }
             </aside>
         }
-    </section>
+
+    </div>
+    @* /maint-d-body *@
+
 </div>
+@* /maint-d *@
 
+</div>
+@* /maint-page *@
 
+@section Scripts {
+    <script src="~/js/modules/maintenance-state.js" asp-append-version="true"></script>
+}

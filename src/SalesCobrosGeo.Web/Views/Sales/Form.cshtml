@@ -24,6 +24,8 @@
         <div class="app-toast-inline danger sale-form-toast" data-auto-toast="true" data-toast-delay="5000">Revisa los campos obligatorios antes de continuar.</div>
     }
 
+    <div id="validationToast" class="app-toast-inline danger sale-form-toast" style="display: none;"></div>
+
     <div class="sale-wizard-steps" id="saleWizardSteps">
         <button type="button" class="sale-step-chip active" data-step-target="1"><span>1</span><small>Cliente</small></button>
         <button type="button" class="sale-step-chip" data-step-target="2"><span>2</span><small>Producto</small></button>
@@ -310,6 +312,130 @@
         return !!String(el?.value || '').trim();
     }
 
+    function clearValidationErrors() {
+        document.querySelectorAll('.form-control, .form-select').forEach(el => {
+            el.classList.remove('is-invalid', 'field-error');
+        });
+        document.querySelectorAll('.invalid-feedback-custom').forEach(el => el.remove());
+    }
+
+    function markFieldInvalid(elementOrId, message) {
+        const el = typeof elementOrId === 'string' ? document.getElementById(elementOrId) : elementOrId;
+        if (!el) return;
+        
+        el.classList.add('is-invalid', 'field-error');
+        
+        // Agregar mensaje de error si se proporciona
+        if (message) {
+            const existingFeedback = el.parentElement.querySelector('.invalid-feedback-custom');
+            if (existingFeedback) {
+                existingFeedback.textContent = message;
+            } else {
+                const feedback = document.createElement('div');
+                feedback.className = 'invalid-feedback-custom';
+                feedback.textContent = message;
+                el.parentElement.appendChild(feedback);
+            }
+        }
+        
+        // Scroll al primer campo inválido
+        if (document.querySelector('.field-error') === el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    function showValidationToast(messages) {
+        const toast = document.getElementById('validationToast');
+        if (!toast) return;
+        
+        const messageHtml = messages.length === 1 
+            ? messages[0]
+            : '<strong>Faltan los siguientes campos:</strong><ul>' + 
+              messages.map(m => '<li>' + m + '</li>').join('') + '</ul>';
+        
+        toast.innerHTML = messageHtml;
+        toast.style.display = 'block';
+        
+        // Auto-ocultar después de 8 segundos
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 8000);
+    }
+
+    function validateAndHighlightFields(step) {
+        clearValidationErrors();
+        const missingFields = [];
+        
+        if (step === 1) {
+            const fields = [
+                { id: 'Input_FechaVenta', label: 'Fecha de venta' },
+                { id: 'Input_NombreCliente', label: 'Nombre del cliente' },
+                { id: 'Input_Zona', label: 'Zona/Colonia' },
+                { id: 'Input_FormaPago', label: 'Forma de pago' },
+                { id: 'Input_DiaCobro', label: 'Día de cobro' }
+            ];
+            
+            fields.forEach(field => {
+                if (!isFilled(field.id)) {
+                    markFieldInvalid(field.id, 'Este campo es obligatorio');
+                    missingFields.push(field.label);
+                }
+            });
+        }
+        
+        if (step === 2) {
+            const productRows = [...tableBody.querySelectorAll('.product-row')];
+            
+            if (productRows.length === 0) {
+                missingFields.push('Debe agregar al menos un producto');
+            } else {
+                productRows.forEach((row, index) => {
+                    const select = row.querySelector('.product-select');
+                    if (!String(select?.value || '').trim()) {
+                        markFieldInvalid(select, 'Seleccione un producto');
+                        missingFields.push(`Producto #${index + 1}`);
+                    }
+                });
+                
+                const total = parseFloat(totalNode.textContent || '0');
+                if (total <= 0) {
+                    missingFields.push('El importe total debe ser mayor a cero');
+                }
+            }
+        }
+        
+        if (step === 3) {
+            const hasAnyPhoto = ['Input_FotoCliente', 'Input_FotoFachada', 'Input_FotoContrato', 'Input_FotoAdd1', 'Input_FotoAdd2']
+                .some(isFilled);
+            
+            if (!hasAnyPhoto) {
+                missingFields.push('Debe capturar al menos una foto');
+            }
+        }
+        
+        if (step === 4) {
+            const fields = [
+                { id: 'Input_Vendedor', label: 'Vendedor(a)' },
+                { id: 'Input_Cobrador', label: 'Cobrador(a)' },
+                { id: 'gpsCoordinates', label: 'Coordenadas GPS' }
+            ];
+            
+            fields.forEach(field => {
+                if (!isFilled(field.id)) {
+                    markFieldInvalid(field.id, 'Este campo es obligatorio');
+                    missingFields.push(field.label);
+                }
+            });
+        }
+        
+        if (missingFields.length > 0) {
+            showValidationToast(missingFields);
+            return false;
+        }
+        
+        return true;
+    }
+
     function isStepComplete(step) {
         if (step === 1) {
             return ['Input_FechaVenta', 'Input_NombreCliente', 'Input_Zona', 'Input_FormaPago', 'Input_DiaCobro']
@@ -351,22 +477,11 @@
     }
 
     function findFirstInvalidStep() {
-        if (!isStepComplete(1)) {
-            return 1;
+        for (let step = 1; step <= 4; step++) {
+            if (!isStepComplete(step)) {
+                return step;
+            }
         }
-
-        if (!isStepComplete(2)) {
-            return 2;
-        }
-
-        if (!isStepComplete(3)) {
-            return 3;
-        }
-
-        if (!isStepComplete(4)) {
-            return 4;
-        }
-
         return 0;
     }
 
@@ -425,6 +540,11 @@
         }
 
         select.addEventListener('change', () => {
+            // Limpiar error del campo cuando seleccione un producto
+            select.classList.remove('is-invalid', 'field-error');
+            const feedback = select.parentElement.querySelector('.invalid-feedback-custom');
+            if (feedback) feedback.remove();
+            
             const selected = select.options[select.selectedIndex];
             const autoPrice = selected && selected.dataset.price ? selected.dataset.price : '';
             if (autoPrice) {
@@ -530,10 +650,25 @@
     });
 
     stepButtons.forEach((button) => {
-        button.addEventListener('click', () => setStep(parseInt(button.dataset.stepTarget || '1', 10)));
+        button.addEventListener('click', () => {
+            const targetStep = parseInt(button.dataset.stepTarget || '1', 10);
+            // Si intenta avanzar, validar el paso actual primero
+            if (targetStep > currentStep && !isStepComplete(currentStep)) {
+                validateAndHighlightFields(currentStep);
+            } else {
+                setStep(targetStep);
+            }
+        });
     });
+    
     document.querySelectorAll('#Input_NombreCliente, #Input_Zona, #Input_FormaPago, #Input_DiaCobro, #Input_Vendedor, #Input_Cobrador, #gpsCoordinates').forEach((el) => {
-        el.addEventListener('input', updateConfirm);
+        el.addEventListener('input', () => {
+            // Limpiar error del campo cuando el usuario empiece a escribir
+            el.classList.remove('is-invalid', 'field-error');
+            const feedback = el.parentElement.querySelector('.invalid-feedback-custom');
+            if (feedback) feedback.remove();
+            updateConfirm();
+        });
         el.addEventListener('change', updateConfirm);
     });
 
@@ -541,6 +676,7 @@
         const invalidStep = findFirstInvalidStep();
         if (invalidStep > 0) {
             event.preventDefault();
+            validateAndHighlightFields(invalidStep);
             setStep(invalidStep);
             focusFirstFieldForStep(invalidStep);
         }
@@ -682,6 +818,5 @@
     }
 })();
 </script>
+<script src="~/js/modules/sales-state.js" asp-append-version="true"></script>
 }
-
-

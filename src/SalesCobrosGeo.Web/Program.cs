@@ -4,8 +4,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SalesCobrosGeo.Api.Catalogs;
+using SalesCobrosGeo.Api.Data;
 using SalesCobrosGeo.Web.Data;
 using SalesCobrosGeo.Web.Security;
+using SalesCobrosGeo.Web.Services.Catalogs;
 using SalesCobrosGeo.Web.Services.Sales;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,16 +21,43 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
 });
 builder.Services.AddMemoryCache();
-builder.Services.AddScoped<ISalesRepository, SqliteSalesRepository>();
+builder.Services.AddHttpContextAccessor();
+
+// Configurar sesiones para almacenar token de API
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SecurePolicy = secureCookiePolicy;
+});
+
+// FASE 2: Ventas y cobros vía API (Excel como fuente de datos)
+builder.Services.AddScoped<ISalesRepository, ApiSalesRepository>();
+
+// Servicios de catálogos compartidos con API (usando Excel)
+var excelFilePath = Path.Combine(builder.Environment.ContentRootPath, "..", "SalesCobrosGeo.Api", "App_Data", "SalesCobrosGeo.xlsx");
+builder.Services.AddSingleton(new ExcelDataService(excelFilePath));
+builder.Services.AddSingleton<ICatalogService, ExcelCatalogService>();
+builder.Services.AddScoped<ICatalogViewService, CatalogViewService>();
 
 var dataPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data");
 Directory.CreateDirectory(dataPath);
 var securityDbPath = Path.Combine(dataPath, "security.db");
 
+// FASE 1: Autenticación vía API (Excel como fuente de datos)
+// HttpClient configurado para consumir API
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:5000";
+builder.Services.AddHttpClient<IApplicationUserService, ApiAuthenticationService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// SQLite solo para sesiones (NO para usuarios)
 builder.Services.AddDbContext<AppSecurityDbContext>(options =>
     options.UseSqlite($"Data Source={securityDbPath}"));
-builder.Services.AddScoped<SecurityDatabaseInitializer>();
-builder.Services.AddScoped<IApplicationUserService, SqliteApplicationUserService>();
 builder.Services.AddScoped<IUserSessionTracker, SqliteUserSessionTracker>();
 
 builder.Services.AddAntiforgery(options =>
@@ -86,11 +116,15 @@ var contentSecurityPolicy = app.Environment.IsDevelopment()
     ? "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:*;"
     : "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self';";
 
+// FASE 1: Comentado - Ya no inicializamos usuarios desde SQLite
+// Los usuarios ahora vienen de Excel vía API
+/*
 using (var scope = app.Services.CreateScope())
 {
     var initializer = scope.ServiceProvider.GetRequiredService<SecurityDatabaseInitializer>();
     initializer.Initialize();
 }
+*/
 
 if (!app.Environment.IsDevelopment())
 {
@@ -102,6 +136,7 @@ app.UseHttpsRedirection();
 app.UseCookiePolicy();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseSession(); // FASE 1: Session para guardar token de API
 app.UseAuthentication();
 
 app.Use(async (context, next) =>

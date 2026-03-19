@@ -5,6 +5,12 @@
         (path.StartsWith("http", StringComparison.OrdinalIgnoreCase) || path.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/")
             ? path
             : "/" + path);
+    
+    // Obtener catálogos dinámicos del ViewBag
+    var saleStatuses = ViewBag.SaleStatuses as IReadOnlyDictionary<string, (string CssClass, string DisplayText)> 
+        ?? new Dictionary<string, (string, string)>();
+    var collectionStatuses = ViewBag.CollectionStatuses as IReadOnlyDictionary<string, (string CssClass, string DisplayText, string? Icon)> 
+        ?? new Dictionary<string, (string, string, string?)>();
 }
 
 <section class="sales-desktop-modern">
@@ -39,114 +45,127 @@
         <div class="alert alert-success alert-desktop-compact">@msg</div>
     }
 
-    @if (Model.Weeks.Count == 0)
+    @{
+        var allDays = Model.Weeks.SelectMany(w => w.Days).OrderByDescending(d => d.Day).ToList();
+    }
+
+    @if (allDays.Count == 0)
     {
         <div class="sales-desktop-empty">
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/>
             </svg>
             <strong>No hay ventas registradas</strong>
-            <p>Cuando captures una venta nueva aparecerá aquí agrupada por semana</p>
+            <p>Cuando captures una venta nueva aparecerá aquí agrupada por día</p>
         </div>
     }
     else
     {
-        foreach (var week in Model.Weeks)
+        var today = DateTime.Today;
+        @foreach (var dayGroup in allDays)
         {
-            <section class="sales-desktop-week-compact">
-                <header class="sales-desktop-week-header-compact">
-                    <div class="sales-week-title-wrap">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+            var isToday = dayGroup.Day.Date == today;
+            <details class="sales-desktop-day-group" @(isToday ? "open" : null)>
+                <summary class="sales-day-header-modern">
+                    <div class="sales-day-header-content">
+                        <svg class="sales-day-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="m6 9 6 6 6-6"/>
                         </svg>
-                        <strong>@week.WeekStart.ToString("dd/MM") - @week.WeekEnd.ToString("dd/MM")</strong>
-                        <span class="sales-week-count-badge">@week.Days.Sum(x => x.Sales.Count) ventas</span>
-                        @if (week.IsCurrentWeek)
+                        <span class="sales-day-name">@dayGroup.Day.ToString("dddd").ToUpper()</span>
+                        <span class="sales-day-separator">|</span>
+                        <span class="sales-day-date">@dayGroup.Day.ToString("dd/MM/yyyy")</span>
+                        <span class="sales-day-separator">|</span>
+                        <span class="sales-day-count">@dayGroup.Sales.Count ventas</span>
+                        @if (isToday)
                         {
-                            <span class="sales-current-week-badge">Semana actual</span>
+                            <span class="sales-today-badge">HOY</span>
                         }
                     </div>
-                </header>
+                </summary>
 
-                <div class="sales-desktop-days-compact">
-                    @foreach (var group in week.Days)
+                <div class="sales-desktop-list-ultra-compact">
+                    @foreach (var sale in dayGroup.Sales)
                     {
-                        <div class="sales-desktop-day-section">
-                            <div class="sales-desktop-day-header-compact">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                    <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-                                </svg>
-                                <strong>@group.Day.ToString("dddd dd/MM")</strong>
-                                <span>@group.Sales.Count registros</span>
+                        var firstProduct = sale.Productos.FirstOrDefault()?.ProductCode ?? sale.Producto;
+                        var saleSearch = $"{sale.NombreCliente} {sale.Zona} {sale.DiaCobro} {sale.Vendedor} {firstProduct}".ToLowerInvariant();
+                        var mapsUrl = $"https://maps.google.com/?q={sale.Coordenadas}";
+                        
+                        // Usar catálogos dinámicos en lugar de switch hardcodeado
+                        var saleStatusCode = sale.Estado?.ToUpperInvariant() ?? "";
+                        var saleStatusClass = saleStatuses.TryGetValue(saleStatusCode, out var saleStatusInfo) 
+                            ? saleStatusInfo.CssClass 
+                            : "status-unknown";
+                        var saleStatusText = saleStatuses.TryGetValue(saleStatusCode, out saleStatusInfo) 
+                            ? saleStatusInfo.DisplayText 
+                            : sale.Estado;
+                        
+                        var collectionStatusCode = sale.Estado2?.ToUpperInvariant() ?? "";
+                        var collectionStatusClass = collectionStatuses.TryGetValue(collectionStatusCode, out var collStatusInfo) 
+                            ? collStatusInfo.CssClass 
+                            : "collection-unknown";
+                        var collectionStatusText = collectionStatuses.TryGetValue(collectionStatusCode, out collStatusInfo) 
+                            ? collStatusInfo.DisplayText 
+                            : sale.Estado2;
+                        
+                        <article class="sales-desktop-item-ultra-compact" data-sales-search="@saleSearch">
+                            <div class="sales-desktop-item-image">
+                                <img class="image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoFachada, "https://placehold.co/80x80?text=V")" alt="Fachada" loading="lazy" decoding="async" />
                             </div>
-
-                            <div class="sales-desktop-list-compact">
-                                @foreach (var sale in group.Sales)
+                            <a class="sales-desktop-item-content" asp-controller="Sales" asp-action="Details" asp-route-id="@sale.IdV">
+                                <div class="sales-desktop-item-main">
+                                    <div class="sales-item-name-section">
+                                        <strong class="sales-item-client">@sale.NombreCliente</strong>
+                                        <div class="sales-item-tags">
+                                            <span class="tag-zone" title="Zona/Colonia">📍 @sale.Zona</span>
+                                            <span class="tag-day" title="Día de cobro">📅 @sale.DiaCobro</span>
+                                            <span class="tag-status @saleStatusClass" title="Estatus Venta">V: @saleStatusText</span>
+                                            <span class="tag-status @collectionStatusClass" title="Estatus Cobro">C: @collectionStatusText</span>
+                                        </div>
+                                    </div>
+                                    <div class="sales-item-product-section">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
+                                        </svg>
+                                        <span class="sales-item-product">@firstProduct</span>
+                                    </div>
+                                    <div class="sales-item-seller-section">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                                        </svg>
+                                        <span>@sale.Vendedor</span>
+                                    </div>
+                                </div>
+                                <div class="sales-desktop-item-amount">
+                                    <span class="sales-amount-big">$@sale.ImporteTotal.ToString("N0")</span>
+                                </div>
+                            </a>
+                            <div class="sales-desktop-item-actions-compact">
+                                @if (!string.IsNullOrWhiteSpace(sale.Coordenadas))
                                 {
-                                    var firstProduct = sale.Productos.FirstOrDefault()?.ProductCode ?? sale.Producto;
-                                    var saleSearch = $"{sale.NombreCliente} {sale.Zona} {sale.DiaCobro} {sale.Vendedor} {firstProduct}".ToLowerInvariant();
-                                    var mapsUrl = $"https://maps.google.com/?q={sale.Coordenadas}";
-                                    <article class="sales-desktop-item-compact" data-sales-search="@saleSearch">
-                                        <div class="sales-desktop-item-image">
-                                            <img class="image-previewable" data-previewable="true" src="@ResolveImage(sale.FotoFachada, "https://placehold.co/80x80?text=V")" alt="Fachada" loading="lazy" decoding="async" />
-                                        </div>
-                                        <a class="sales-desktop-item-content" asp-controller="Sales" asp-action="Details" asp-route-id="@sale.IdV">
-                                            <div class="sales-desktop-item-main">
-                                                <div class="sales-item-name-section">
-                                                    <strong class="sales-item-client">@sale.NombreCliente</strong>
-                                                    <div class="sales-item-tags">
-                                                        <span class="tag-zone">@sale.Zona</span>
-                                                        <span class="tag-day">@sale.DiaCobro</span>
-                                                        <span class="tag-payment">@sale.FormaPago</span>
-                                                    </div>
-                                                </div>
-                                                <div class="sales-item-product-section">
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
-                                                    </svg>
-                                                    <span class="sales-item-product">@firstProduct</span>
-                                                </div>
-                                                <div class="sales-item-seller-section">
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                                                    </svg>
-                                                    <span>@sale.Vendedor</span>
-                                                </div>
-                                            </div>
-                                            <div class="sales-desktop-item-amount">
-                                                <span class="sales-amount-big">$@sale.ImporteTotal.ToString("N0")</span>
-                                            </div>
-                                        </a>
-                                        <div class="sales-desktop-item-actions-compact">
-                                            @if (!string.IsNullOrWhiteSpace(sale.Coordenadas))
-                                            {
-                                                <a class="sales-action-btn-modern" href="@mapsUrl" target="_blank" rel="noopener noreferrer" title="Ver en mapa">
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                                        <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/>
-                                                    </svg>
-                                                </a>
-                                            }
-                                            @if (!string.IsNullOrWhiteSpace(sale.Celular))
-                                            {
-                                                <a class="sales-action-btn-modern" href="tel:@sale.Celular" title="Llamar">
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                                                    </svg>
-                                                </a>
-                                            }
-                                            <a class="sales-action-btn-modern primary" asp-controller="Sales" asp-action="Details" asp-route-id="@sale.IdV" title="Ver detalle">
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                                                </svg>
-                                            </a>
-                                        </div>
-                                    </article>
+                                    <a class="sales-action-btn-modern" href="@mapsUrl" target="_blank" rel="noopener noreferrer" title="Ver en mapa">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/>
+                                        </svg>
+                                    </a>
                                 }
+                                @if (!string.IsNullOrWhiteSpace(sale.Celular))
+                                {
+                                    <a class="sales-action-btn-modern" href="tel:@sale.Celular" title="Llamar">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                                        </svg>
+                                    </a>
+                                }
+                                <a class="sales-action-btn-modern primary" asp-controller="Sales" asp-action="Details" asp-route-id="@sale.IdV" title="Ver detalle">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                </a>
                             </div>
-                        </div>
+                        </article>
                     }
                 </div>
-            </section>
+            </details>
         }
     }
 </section>

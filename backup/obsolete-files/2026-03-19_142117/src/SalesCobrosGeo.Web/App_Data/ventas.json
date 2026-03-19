@@ -1,0 +1,42 @@
+[
+  {
+    "idV": "addcdb49",
+    "numVenta": 1,
+    "fechaVenta": "2024-12-10T00:00:00",
+    "nombreCliente": "ALEJANDRO GARCIA",
+    "celular": "5586785348",
+    "telefono": null,
+    "zona": "HEROES CHALCO",
+    "formaPago": "SEMANAL",
+    "diaCobro": "LUNES",
+    "fotoCliente": "VENTAS_Images/addcdb49.FOTO CLIENTE.165310.jpg",
+    "fotoFachada": "IMG_VENTAS/addcdb49.FOTO FACHADA.165310.jpg",
+    "fotoContrato": "VENTAS_Images/addcdb49.FOTO CONTRATO.165310.jpg",
+    "observacionVenta": "Producto precontado en dos semanas",
+    "vendedor": "JAKE",
+    "usuario": "avedanojenny6@gmail.com",
+    "cobrador": "ggab75218@gmail.com",
+    "coordenadas": "19.260839,-98.831437",
+    "urlUbicacion": null,
+    "fechaPrimerCobro": "2024-12-13T00:00:00",
+    "estado": "EN COBRO",
+    "fechaActu": "2024-12-10T10:54:30",
+    "cliente": "ALEJANDRO GARCIA",
+    "producto": "GEL TICILT",
+    "estado2": "OPEN",
+    "comisionVendedorPct": 0,
+    "cobrar": "OK",
+    "fotoAdd1": null,
+    "fotoAdd2": null,
+    "coordenadas2": null,
+    "productosCantidad": 1,
+    "importeTotal": 1490,
+    "productos": [
+      {
+        "productCode": "GEL TICILT",
+        "quantity": 1,
+        "unitPrice": 1490
+      }
+    ]
+  }
+]

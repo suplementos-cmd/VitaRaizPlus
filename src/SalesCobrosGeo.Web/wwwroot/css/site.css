@@ -2165,6 +2165,67 @@ textarea.form-control:focus {
   box-shadow: 0 0 0 0.22rem var(--ui-focus);
 }
 
+/* Enhanced Validation Styles */
+.form-control.is-invalid,
+.form-select.is-invalid,
+.form-control.field-error,
+.form-select.field-error {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2;
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus,
+.form-control.field-error:focus,
+.form-select.field-error:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+}
+
+.invalid-feedback-custom {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #dc2626;
+  animation: fadeInDown 0.3s ease-out;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sale-required-dot {
+  color: #ef4444;
+  font-weight: 900;
+  font-size: 1.1em;
+}
+
+.app-toast-inline ul {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+  text-align: left;
+}
+
+.app-toast-inline ul li {
+  margin: 4px 0;
+  font-weight: 600;
+}
+
 .form-select {
   background-image: linear-gradient(45deg, transparent 50%, #3f5d7a 50%), linear-gradient(135deg, #3f5d7a 50%, transparent 50%);
   background-position: calc(100% - 20px) calc(50% - 3px), calc(100% - 14px) calc(50% - 3px);

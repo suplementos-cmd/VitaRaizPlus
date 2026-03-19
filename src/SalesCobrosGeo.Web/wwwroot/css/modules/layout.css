@@ -719,3 +719,120 @@
   }
 }
 
+
+/* ----------------------------------------------------------
+   GLOBAL NAVIGATION CONTROLS (? ?)
+   Architecture: Browser history-based navigation
+   ---------------------------------------------------------- */
+
+/* -- Mobile navigation controls ---------------------------- */
+.app-nav-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08));
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 18px rgba(11, 21, 39, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.app-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.app-nav-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(11, 21, 39, 0.15);
+}
+
+.app-nav-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.app-nav-btn:disabled {
+  display: none;
+}
+
+.app-nav-btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+/* Hide container when both buttons are disabled */
+.app-nav-controls:has(.app-nav-btn:not(:disabled)) {
+  display: inline-flex;
+}
+
+.app-nav-controls:not(:has(.app-nav-btn:not(:disabled))) {
+  display: none;
+}
+
+/* -- Desktop navigation controls --------------------------- */
+.app-desktop-nav-controls {
+  align-items: center;
+  gap: 4px;
+  margin-left: 12px;
+  padding: 3px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-desktop-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.app-desktop-nav-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.app-desktop-nav-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.app-desktop-nav-btn:disabled {
+  display: none;
+}
+
+.app-desktop-nav-btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+/* Hide container when both buttons are disabled */
+.app-desktop-nav-controls:has(.app-desktop-nav-btn:not(:disabled)) {
+  display: flex;
+}
+
+.app-desktop-nav-controls:not(:has(.app-desktop-nav-btn:not(:disabled))) {
+  display: none;
+}
+
+/* -- JavaScript enhancement for state management ---------- */
+/* Buttons are disabled/enabled based on history state via JS */

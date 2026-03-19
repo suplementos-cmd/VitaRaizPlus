@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SalesCobrosGeo.Web.Models.Security;
 using SalesCobrosGeo.Web.Security;
+using System.Security.Claims;
 
 namespace SalesCobrosGeo.Web.Controllers;
 
@@ -62,8 +63,21 @@ public sealed class AccountController : Controller
             return View(input);
         }
 
-        var userSummary = _userService.GetUsers()
-            .First(x => x.Username.Equals(input.Username, StringComparison.OrdinalIgnoreCase));
+        // Crear userSummary desde los claims del principal retornado por la API
+        var fullName = principal.FindFirst(ClaimTypes.GivenName)?.Value ?? input.Username;
+        var role = principal.FindFirst(ClaimTypes.Role)?.Value ?? "Unknown";
+        
+        var userSummary = new ApplicationUserSummary(
+            Username: input.Username,
+            DisplayName: fullName,
+            Role: role,
+            RoleLabel: role,
+            Zone: "Default",
+            Theme: "default",
+            IsActive: true,
+            TwoFactorEnabled: false,
+            Permissions: Array.Empty<string>()
+        );
 
         var sessionPrincipal = _sessionTracker.AttachSession(principal, userSummary, HttpContext);
 

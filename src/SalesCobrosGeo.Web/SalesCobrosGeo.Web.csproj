@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SalesCobrosGeo.Shared\SalesCobrosGeo.Shared.csproj" />
+    <ProjectReference Include="..\SalesCobrosGeo.Api\SalesCobrosGeo.Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>

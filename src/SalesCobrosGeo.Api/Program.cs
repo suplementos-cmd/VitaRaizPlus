@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.RateLimiting;
 using Scalar.AspNetCore;
 using SalesCobrosGeo.Api.Audit;
 using SalesCobrosGeo.Api.Business;
+using SalesCobrosGeo.Api.Catalogs;
+using SalesCobrosGeo.Api.Data;
+using SalesCobrosGeo.Api.Initialization;
 using SalesCobrosGeo.Api.Security;
 using SalesCobrosGeo.Shared.Security;
 using System.Threading.RateLimiting;
@@ -43,11 +46,15 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
-// ── Servicios in-memory (datos demo — mantener hasta migrar a BD) ─────────────────
-builder.Services.AddSingleton<IUserStore, InMemoryUserStore>();
-builder.Services.AddSingleton<ITokenService, InMemoryTokenService>();
-builder.Services.AddSingleton<IAuditTrailStore, InMemoryAuditTrailStore>();
-builder.Services.AddSingleton<IBusinessStore, InMemoryBusinessStore>();
+// ── Servicios de datos basados en Excel (reemplaza InMemory stores) ───────────────
+var excelFilePath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "SalesCobrosGeo.xlsx");
+builder.Services.AddSingleton(new ExcelDataService(excelFilePath));
+builder.Services.AddSingleton<IUserStore, ExcelUserStore>();
+builder.Services.AddSingleton<ITokenService, InMemoryTokenService>(); // Tokens siguen en memoria (sesiones temporales)
+builder.Services.AddSingleton<IAuditTrailStore, ExcelAuditTrailStore>();
+builder.Services.AddSingleton<IBusinessStore, ExcelBusinessStore>();
+builder.Services.AddSingleton<ICatalogService, ExcelCatalogService>();
+builder.Services.AddScoped<ISalesStore, ExcelSalesStore>(); // Fase 2: Ventas y cobros desde Excel
 
 // ── Autenticación Bearer personalizada ────────────────────────────────────────────
 builder.Services
@@ -77,6 +84,11 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+
+// ── Inicialización de datos en Excel ──────────────────────────────────────────────
+var excelService = app.Services.GetRequiredService<ExcelDataService>();
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+ExcelDataInitializer.Initialize(excelService, logger);
 
 // ── Pipeline HTTP ─────────────────────────────────────────────────────────────────
 if (app.Environment.IsDevelopment())

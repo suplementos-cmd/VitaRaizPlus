@@ -8,6 +8,8 @@
     <!-- OpenAPI spec + Scalar UI -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.*" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.*" />
+    <!-- Excel data management -->
+    <PackageReference Include="EPPlus" Version="7.5.2" />
   </ItemGroup>
 
   <PropertyGroup>

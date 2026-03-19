@@ -1,5 +1,10 @@
 ﻿@using SalesCobrosGeo.Web.Models.Collections
 @model CollectorHomeViewModel
+@{
+    // Obtener catálogos dinámicos del ViewBag
+    var collectionStatuses = ViewBag.CollectionStatuses as IReadOnlyDictionary<string, (string CssClass, string DisplayText, string? Icon)> 
+        ?? new Dictionary<string, (string, string, string?)>();
+}
 @functions {
     string IconSvg(string filter) => filter switch
     {
@@ -9,43 +14,58 @@
         _ => "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><rect x='3' y='5' width='18' height='16' rx='2'/><path d='M16 3v4'/><path d='M8 3v4'/><path d='M3 11h18'/></svg>"
     };
 
-    string SaleTone(CollectorClientListItem item) => item.Status.ToUpperInvariant() switch
+    string SaleTone(CollectorClientListItem item, IReadOnlyDictionary<string, (string CssClass, string DisplayText, string? Icon)> statuses)
     {
-        _ when item.HasPromiseOverdue => "danger",
-        _ when item.IsNotLocated => "warning",
-        _ when item.IsRefused => "muted",
-        "ATRASADO" => "danger",
-        "CANCELADO" => "muted",
-        "LIQUIDADO" => "success",
-        "AL CORRIENTE" => "success",
-        "PARCIAL" => "warning",
-        "POR INICIAR" => "neutral",
-        _ when item.HasPromise => "info",
-        _ => "neutral"
-    };
+        // Condiciones especiales primero
+        if (item.HasPromiseOverdue) return "danger";
+        if (item.IsNotLocated) return "warning";
+        if (item.IsRefused) return "muted";
+        if (item.HasPromise) return "info";
+        
+        // Buscar en catálogos dinámicos
+        var statusCode = item.Status.ToUpperInvariant();
+        if (statuses.TryGetValue(statusCode, out var statusInfo))
+            return statusInfo.CssClass;
+        
+        return "neutral";
+    }
 
-    string SaleFlag(CollectorClientListItem item) => item switch
+    string SaleFlag(CollectorClientListItem item, IReadOnlyDictionary<string, (string CssClass, string DisplayText, string? Icon)> statuses)
     {
-        _ when item.HasPromiseOverdue => "Promesa vencida",
-        _ when item.HasPromise => "Promesa activa",
-        _ when item.IsNotLocated => "No localizado",
-        _ when item.IsRefused => "Se nego",
-        _ when item.Status.Equals("ATRASADO", StringComparison.OrdinalIgnoreCase) => "Urgente",
-        _ when item.Status.Equals("CANCELADO", StringComparison.OrdinalIgnoreCase) => "Cancelada",
-        _ when item.Status.Equals("LIQUIDADO", StringComparison.OrdinalIgnoreCase) => "Liquidada",
-        _ => "Pendiente"
-    };
+        // Textos para condiciones especiales
+        if (item.HasPromiseOverdue) return "Promesa vencida";
+        if (item.HasPromise) return "Promesa activa";
+        if (item.IsNotLocated) return "No localizado";
+        if (item.IsRefused) return "Se nego";
+        
+        // Buscar texto en catálogos dinámicos
+        var statusCode = item.Status.ToUpperInvariant();
+        if (statuses.TryGetValue(statusCode, out var statusInfo))
+            return statusInfo.DisplayText;
+        
+        return "Pendiente";
+    }
 
-    string SaleIcon(CollectorClientListItem item) => item switch
+    string SaleIcon(CollectorClientListItem item, IReadOnlyDictionary<string, (string CssClass, string DisplayText, string? Icon)> statuses)
     {
-        _ when item.HasPromiseOverdue => "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M12 9v4'/><path d='M12 17h.01'/><path d='M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z'/></svg>",
-        _ when item.HasPromise => "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M8 7h8'/><path d='M8 12h8'/><path d='M8 17h5'/><path d='M5 4h14a1 1 0 0 1 1 1v14l-4-3-4 3-4-3-4 3V5a1 1 0 0 1 1-1z'/></svg>",
-        _ when item.IsNotLocated => "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='m21 10-5.2-5.2a2 2 0 0 0-2.8 0L4 14v6h6l9-9a2 2 0 0 0 0-2.8Z'/><path d='M7 17h.01'/></svg>",
-        _ when item.IsRefused => "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='9'/><path d='m15 9-6 6'/><path d='m9 9 6 6'/></svg>",
-        _ when item.Status.Equals("ATRASADO", StringComparison.OrdinalIgnoreCase) => "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='9'/><path d='M12 7v5l3 3'/></svg>",
-        _ when item.Status.Equals("LIQUIDADO", StringComparison.OrdinalIgnoreCase) => "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='m5 13 4 4L19 7'/></svg>",
-        _ => "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><rect x='3' y='5' width='18' height='16' rx='2'/><path d='M16 3v4'/><path d='M8 3v4'/><path d='M3 11h18'/></svg>"
-    };
+        // Iconos para condiciones especiales
+        if (item.HasPromiseOverdue) 
+            return "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M12 9v4'/><path d='M12 17h.01'/><path d='M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z'/></svg>";
+        if (item.HasPromise) 
+            return "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M8 7h8'/><path d='M8 12h8'/><path d='M8 17h5'/><path d='M5 4h14a1 1 0 0 1 1 1v14l-4-3-4 3-4-3-4 3V5a1 1 0 0 1 1-1z'/></svg>";
+        if (item.IsNotLocated) 
+            return "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='m21 10-5.2-5.2a2 2 0 0 0-2.8 0L4 14v6h6l9-9a2 2 0 0 0 0-2.8Z'/><path d='M7 17h.01'/></svg>";
+        if (item.IsRefused) 
+            return "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='9'/><path d='m15 9-6 6'/><path d='m9 9 6 6'/></svg>";
+        
+        // Buscar icono en catálogos dinámicos
+        var statusCode = item.Status.ToUpperInvariant();
+        if (statuses.TryGetValue(statusCode, out var statusInfo) && !string.IsNullOrWhiteSpace(statusInfo.Icon))
+            return statusInfo.Icon;
+        
+        // Icono por defecto
+        return "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><rect x='3' y='5' width='18' height='16' rx='2'/><path d='M16 3v4'/><path d='M8 3v4'/><path d='M3 11h18'/></svg>";
+    }
 }
 <div class="collector-mobile-shell compact-home">
     <div class="collector-mobile-historycards">
@@ -91,10 +111,10 @@
         @foreach (var item in Model.TodayClients)
         {
             var mapLink = string.IsNullOrWhiteSpace(item.Coordinates) ? "#" : $"https://maps.google.com/?q={Uri.EscapeDataString(item.Coordinates)}";
-            var tone = SaleTone(item);
+            var tone = SaleTone(item, collectionStatuses);
             <article class="collector-mobile-clientrow status-@tone">
                 <a class="collector-mobile-clientmain" asp-action="Register" asp-route-id="@item.IdV" asp-route-profile="@Model.Profile">
-                    <strong><span class="collector-semantic-icon @tone">@Html.Raw(SaleIcon(item))</span>@item.Name <span class="collector-inline-flag @tone">@SaleFlag(item)</span></strong>
+                    <strong><span class="collector-semantic-icon @tone">@Html.Raw(SaleIcon(item, collectionStatuses))</span>@item.Name <span class="collector-inline-flag @tone">@SaleFlag(item, collectionStatuses)</span></strong>
                     <span>@item.Zone · @item.NextAction</span>
                 </a>
                 <div class="collector-mobile-clientactions">

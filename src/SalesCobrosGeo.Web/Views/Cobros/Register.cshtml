@@ -6,6 +6,11 @@
     var sale = Model.Sale;
     var roleView = (ViewData["CollectionsRoleView"] as string) ?? "collector";
     var isSupervisorView = string.Equals(roleView, "supervisor", StringComparison.OrdinalIgnoreCase);
+    
+    // Catálogos dinámicos desde ViewBag
+    var collectionStatuses = (ViewBag.CollectionStatuses as IReadOnlyDictionary<string, (string DisplayText, string CssClass, string Icon)>) 
+        ?? new Dictionary<string, (string, string, string)>();
+    
     string ResolveImage(string? path, string fallback) =>
         string.IsNullOrWhiteSpace(path) ? fallback :
         (path.StartsWith("http", StringComparison.OrdinalIgnoreCase) || path.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/")
@@ -18,24 +23,20 @@
     var cleanPhone = string.IsNullOrWhiteSpace(Model.PortfolioItem?.Celular) ? string.Empty : new string(Model.PortfolioItem.Celular.Where(char.IsDigit).ToArray());
     var mapLink = string.IsNullOrWhiteSpace(sale?.Coordenadas) ? "#" : $"https://maps.google.com/?q={Uri.EscapeDataString(sale.Coordenadas)}";
 
-    string StatusClass(string status) => status.ToUpperInvariant() switch
+    // Función dinámica para obtener clase CSS del estado (busca en catálogo)
+    string StatusClass(string status)
     {
-        "POR INICIAR" => "status-chip status-start",
-        "AL CORRIENTE" => "status-chip status-current",
-        "ATRASADO" => "status-chip status-late",
-        "LIQUIDADO" => "status-chip status-done",
-        _ => "status-chip"
-    };
-    var actionStatuses = new[]
-    {
-        ("AL CORRIENTE", "A corr.", "ok"),
-        ("PROXIMA SEMANA", "Pr. sem.", "clock"),
-        ("PASAR MAÑANA", "Man.", "next"),
-        ("ATRASADO", "Atr.", "alert"),
-        ("PASAR MAS TARDE", "Mas t.", "later"),
-        ("CANCELADO", "Canc.", "off"),
-        ("LIQUIDADO", "Liq.", "done")
-    };
+        var statusCode = status.ToUpperInvariant();
+        if (collectionStatuses.TryGetValue(statusCode, out var statusInfo))
+            return $"status-chip {statusInfo.CssClass}";
+        return "status-chip";
+    }
+    
+    // Construcción dinámica de acciones de estado desde catálogo
+    var actionStatuses = collectionStatuses
+        .Select(kvp => (kvp.Key, kvp.Value.DisplayText, kvp.Value.Icon.ToLowerInvariant()))
+        .ToList();
+    
     string MoneyClass(decimal amount) => amount switch
     {
         > 0m => "is-positive",

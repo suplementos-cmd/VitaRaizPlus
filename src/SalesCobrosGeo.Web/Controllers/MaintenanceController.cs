@@ -21,9 +21,9 @@ public sealed class MaintenanceController : Controller
     }
 
     [HttpGet]
-    public IActionResult Index(string section = "catalogos", long? editId = null, bool create = false)
+    public IActionResult Index(string section = "catalogos", long? viewId = null, long? editId = null, bool create = false)
     {
-        var model = BuildViewModel(section, editId, create, TempData["MaintenanceMessage"] as string);
+        var model = BuildViewModel(section, viewId, editId, create, TempData["MaintenanceMessage"] as string);
         return View(model);
     }
 
@@ -75,7 +75,7 @@ public sealed class MaintenanceController : Controller
         return RedirectToAction(nameof(Index), new { section });
     }
 
-    private MaintenancePageViewModel BuildViewModel(string section, long? editId, bool create, string? message)
+    private MaintenancePageViewModel BuildViewModel(string section, long? viewId, long? editId, bool create, string? message)
     {
         var selected = NormalizeSection(section);
         var sections = BuildSections();
@@ -95,12 +95,17 @@ public sealed class MaintenanceController : Controller
             IsActive = editorRecord?.IsActive ?? true
         };
 
+        var showEditor = EditableSections.Contains(selected, StringComparer.OrdinalIgnoreCase) && (create || editId is > 0);
+        // When editing, suppress viewId so the detail panel doesn't also try to render
+        var resolvedViewId = showEditor ? null : viewId;
+
         return new MaintenancePageViewModel(
             selected,
             stats,
             sections,
             editor,
-            EditableSections.Contains(selected, StringComparer.OrdinalIgnoreCase) && (create || editId is > 0),
+            showEditor,
+            resolvedViewId,
             message);
     }
 

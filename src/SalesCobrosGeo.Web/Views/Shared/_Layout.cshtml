@@ -111,6 +111,22 @@
                                     </svg>
                                 </a>
                             }
+                            else
+                            {
+                                @* Navigation buttons using browser history *@
+                                <div class="app-nav-controls">
+                                    <button type="button" class="app-nav-btn app-nav-back" onclick="window.history.back()" aria-label="Atrás" title="Atrás">
+                                        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                            <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd"/>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="app-nav-btn app-nav-forward" onclick="window.history.forward()" aria-label="Adelante" title="Adelante">
+                                        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                            <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            }
                             <a class="app-mobile-brand" asp-area="" asp-controller="@landingController" asp-action="@landingAction">
                                 <span class="app-mobile-brandmark" aria-hidden="true">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 22V12"/><path d="M12 12C12 7 17 3 22 3c0 5-4 9-10 9z"/><path d="M12 12C12 7 7 3 2 3c0 5 4 9 10 9z"/></svg>
@@ -159,8 +175,22 @@
                     <span class="navbar-brand-text">VitaRaizPlus</span>
                 </a>
 
+                    @* Desktop navigation controls *@
                     @if (isAuthenticated)
                     {
+                        <div class="app-desktop-nav-controls d-none d-lg-flex">
+                            <button type="button" class="app-desktop-nav-btn app-nav-back" onclick="window.history.back()" aria-label="Atrás" title="Atrás">
+                                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="app-desktop-nav-btn app-nav-forward" onclick="window.history.forward()" aria-label="Adelante" title="Adelante">
+                                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/>
+                                </svg>
+                            </button>
+                        </div>
+
                         <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMoreMenu" aria-controls="mobileMoreMenu" aria-label="Abrir menu">
                             <span class="navbar-toggler-icon"></span>
                         </button>
@@ -348,6 +378,8 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/mobile-components.js" asp-append-version="true"></script>
+    <script src="~/js/state-manager.js" asp-append-version="true"></script>
+    <script src="~/js/navigation.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
