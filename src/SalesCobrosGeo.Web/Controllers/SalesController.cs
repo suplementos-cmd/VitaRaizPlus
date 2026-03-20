@@ -34,7 +34,24 @@ public sealed class SalesController : BaseController
 
         // Apply filters to sales data
         var allSales = _repository.GetAll().ToList();
+        
+        // DEBUG: Log de ventas obtenidas
+        var username = User.Identity?.Name ?? "Unknown";
+        var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "Unknown";
+        Console.WriteLine($"[SALES INDEX DEBUG] Usuario: {username}, Rol: {userRole}");
+        Console.WriteLine($"[SALES INDEX DEBUG] Total ventas obtenidas: {allSales.Count}");
+        if (allSales.Count > 0)
+        {
+            Console.WriteLine($"[SALES INDEX DEBUG] Primeras 5 ventas:");
+            foreach (var sale in allSales.Take(5))
+            {
+                Console.WriteLine($"  - {sale.IdV} | Cliente: {sale.NombreCliente} | Vendedor: {sale.Vendedor} | Fecha: {sale.FechaVenta:dd/MM/yyyy}");
+            }
+        }
+        
         var filteredSales = ApplySalesFilters(allSales, filterContext);
+        Console.WriteLine($"[SALES INDEX DEBUG] Ventas después de filtros: {filteredSales.Count}");
+        Console.WriteLine($"[SALES INDEX DEBUG] Filtros activos: DateFrom={filterContext.DateFrom}, DateTo={filterContext.DateTo}, Zone={filterContext.Zone}, Seller={filterContext.Seller}");
 
         var weeks = filteredSales
             .GroupBy(x => StartOfWeek(x.FechaVenta.Date))
@@ -110,8 +127,8 @@ public sealed class SalesController : BaseController
         {
             var saved = _repository.Create(NormalizeInput(input));
             _sessionTracker.UpdateCoordinates(User.Identity?.Name ?? string.Empty, saved.Coordenadas, "Venta registrada");
-            TempData["SalesMessage"] = "Venta registrada correctamente.";
-            return RedirectToAction(nameof(Details), new { id = saved.IdV });
+            TempData["SalesMessage"] = $"Venta #{saved.NumVenta} registrada correctamente (ID: {saved.IdV}).";
+            return RedirectToAction(nameof(Index));
         }
         catch (InvalidOperationException ex)
         {
@@ -165,8 +182,8 @@ public sealed class SalesController : BaseController
         {
             var saved = _repository.Update(id, NormalizeInput(input));
             _sessionTracker.UpdateCoordinates(User.Identity?.Name ?? string.Empty, saved.Coordenadas, "Venta actualizada");
-            TempData["SalesMessage"] = "Venta actualizada correctamente.";
-            return RedirectToAction(nameof(Details), new { id = saved.IdV });
+            TempData["SalesMessage"] = $"Venta #{saved.NumVenta} actualizada correctamente.";
+            return RedirectToAction(nameof(Index));
         }
         catch (InvalidOperationException ex)
         {

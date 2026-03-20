@@ -53,6 +53,15 @@ public sealed class ExcelSalesStore : ISalesStore
     {
         try
         {
+            _logger.LogInformation("Iniciando creación de venta para cliente: {Cliente}", input.NombreCliente);
+            
+            // Validar productos
+            if (input.Productos == null || input.Productos.Count == 0)
+            {
+                _logger.LogWarning("Intento de crear venta sin productos");
+                throw new InvalidOperationException("Debe agregar al menos un producto a la venta");
+            }
+            
             // Generar IdV y NumVenta
             var allSales = await _excelService.ReadSheetAsync("Sales");
             var maxNumVenta = allSales.Count > 0
@@ -61,9 +70,13 @@ public sealed class ExcelSalesStore : ISalesStore
             
             var numVenta = maxNumVenta + 1;
             var idV = $"V{numVenta:D6}";
+            
+            _logger.LogInformation("Generado IdV: {IdV}, NumVenta: {NumVenta}", idV, numVenta);
 
             // Serializar productos
             var (productsCodes, productsQuantities, productsPrices, totalAmount, productsCount) = SerializeProducts(input.Productos);
+            
+            _logger.LogInformation("Productos serializados: {Count} productos, Total: {Total:C}", productsCount, totalAmount);
 
             var saleData = new Dictionary<string, object?>
             {
@@ -97,17 +110,28 @@ public sealed class ExcelSalesStore : ISalesStore
                 ["ProductosCodigos"] = productsCodes,
                 ["ProductosCantidades"] = productsQuantities,
                 ["ProductosPrecios"] = productsPrices,
-                ["ImporteTotal"] = totalAmount
+                ["ImporteTotal"] = totalAmount,
+                ["ProductosCantidad"] = productsCount
             };
 
+            _logger.LogInformation("Guardando venta en Excel...");
             await _excelService.AppendRowAsync("Sales", saleData);
-            _logger.LogInformation("Venta creada: {IdV}", idV);
+            _logger.LogInformation("Venta guardada exitosamente: {IdV}", idV);
 
-            return await GetSaleByIdAsync(idV) ?? MapInputToRecord(input, idV, numVenta, totalAmount, productsCount);
+            var result = await GetSaleByIdAsync(idV);
+            if (result == null)
+            {
+                _logger.LogWarning("No se pudo recuperar la venta recién creada, usando MapInputToRecord");
+                result = MapInputToRecord(input, idV, numVenta, totalAmount, productsCount);
+            }
+            
+            return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al crear venta en Excel");
+            _logger.LogError(ex, "Error al crear venta en Excel. Cliente: {Cliente}, Productos: {ProductCount}", 
+                input?.NombreCliente ?? "N/A", 
+                input?.Productos?.Count ?? 0);
             throw;
         }
     }
@@ -160,6 +184,7 @@ public sealed class ExcelSalesStore : ISalesStore
                     row["ProductosCantidades"] = productsQuantities;
                     row["ProductosPrecios"] = productsPrices;
                     row["ImporteTotal"] = totalAmount;
+                    row["ProductosCantidad"] = productsCount;
                 });
 
             _logger.LogInformation("Venta actualizada: {IdV}", idV);

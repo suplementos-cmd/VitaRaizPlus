@@ -1,3 +1,306 @@
+/* ═══════════════════════════════════════════════════════════════
+   SECURITY & LOGIN STYLES - Glass Morphism Blue Design
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Login Backdrop ───────────────────────────────────────────── */
+
+.login-backdrop {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-backdrop::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(147, 197, 253, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: floatBlur 20s ease-in-out infinite;
+}
+
+.login-backdrop::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: floatBlur 25s ease-in-out infinite reverse;
+}
+
+@keyframes floatBlur {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, 30px) scale(1.1); }
+}
+
+/* ── Glass Card ───────────────────────────────────────────────── */
+
+.login-glass-card {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 24px;
+  padding: 50px 40px 32px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  animation: slideUpFade 0.6s ease-out;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Avatar Circle ────────────────────────────────────────────── */
+
+.login-avatar-circle {
+  position: absolute;
+  top: -45px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 90px;
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 0 0 6px rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.login-avatar-circle svg {
+  width: 42px;
+  height: 42px;
+  stroke-width: 2.5;
+}
+
+/* ── Form Glass ───────────────────────────────────────────────── */
+
+.login-form-glass {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 20px;
+}
+
+/* ── Error Alert ──────────────────────────────────────────────── */
+
+.login-error-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.login-error-alert svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: #fca5a5;
+}
+
+/* ── Input Groups ─────────────────────────────────────────────── */
+
+.login-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.login-input-icon {
+  position: absolute;
+  left: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.login-input-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.2;
+}
+
+.login-glass-input {
+  width: 100%;
+  padding: 16px 18px 16px 54px;
+  font-size: 0.9375rem;
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  outline: none;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.login-glass-input::placeholder {
+  color: rgba(30, 41, 59, 0.5);
+  font-weight: 400;
+}
+
+.login-glass-input:focus {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+}
+
+.login-input-group:focus-within .login-input-icon {
+  color: #3b82f6;
+}
+
+/* ── Options ──────────────────────────────────────────────────── */
+
+.login-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 4px 0;
+}
+
+.login-remember-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.login-remember-check input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #1e40af;
+}
+
+/* ── Submit Button ────────────────────────────────────────────── */
+
+.login-submit-btn {
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s ease;
+  box-shadow: 
+    0 4px 16px rgba(30, 64, 175, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  text-transform: uppercase;
+  margin-top: 8px;
+}
+
+.login-submit-btn:hover {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 20px rgba(30, 64, 175, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.login-submit-btn:active {
+  transform: translateY(0);
+  box-shadow: 
+    0 2px 8px rgba(30, 64, 175, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* ── Card Footer ──────────────────────────────────────────────── */
+
+.login-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+}
+
+.login-card-footer svg {
+  width: 16px;
+  height: 16px;
+  color: #93c5fd;
+}
+
+/* ── Brand Badge ──────────────────────────────────────────────── */
+
+.login-brand-badge {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 5;
+}
+
+.login-brand-badge svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ── User Panel (Topbar) ──────────────────────────────────────── */
+
 .app-user-panel {
   display: flex;
   align-items: center;
@@ -31,255 +334,33 @@
   margin: 0;
 }
 
-/* ── Auth layout (login page) ─────────────────────────────────── */
-
-.security-auth-shell {
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
-  gap: 20px;
-  align-items: start;
-  padding-top: 8px;
-}
-
-.security-auth-card,
-.security-hint-card,
-.security-message-card {
-  border-radius: 28px;
-  border: 1px solid rgba(115, 135, 164, 0.16);
-  background: linear-gradient(160deg, rgba(255,255,255,0.99) 0%, rgba(242,248,255,0.98) 100%);
-  box-shadow: 0 32px 64px rgba(22, 45, 90, 0.12), 0 4px 16px rgba(22, 45, 90, 0.06);
-}
-
-.security-auth-card,
-.security-hint-card {
-  padding: 28px;
-}
-
-/* ── Brand mark inside auth card ─────────────────────────────── */
-
-.security-auth-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 22px;
-  padding: 7px 14px 7px 8px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--vr-color-brand-3) 70%, #ffffff) 0%, rgba(255,255,255,0.8) 100%);
-  border: 1px solid color-mix(in srgb, var(--vr-color-border) 78%, #ffffff);
-  box-shadow: 0 4px 14px color-mix(in srgb, var(--vr-color-brand) 8%, transparent);
-}
-
-.security-brand-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--vr-color-brand) 0%, var(--vr-color-brand-2) 100%);
-  color: #fff;
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--vr-color-brand) 28%, transparent);
-}
-
-.security-brand-mark svg {
-  display: block;
-}
-
-.security-brand-name {
-  font-weight: 900;
-  font-size: 1rem;
-  color: var(--vr-color-text);
-  letter-spacing: 0.01em;
-}
-
-/* ── Auth head ───────────────────────────────────────────────── */
-
-.security-auth-head {
-  margin-bottom: 20px;
-}
-
-.security-auth-eyebrow {
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--vr-color-brand);
-  opacity: 0.78;
-}
-
-.security-auth-title {
-  margin: 6px 0 5px;
-  font-size: clamp(1.7rem, 3vw, 2.4rem);
-  font-weight: 900;
-  color: #18283d;
-  line-height: 1.1;
-}
-
-.security-auth-subtitle,
-.security-hint-subtitle {
-  color: #627488;
-  font-size: 0.88rem;
-  line-height: 1.5;
-}
-
-/* ── Auth form ───────────────────────────────────────────────── */
-
-.security-auth-form {
-  display: grid;
-  gap: 14px;
-}
-
-.security-field {
-  display: grid;
-  gap: 6px;
-}
-
-/* Input with leading icon */
-.security-input-wrap {
-  position: relative;
-}
-
-.security-input-icon {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--vr-color-text-soft);
-  pointer-events: none;
-  z-index: 2;
-  width: 17px;
-  height: 17px;
-}
-
-.security-input-field {
-  padding-left: 42px !important;
-}
-
-.security-remember {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 2px;
-  color: #4f6078;
-  font-size: 0.9rem;
-}
-
-.security-submit-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  border-radius: 14px !important;
-  min-height: 52px;
-  font-size: 1rem;
-  margin-top: 4px;
-}
-
-/* ── Hint card ──────────────────────────────────────────────── */
-
-.security-hint-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid color-mix(in srgb, var(--vr-color-border) 72%, #ffffff);
-  color: var(--vr-color-brand);
-}
-
-.security-hint-header > svg {
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.security-hint-title {
-  font-size: 1rem;
-  font-weight: 900;
-  color: #23354f;
-  line-height: 1.2;
-}
-
-.security-hint-list {
-  display: grid;
-  gap: 10px;
-}
-
-.security-hint-item {
-  padding: 14px;
-  border-radius: 16px;
-  border: 1px solid color-mix(in srgb, var(--vr-color-border) 82%, #ffffff);
-  background: linear-gradient(135deg, rgba(255,255,255,0.96), color-mix(in srgb, var(--vr-color-brand-3) 28%, #ffffff));
-  transition: box-shadow 0.18s ease;
-}
-
-.security-hint-item:hover {
-  box-shadow: 0 8px 22px color-mix(in srgb, var(--vr-color-brand) 10%, transparent);
-}
-
-.security-hint-role {
-  display: inline-flex;
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--vr-color-brand-3) 92%, #ffffff);
-  color: var(--vr-color-brand);
-  font-size: 0.7rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 6px;
-}
-
-.security-hint-item strong {
-  display: block;
-  font-size: 0.92rem;
-  color: #23354f;
-}
-
-.security-hint-password {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin: 5px 0;
-  color: var(--vr-color-brand);
-  font-weight: 800;
-  font-size: 0.88rem;
-  font-family: ui-monospace, "Cascadia Code", monospace;
-}
-
-.security-hint-password svg {
-  opacity: 0.7;
-}
-
-.security-hint-item p {
-  margin: 0;
-  color: #627287;
-  font-size: 0.84rem;
-  line-height: 1.45;
-}
-
-/* ── Message card (access denied etc.) ──────────────────────── */
+/* ── Message Card (Access Denied) ─────────────────────────────── */
 
 .security-message-shell {
+  min-height: 100vh;
   display: flex;
-  justify-content: center;
   align-items: center;
-  min-height: calc(100dvh - 220px);
+  justify-content: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
 }
 
 .security-message-card {
-  width: min(100%, 620px);
-  padding: 32px;
+  width: 100%;
+  max-width: 560px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
 }
 
 .security-message-actions {
   display: flex;
-  gap: 10px;
-  margin-top: 20px;
+  gap: 12px;
+  margin-top: 24px;
 }
 
-/* ── Topbar theme overrides ──────────────────────────────────── */
+/* ── Topbar Theme ─────────────────────────────────────────────── */
 
 body[data-role-theme] .app-topbar {
   background: linear-gradient(135deg,
@@ -287,7 +368,7 @@ body[data-role-theme] .app-topbar {
     color-mix(in srgb, var(--vr-color-brand-2) 72%, #1d3150) 100%);
 }
 
-/* ── Responsive ──────────────────────────────────────────────── */
+/* ── Responsive Mobile ────────────────────────────────────────── */
 
 @media (max-width: 991px) {
   .app-user-panel {
@@ -295,9 +376,96 @@ body[data-role-theme] .app-topbar {
   }
 }
 
-@media (max-width: 820px) {
-  .security-auth-shell {
-    grid-template-columns: 1fr;
+@media (max-width: 640px) {
+  .login-backdrop {
+    padding: 16px;
+  }
+
+  .login-glass-card {
+    max-width: 100%;
+    padding: 45px 28px 28px;
+    border-radius: 20px;
+  }
+
+  .login-avatar-circle {
+    width: 75px;
+    height: 75px;
+    top: -37px;
+  }
+
+  .login-avatar-circle svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .login-form-glass {
+    gap: 16px;
+  }
+
+  .login-glass-input {
+    padding: 14px 16px 14px 50px;
+    font-size: 0.875rem;
+  }
+
+  .login-input-icon {
+    left: 16px;
+  }
+
+  .login-input-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .login-submit-btn {
+    padding: 14px 20px;
+    font-size: 0.875rem;
+  }
+
+  .login-brand-badge {
+    bottom: 20px;
+    font-size: 0.875rem;
+    padding: 8px 16px;
+  }
+
+  .login-brand-badge svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .security-message-card {
+    padding: 28px 20px;
+  }
+
+  .security-message-actions {
+    flex-direction: column;
+  }
+
+  .security-message-actions .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 400px) {
+  .login-glass-card {
+    padding: 40px 24px 24px;
+  }
+
+  .login-avatar-circle {
+    width: 70px;
+    height: 70px;
+    top: -35px;
+  }
+
+  .login-avatar-circle svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .login-card-footer {
+    font-size: 0.75rem;
+  }
+}
+
   }
 }
 

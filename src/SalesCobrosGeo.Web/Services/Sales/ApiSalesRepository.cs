@@ -31,41 +31,76 @@ public sealed class ApiSalesRepository : ISalesRepository
     {
         try
         {
+            _logger.LogInformation("Obteniendo catálogos para ventas desde Excel");
+            
             // Leer catálogos desde Excel (compartido con Web)
             var zones = _excelService.ReadSheetAsync("Zones").GetAwaiter().GetResult()
                 .Where(row => GetBool(row, "IsActive") == true)
-                .Select(row => new CatalogOption(GetString(row, "Code") ?? "", GetString(row, "Name") ?? ""))
+                .Select(row => new CatalogOption(
+                    GetString(row, "Code") ?? "", 
+                    GetString(row, "Name") ?? GetString(row, "Label") ?? ""))
                 .ToList();
             
             var paymentMethods = _excelService.ReadSheetAsync("PaymentMethods").GetAwaiter().GetResult()
                 .Where(row => GetBool(row, "IsActive") == true)
-                .Select(row => new CatalogOption(GetString(row, "Code") ?? "", GetString(row, "Name") ?? ""))
+                .Select(row => new CatalogOption(
+                    GetString(row, "Code") ?? "", 
+                    GetString(row, "Name") ?? GetString(row, "Label") ?? ""))
                 .ToList();
             
             var collectionDays = _excelService.ReadSheetAsync("WeekDays").GetAwaiter().GetResult()
                 .Where(row => GetBool(row, "IsActive") == true)
-                .Select(row => new CatalogOption(GetString(row, "Code") ?? "", GetString(row, "Label") ?? ""))
+                .Select(row => new CatalogOption(
+                    GetString(row, "Code") ?? "", 
+                    GetString(row, "Label") ?? GetString(row, "Name") ?? ""))
                 .ToList();
             
             var products = _excelService.ReadSheetAsync("Products").GetAwaiter().GetResult()
                 .Where(row => GetBool(row, "IsActive") == true)
                 .Select(row => new ProductOption(
                     GetString(row, "Code") ?? "", 
-                    GetString(row, "Name") ?? "", 
+                    GetString(row, "Name") ?? GetString(row, "Label") ?? "", 
                     GetDecimal(row, "Price") ?? 0))
                 .ToList();
             
-            var users = _excelService.ReadSheetAsync("Users").GetAwaiter().GetResult()
-                .Where(row => GetBool(row, "IsActive") == true && GetString(row, "UserName") != "admin")
-                .Select(row => new CatalogOption(GetString(row, "UserName") ?? "", GetString(row, "DisplayName") ?? ""))
+            // Cargar usuarios y filtrar por rol
+            var allUsers = _excelService.ReadSheetAsync("Users").GetAwaiter().GetResult()
+                .Where(row => GetBool(row, "IsActive") == true)
+                .ToList();
+            
+            var sellers = allUsers
+                .Where(row => 
+                {
+                    var role = GetString(row, "Role");
+                    return role == "Vendedor" || role == "SupervisorVentas" || role == "Administrador";
+                })
+                .Select(row => new CatalogOption(
+                    GetString(row, "UserName") ?? "", 
+                    GetString(row, "DisplayName") ?? ""))
+                .ToList();
+            
+            var collectors = allUsers
+                .Where(row => 
+                {
+                    var role = GetString(row, "Role");
+                    return role == "Cobrador" || role == "SupervisorCobranza" || role == "Administrador";
+                })
+                .Select(row => new CatalogOption(
+                    GetString(row, "UserName") ?? "", 
+                    GetString(row, "DisplayName") ?? ""))
                 .ToList();
             
             var saleStatuses = _excelService.ReadSheetAsync("SaleStatuses").GetAwaiter().GetResult()
                 .Where(row => GetBool(row, "IsActive") == true)
-                .Select(row => new CatalogOption(GetString(row, "Code") ?? "", GetString(row, "Label") ?? ""))
+                .Select(row => new CatalogOption(
+                    GetString(row, "Code") ?? "", 
+                    GetString(row, "Label") ?? GetString(row, "Name") ?? ""))
                 .ToList();
 
-            return new SalesCatalogs(zones, paymentMethods, collectionDays, products, users, users, saleStatuses);
+            _logger.LogInformation("Catálogos cargados: {Zones} zonas, {PaymentMethods} formas pago, {Days} días, {Products} productos, {Sellers} vendedores, {Collectors} cobradores, {Statuses} estados", 
+                zones.Count, paymentMethods.Count, collectionDays.Count, products.Count, sellers.Count, collectors.Count, saleStatuses.Count);
+
+            return new SalesCatalogs(zones, paymentMethods, collectionDays, products, sellers, collectors, saleStatuses);
         }
         catch (Exception ex)
         {
@@ -85,13 +120,46 @@ public sealed class ApiSalesRepository : ISalesRepository
             }
 
             var rows = _excelService.ReadSheetAsync(sheetName).GetAwaiter().GetResult();
+            
+            // Filtrar vendedores/cobradores por rol
+            if (section == "vendedores")
+            {
+                rows = rows.Where(row => 
+                {
+                    var role = GetString(row, "Role");
+                    return role == "Vendedor" || role == "SupervisorVentas" || role == "Administrador";
+                }).ToList();
+                _logger.LogInformation("Catálogo vendedores: {RowCount} registros después de filtrar por rol", rows.Count);
+            }
+            else if (section == "cobradores")
+            {
+                rows = rows.Where(row => 
+                {
+                    var role = GetString(row, "Role");
+                    return role == "Cobrador" || role == "SupervisorCobranza" || role == "Administrador";
+                }).ToList();
+                _logger.LogInformation("Catálogo cobradores: {RowCount} registros después de filtrar por rol", rows.Count);
+            }
+            
+            // Log columnas disponibles de la primera fila para depuración
+            if (rows.Count > 0)
+            {
+                var firstRow = rows[0];
+                _logger.LogInformation("Columnas disponibles en {Section}: {Columns}", section, string.Join(", ", firstRow.Keys));
+            }
+            else
+            {
+                _logger.LogWarning("Catálogo {Section} no tiene registros", section);
+            }
+            
             return rows.Select(row => new MaintenanceCatalogRecord(
                 (long)(GetInt(row, "Id") ?? 0),
                 section,
-                GetString(row, "Code") ?? "",
-                GetString(row, "Name") ?? GetString(row, "Label") ?? "",
+                GetString(row, "Code") ?? GetString(row, "UserName") ?? "",
+                GetString(row, "Name") ?? GetString(row, "Label") ?? GetString(row, "DisplayName") ?? "",
                 GetDecimal(row, "Price"),
-                GetBool(row, "IsActive") ?? true
+                GetBool(row, "IsActive") ?? true,
+                new Dictionary<string, object?>(row) // Todas las columnas
             )).ToList();
         }
         catch (Exception ex)
@@ -103,28 +171,135 @@ public sealed class ApiSalesRepository : ISalesRepository
 
     public MaintenanceCatalogRecord SaveMaintenanceCatalogItem(MaintenanceCatalogSaveInput input)
     {
-        // TODO: Implement via API
-        _logger.LogWarning("SaveMaintenanceCatalogItem no implementado aún en API");
-        throw new NotImplementedException("Método pendiente de implementación en API");
+        try
+        {
+            var sheetName = ResolveSheetName(input.Section);
+            if (string.IsNullOrEmpty(sheetName))
+            {
+                throw new ArgumentException($"Sección '{input.Section}' no válida", nameof(input));
+            }
+
+            var isUpdate = input.Id.HasValue && input.Id.Value > 0;
+
+            if (isUpdate)
+            {
+                // Actualizar registro existente
+                _excelService.UpdateRowsAsync(sheetName, 
+                    row => (GetInt(row, "Id") ?? 0) == input.Id.Value,
+                    row =>
+                    {
+                        // Actualizar todos los campos dinámicamente (excepto Id)
+                        foreach (var field in input.Fields.Where(f => f.Key != "Id"))
+                        {
+                            row[field.Key] = field.Value;
+                        }
+                        // Asegurar compatibilidad Name/Label
+                        if (input.Fields.ContainsKey("Name") && !input.Fields.ContainsKey("Label"))
+                        {
+                            row["Label"] = input.Fields["Name"];
+                        }
+                    }).GetAwaiter().GetResult();
+
+                _logger.LogInformation("Catálogo actualizado: {Section} - ID {Id}", input.Section, input.Id);
+            }
+            else
+            {
+                // Crear nuevo registro - obtener siguiente ID
+                var existingData = _excelService.ReadSheetAsync(sheetName).GetAwaiter().GetResult();
+                var maxId = existingData.Count > 0
+                    ? existingData.Max(row => GetInt(row, "Id") ?? 0)
+                    : 0;
+                var newId = maxId + 1;
+
+                // Crear fila con todos los campos dinámicos
+                var newRow = new Dictionary<string, object?> { ["Id"] = newId };
+                foreach (var field in input.Fields.Where(f => f.Key != "Id"))
+                {
+                    newRow[field.Key] = field.Value;
+                }
+                // Asegurar compatibilidad Name/Label
+                if (input.Fields.ContainsKey("Name") && !input.Fields.ContainsKey("Label"))
+                {
+                    newRow["Label"] = input.Fields["Name"];
+                }
+
+                _excelService.AppendRowAsync(sheetName, newRow).GetAwaiter().GetResult();
+                input.Id = newId;
+
+                _logger.LogInformation("Catálogo creado: {Section} - ID {Id}", input.Section, newId);
+            }
+
+            return new MaintenanceCatalogRecord(
+                input.Id ?? 0,
+                input.Section,
+                input.Fields.TryGetValue("Code", out var code) ? code?.ToString() ?? "" : "",
+                input.Fields.TryGetValue("Name", out var name) ? name?.ToString() ?? "" : 
+                    input.Fields.TryGetValue("Label", out var label) ? label?.ToString() ?? "" : "",
+                input.Fields.TryGetValue("Price", out var price) && price is decimal d ? d : null,
+                input.Fields.TryGetValue("IsActive", out var active) && active is bool b ? b : true,
+                new Dictionary<string, object?>(input.Fields)
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar ítem de catálogo {Section}", input.Section);
+            throw;
+        }
     }
 
     public bool DeleteMaintenanceCatalogItem(string section, long id)
     {
-        // TODO: Implement via API
-        _logger.LogWarning("DeleteMaintenanceCatalogItem no implementado aún en API");
-        throw new NotImplementedException("Método pendiente de implementación en API");
+        try
+        {
+            var sheetName = ResolveSheetName(section);
+            if (string.IsNullOrEmpty(sheetName))
+            {
+                throw new ArgumentException($"Sección '{section}' no válida", nameof(section));
+            }
+
+            _excelService.DeleteRowsAsync(sheetName,
+                row => (GetInt(row, "Id") ?? 0) == id
+            ).GetAwaiter().GetResult();
+
+            _logger.LogInformation("Catálogo eliminado: {Section} - ID {Id}", section, id);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al eliminar ítem de catálogo {Section} ID {Id}", section, id);
+            return false;
+        }
     }
 
     private string? ResolveSheetName(string section)
     {
         return section switch
         {
+            // Catálogos de negocio
+            "zonas" => "Zones",
+            "productos" => "Products",
+            "formas-pago" => "PaymentMethods",
+            "dias-cobro" => "WeekDays",
+            "estatus-venta" => "SaleStatuses",
+            "estatus-cobro-grupos" => "CollectionStatuses",
+            
+            // Catálogos de configuración
+            "menu-items" => "MenuItems",
+            "tipos-catalogo" => "CatalogTypes",
+            "config-ui" => "UISettings",
+            
+            // Personal (filtrado de Users)
+            "vendedores" => "Users",
+            "cobradores" => "Users",
+            
+            // Backward compatibility
             "zones" => "Zones",
             "products" => "Products",
             "payments" => "PaymentMethods",
             "weekdays" => "WeekDays",
             "sale_statuses" => "SaleStatuses",
             "collection_statuses" => "CollectionStatuses",
+            
             _ => null
         };
     }
@@ -169,16 +344,52 @@ public sealed class ApiSalesRepository : ISalesRepository
     {
         try
         {
+            _logger.LogInformation("Enviando venta a API: Cliente {Cliente}, Productos: {ProductCount}", 
+                input.NombreCliente, 
+                input.Productos?.Count ?? 0);
+            
             var response = _httpClient.PostAsJsonAsync("api/sales", input).GetAwaiter().GetResult();
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                _logger.LogError("Error de API al crear venta. Status: {Status}, Contenido: {Content}", 
+                    response.StatusCode, 
+                    errorContent);
+                
+                // Intentar extraer mensaje de error
+                try
+                {
+                    var errorObj = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(errorContent);
+                    if (errorObj != null && errorObj.TryGetValue("message", out var msg))
+                    {
+                        throw new InvalidOperationException($"Error de API: {msg}");
+                    }
+                }
+                catch (System.Text.Json.JsonException)
+                {
+                    // Si no se puede deserializar, usar el contenido crudo
+                }
+                
+                throw new InvalidOperationException($"Error al crear venta en API (Status: {response.StatusCode})");
+            }
+            
             response.EnsureSuccessStatusCode();
             
             var sale = response.Content.ReadFromJsonAsync<SaleRecord>().GetAwaiter().GetResult();
             if (sale == null)
             {
+                _logger.LogError("API retornó null después de crear venta");
                 throw new Exception("API retornó null después de crear venta");
             }
             
+            _logger.LogInformation("Venta creada exitosamente: {IdV}", sale.IdV);
             return sale;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Error HTTP al crear venta en API");
+            throw new InvalidOperationException("Error de conexión con el servidor. Verifique que la API esté ejecutándose.", ex);
         }
         catch (Exception ex)
         {
@@ -357,7 +568,15 @@ public sealed class ApiSalesRepository : ISalesRepository
             // Obtener usuarios con rol de cobrador
             var users = _excelService.ReadSheetAsync("Users").GetAwaiter().GetResult();
             return users
-                .Where(row => GetBool(row, "IsActive") == true && GetString(row, "UserName") != "admin")
+                .Where(row => 
+                {
+                    var isActive = GetBool(row, "IsActive") == true;
+                    var userName = GetString(row, "UserName");
+                    var role = GetString(row, "Role");
+                    return isActive && 
+                           userName != "admin" && 
+                           (role == "Cobrador" || role == "SupervisorCobranza");
+                })
                 .Select(row => new CatalogOption(GetString(row, "UserName") ?? "", GetString(row, "DisplayName") ?? ""))
                 .ToList();
         }

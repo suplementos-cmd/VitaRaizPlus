@@ -48,7 +48,8 @@ public sealed class AppSessionEntity
     public string LastCoordinates { get; set; } = "-";
     public string LastLocationSource { get; set; } = "Sin traza";
 
-    public AppUserEntity? User { get; set; }
+    // REMOVIDO: Navigation a User - Ya no hay FK porque usuarios están en Excel
+    // public AppUserEntity? User { get; set; }
 }
 
 public sealed class AuditLogEntity

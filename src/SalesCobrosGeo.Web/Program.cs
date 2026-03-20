@@ -33,9 +33,6 @@ builder.Services.AddSession(options =>
     options.Cookie.SecurePolicy = secureCookiePolicy;
 });
 
-// FASE 2: Ventas y cobros vía API (Excel como fuente de datos)
-builder.Services.AddScoped<ISalesRepository, ApiSalesRepository>();
-
 // Servicios de catálogos compartidos con API (usando Excel)
 var excelFilePath = Path.Combine(builder.Environment.ContentRootPath, "..", "SalesCobrosGeo.Api", "App_Data", "SalesCobrosGeo.xlsx");
 builder.Services.AddSingleton(new ExcelDataService(excelFilePath));
@@ -46,14 +43,26 @@ var dataPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data");
 Directory.CreateDirectory(dataPath);
 var securityDbPath = Path.Combine(dataPath, "security.db");
 
-// FASE 1: Autenticación vía API (Excel como fuente de datos)
-// HttpClient configurado para consumir API
-var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:5000";
+// FASE 1 & 2: HttpClient configurado para consumir API con autenticación
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5207";
+
+// Registrar handler que inyecta el token en cada petición
+builder.Services.AddTransient<ApiTokenDelegatingHandler>();
+
+// HttpClient para autenticación
 builder.Services.AddHttpClient<IApplicationUserService, ApiAuthenticationService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
     client.Timeout = TimeSpan.FromSeconds(30);
 });
+
+// HttpClient para repositorio de ventas/cobros con autenticación
+builder.Services.AddHttpClient<ISalesRepository, ApiSalesRepository>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+})
+.AddHttpMessageHandler<ApiTokenDelegatingHandler>();
 
 // SQLite solo para sesiones (NO para usuarios)
 builder.Services.AddDbContext<AppSecurityDbContext>(options =>
@@ -112,6 +121,14 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+
+// Crear base de datos SQLite si no existe
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppSecurityDbContext>();
+    dbContext.Database.EnsureCreated();
+}
+
 var contentSecurityPolicy = app.Environment.IsDevelopment()
     ? "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:*;"
     : "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self';";

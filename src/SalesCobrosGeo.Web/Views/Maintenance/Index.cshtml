@@ -3,9 +3,33 @@
 @{
     ViewData["Title"] = "Mantenimiento";
     var current = Model.Sections.First(x => x.Key == Model.SelectedSection);
-    var editableSection = new[] { "zonas", "dias-cobro", "formas-pago", "productos", "vendedores", "cobradores", "estatus-venta", "estatus-cobro-grupos" }
+    var editableSection = new[] { "zonas", "dias-cobro", "formas-pago", "productos", "vendedores", "cobradores", "estatus-venta", "estatus-cobro-grupos", "menu-items", "tipos-catalogo", "config-ui" }
         .Contains(Model.SelectedSection, StringComparer.OrdinalIgnoreCase);
     var readonlyCodeSection = Model.SelectedSection.Equals("estatus-cobro-grupos", StringComparison.OrdinalIgnoreCase);
+
+    // Helper para determinar tipo de campo basado en nombre de columna
+    string GetFieldType(string fieldName, object? value)
+    {
+        if (fieldName.Contains("Price", StringComparison.OrdinalIgnoreCase) || 
+            fieldName.Contains("Amount", StringComparison.OrdinalIgnoreCase))
+            return "number";
+        if (fieldName.Contains("Sort", StringComparison.OrdinalIgnoreCase) || 
+            fieldName.Contains("Priority", StringComparison.OrdinalIgnoreCase) || 
+            fieldName.Contains("Order", StringComparison.OrdinalIgnoreCase))
+            return "number";
+        if (value is int || value is long || value is decimal || value is double)
+            return "number";
+        if (value is bool)
+            return "checkbox";
+        return "text";
+    }
+
+    string FormatFieldLabel(string fieldName)
+    {
+        // Convertir CamelCase a palabras separadas
+        var result = System.Text.RegularExpressions.Regex.Replace(fieldName, "([A-Z])", " $1").Trim();
+        return char.ToUpper(result[0]) + result.Substring(1);
+    }
 
     // Resolve the item being viewed (detail panel)
     var viewItem = Model.ViewItemId.HasValue
@@ -48,7 +72,9 @@
     {
         ["ZON"]  = "zonas",     ["DIA"]  = "dias-cobro",         ["PAG"]  = "formas-pago",
         ["PRO"]  = "productos", ["VEN"]  = "vendedores",         ["COB"]  = "cobradores",
-        ["ESTV"] = "estatus-venta", ["ESTC"] = "estatus-cobro-grupos", ["EMP"] = "empleados"
+        ["ESTV"] = "estatus-venta", ["ESTC"] = "estatus-cobro-grupos", 
+        ["MENU"] = "menu-items", ["TIPO"] = "tipos-catalogo",    ["UI"]   = "config-ui",
+        ["EMP"] = "empleados"
     };
 
     // ─── Cancel URL for editor (desktop + mobile) ──────────────────
@@ -101,6 +127,9 @@
         "cobradores"          => """<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v.67l-.046.008C7.472 7.696 6.25 9.048 6.25 10.7c0 1.68 1.25 3.02 3 3.26v1.29a.75.75 0 001.5 0v-1.29c1.75-.24 3-1.58 3-3.26v-.007c0-1.652-1.222-3.004-2.954-3.272L10.75 7.42v-.67zm-1.5 1.726l-.092.015C7.846 8.687 7.25 9.608 7.25 10.7c0 1.09.6 2.013 1.908 2.21l.092.014V9.476zm1.5.04v3.01l.092-.015C12.15 12.713 12.75 11.79 12.75 10.7v-.007c0-1.086-.597-2.007-1.908-2.21l-.092-.016z" clip-rule="evenodd"/></svg>""",
         "estatus-venta"       => """<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2c-2.236 0-4.43.18-6.57.524C1.993 2.755 1 4.014 1 5.426v5.148c0 1.413.993 2.67 2.43 2.902.848.137 1.705.248 2.57.331v3.443a.75.75 0 001.28.53l3.58-3.579a.78.78 0 01.527-.224 41.202 41.202 0 005.183-.5c1.437-.232 2.43-1.49 2.43-2.903V5.426c0-1.413-.993-2.67-2.43-2.902A41.289 41.289 0 0010 2z" clip-rule="evenodd"/></svg>""",
         "estatus-cobro-grupos"=> """<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 4.25A2.25 2.25 0 014.25 2h11.5A2.25 2.25 0 0118 4.25v8.5A2.25 2.25 0 0115.75 15h-3.105a3.501 3.501 0 001.1 1.677A.75.75 0 0113.26 18H6.74a.75.75 0 01-.484-1.323A3.501 3.501 0 007.355 15H4.25A2.25 2.25 0 012 12.75v-8.5zm1.5 0a.75.75 0 01.75-.75h11.5a.75.75 0 01.75.75v7.5a.75.75 0 01-.75.75H4.25a.75.75 0 01-.75-.75v-7.5z" clip-rule="evenodd"/></svg>""",
+        "menu-items"          => """<svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 00-1 1v1a1 1 0 001 1h14a1 1 0 001-1V5a1 1 0 00-1-1H3zM3 9a1 1 0 00-1 1v1a1 1 0 001 1h14a1 1 0 001-1v-1a1 1 0 00-1-1H3zM3 14a1 1 0 00-1 1v1a1 1 0 001 1h14a1 1 0 001-1v-1a1 1 0 00-1-1H3z"/></svg>""",
+        "tipos-catalogo"      => """<svg viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>""",
+        "config-ui"           => """<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.34 1.804A1 1 0 019.32 1h1.36a1 1 0 01.98.804l.295 1.473c.497.144.971.342 1.416.587l1.25-.834a1 1 0 011.262.125l.962.962a1 1 0 01.125 1.262l-.834 1.25c.245.445.443.919.587 1.416l1.473.294a1 1 0 01.804.98v1.361a1 1 0 01-.804.98l-1.473.295a6.95 6.95 0 01-.587 1.416l.834 1.25a1 1 0 01-.125 1.262l-.962.962a1 1 0 01-1.262.125l-1.25-.834a6.953 6.953 0 01-1.416.587l-.294 1.473a1 1 0 01-.98.804H9.32a1 1 0 01-.98-.804l-.295-1.473a6.957 6.957 0 01-1.416-.587l-1.25.834a1 1 0 01-1.262-.125l-.962-.962a1 1 0 01-.125-1.262l.834-1.25a6.957 6.957 0 01-.587-1.416l-1.473-.294A1 1 0 011 10.68V9.32a1 1 0 01.804-.98l1.473-.295c.144-.497.342-.971.587-1.416l-.834-1.25a1 1 0 01.125-1.262l.962-.962A1 1 0 015.38 3.03l1.25.834a6.957 6.957 0 011.416-.587l.294-1.473zM13 10a3 3 0 11-6 0 3 3 0 016 0z" clip-rule="evenodd"/></svg>""",
         "empleados"           => """<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zM1.49 15.326a.78.78 0 01-.358-.442 3 3 0 014.308-3.516 6.484 6.484 0 00-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 01-2.07-.655zM16.44 15.98a4.97 4.97 0 002.07-.654.78.78 0 00.357-.442 3 3 0 00-4.308-3.517 6.484 6.484 0 011.907 3.96 2.32 2.32 0 01-.026.654zM18 8a2 2 0 11-4 0 2 2 0 014 0zM5.304 16.19a.844.844 0 01-.277-.71 5 5 0 019.947 0 .843.843 0 01-.277.71A6.975 6.975 0 0110 18a6.974 6.974 0 01-4.696-1.81z"/></svg>""",
         _                     => """<svg viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM14 11a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z"/></svg>"""
     };
@@ -271,28 +300,49 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="Section" value="@Model.SelectedSection" />
                 <input type="hidden" name="Id" value="@Model.Editor.Id" />
-                <div>
-                    <label class="form-label" for="mCode">Código</label>
-                    <input class="form-control" id="mCode" name="Code"
-                           value="@Model.Editor.Code" @(readonlyCodeSection ? "readonly" : null) />
-                </div>
-                <div>
-                    <label class="form-label" for="mName">Nombre</label>
-                    <input class="form-control" id="mName" name="Name" value="@Model.Editor.Name" />
-                </div>
-                @if (Model.SelectedSection == "productos")
+                
+                @* Campos dinámicos *@
+                @foreach (var field in Model.Editor.Fields.OrderBy(f => 
+                    f.Key == "Code" || f.Key == "UserName" ? 0 : 
+                    f.Key == "Name" || f.Key == "Label" || f.Key == "DisplayName" ? 1 : 
+                    f.Key == "IsActive" ? 999 : 
+                    2))
                 {
-                    <div>
-                        <label class="form-label" for="mPrice">Precio base</label>
-                        <input class="form-control" id="mPrice" name="Price"
-                               type="number" step="0.01" min="0" value="@Model.Editor.Price" />
-                    </div>
+                    var fieldType = GetFieldType(field.Key, field.Value);
+                    var fieldName = "Field_" + field.Key;
+                    var fieldLabel = FormatFieldLabel(field.Key);
+                    var isReadonly = readonlyCodeSection && field.Key == "Code";
+                    
+                    if (fieldType == "checkbox")
+                    {
+                        <label class="admin-check-chip maintenance-check-chip">
+                            <input type="hidden" name="@fieldName" value="false" />
+                            <input type="checkbox" name="@fieldName" value="true" @(field.Value is bool b && b ? "checked" : null) />
+                            <span>@fieldLabel</span>
+                        </label>
+                    }
+                    else
+                    {
+                        <div>
+                            <label class="form-label" for="@fieldName">@fieldLabel</label>
+                            @if (fieldType == "number")
+                            {
+                                <input class="form-control" id="@fieldName" name="@fieldName"
+                                       type="number" step="0.01" value="@field.Value" @(isReadonly ? "readonly" : null) />
+                            }
+                            else if (field.Key.Contains("Svg", StringComparison.OrdinalIgnoreCase) || field.Value?.ToString()?.Length > 100)
+                            {
+                                <textarea class="form-control" id="@fieldName" name="@fieldName" rows="3" @(isReadonly ? "readonly" : null)>@field.Value</textarea>
+                            }
+                            else
+                            {
+                                <input class="form-control" id="@fieldName" name="@fieldName"
+                                       value="@field.Value" @(isReadonly ? "readonly" : null) />
+                            }
+                        </div>
+                    }
                 }
-                <label class="admin-check-chip maintenance-check-chip">
-                    <input type="hidden" name="IsActive" value="false" />
-                    <input type="checkbox" name="IsActive" value="true" @(Model.Editor.IsActive ? "checked" : null) />
-                    <span>Activo para operación</span>
-                </label>
+                
                 <div class="maint-editor-actions">
                     <button type="submit" class="btn btn-primary">Guardar</button>
                     <a class="btn btn-outline-secondary" href="@cancelUrl"
@@ -504,28 +554,45 @@
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="Section" value="@Model.SelectedSection" />
                         <input type="hidden" name="Id" value="@Model.Editor.Id" />
-                        <div>
-                            <label class="form-label" for="dCode">Código</label>
-                            <input class="form-control" id="dCode" name="Code"
-                                   value="@Model.Editor.Code" @(readonlyCodeSection ? "readonly" : null) />
-                        </div>
-                        <div>
-                            <label class="form-label" for="dName">Nombre</label>
-                            <input class="form-control" id="dName" name="Name" value="@Model.Editor.Name" />
-                        </div>
-                        @if (Model.SelectedSection == "productos")
+                        
+                        @* Campos dinámicos *@
+                        @foreach (var field in Model.Editor.Fields.OrderBy(f => f.Key == "Code" ? 0 : f.Key == "Name" || f.Key == "Label" ? 1 : 2))
                         {
-                            <div>
-                                <label class="form-label" for="dPrice">Precio base</label>
-                                <input class="form-control" id="dPrice" name="Price"
-                                       type="number" step="0.01" min="0" value="@Model.Editor.Price" />
-                            </div>
+                            var fieldType = GetFieldType(field.Key, field.Value);
+                            var fieldName = "Field_" + field.Key;
+                            var fieldLabel = FormatFieldLabel(field.Key);
+                            var isReadonly = readonlyCodeSection && field.Key == "Code";
+                            
+                            if (fieldType == "checkbox")
+                            {
+                                <label class="admin-check-chip maintenance-check-chip">
+                                    <input type="hidden" name="@fieldName" value="false" />
+                                    <input type="checkbox" name="@fieldName" value="true" @(field.Value is bool b && b ? "checked" : null) />
+                                    <span>@fieldLabel</span>
+                                </label>
+                            }
+                            else
+                            {
+                                <div>
+                                    <label class="form-label" for="d@field.Key">@fieldLabel</label>
+                                    @if (fieldType == "number")
+                                    {
+                                        <input class="form-control" id="d@field.Key" name="@fieldName"
+                                               type="number" step="0.01" value="@field.Value" @(isReadonly ? "readonly" : null) />
+                                    }
+                                    else if (field.Key.Contains("Svg", StringComparison.OrdinalIgnoreCase) || field.Value?.ToString()?.Length > 100)
+                                    {
+                                        <textarea class="form-control" id="d@field.Key" name="@fieldName" rows="3" @(isReadonly ? "readonly" : null)>@field.Value</textarea>
+                                    }
+                                    else
+                                    {
+                                        <input class="form-control" id="d@field.Key" name="@fieldName"
+                                               value="@field.Value" @(isReadonly ? "readonly" : null) />
+                                    }
+                                </div>
+                            }
                         }
-                        <label class="admin-check-chip maintenance-check-chip">
-                            <input type="hidden" name="IsActive" value="false" />
-                            <input type="checkbox" name="IsActive" value="true" @(Model.Editor.IsActive ? "checked" : null) />
-                            <span>Activo para operación</span>
-                        </label>
+                        
                         <div class="maint-editor-actions">
                             <button type="submit" class="btn btn-primary">Guardar</button>
                             <a class="btn btn-outline-secondary" href="@cancelUrl"

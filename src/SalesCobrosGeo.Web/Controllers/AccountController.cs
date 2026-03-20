@@ -65,18 +65,29 @@ public sealed class AccountController : Controller
 
         // Crear userSummary desde los claims del principal retornado por la API
         var fullName = principal.FindFirst(ClaimTypes.GivenName)?.Value ?? input.Username;
-        var role = principal.FindFirst(ClaimTypes.Role)?.Value ?? "Unknown";
+        var webRole = principal.FindFirst(ClaimTypes.Role)?.Value ?? "Unknown"; // FULL, SALES, etc.
+        var displayRole = principal.FindFirst(AppClaimTypes.DisplayRole)?.Value ?? webRole; // Administrador, Vendedor, etc.
+        var permissions = principal.FindAll(AppClaimTypes.Permission).Select(c => c.Value).ToArray();
+        
+        // DEBUG: Log de permisos
+        Console.WriteLine($"[LOGIN DEBUG] Usuario: {input.Username}");
+        Console.WriteLine($"[LOGIN DEBUG] WebRole: {webRole}");
+        Console.WriteLine($"[LOGIN DEBUG] DisplayRole: {displayRole}");
+        Console.WriteLine($"[LOGIN DEBUG] Permisos: {string.Join(", ", permissions)}");
+        Console.WriteLine($"[LOGIN DEBUG] IsInRole(FULL): {principal.IsInRole(AppRoles.Full)}");
+        Console.WriteLine($"[LOGIN DEBUG] HasPermission(DashboardView): {principal.HasPermission(AppPermissions.DashboardView)}");
+        Console.WriteLine($"[LOGIN DEBUG] HasPermission(AdministrationView): {principal.HasPermission(AppPermissions.AdministrationView)}");
         
         var userSummary = new ApplicationUserSummary(
             Username: input.Username,
             DisplayName: fullName,
-            Role: role,
-            RoleLabel: role,
+            Role: webRole,
+            RoleLabel: displayRole,
             Zone: "Default",
             Theme: "default",
             IsActive: true,
             TwoFactorEnabled: false,
-            Permissions: Array.Empty<string>()
+            Permissions: permissions
         );
 
         var sessionPrincipal = _sessionTracker.AttachSession(principal, userSummary, HttpContext);

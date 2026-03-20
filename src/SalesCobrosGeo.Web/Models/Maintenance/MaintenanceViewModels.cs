@@ -31,10 +31,15 @@ public sealed class MaintenanceEditorInput
 {
     public long? Id { get; set; }
     public string Section { get; set; } = "catalogos";
-    public string Code { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public decimal? Price { get; set; }
-    public bool IsActive { get; set; } = true;
+    public Dictionary<string, object?> Fields { get; set; } = new();
+    
+    // Backward compatibility properties (deprecated)
+    public string Code { get => GetField<string>("Code") ?? string.Empty; set => Fields["Code"] = value; }
+    public string Name { get => GetField<string>("Name") ?? string.Empty; set => Fields["Name"] = value; }
+    public decimal? Price { get => GetField<decimal?>("Price"); set => Fields["Price"] = value; }
+    public bool IsActive { get => GetField<bool>("IsActive"); set => Fields["IsActive"] = value; }
+
+    private T? GetField<T>(string key) => Fields.TryGetValue(key, out var value) && value is T typed ? typed : default;
 }
 
 public sealed record MaintenanceCatalogRecord(
@@ -43,14 +48,20 @@ public sealed record MaintenanceCatalogRecord(
     string Code,
     string Name,
     decimal? Price,
-    bool IsActive);
+    bool IsActive,
+    Dictionary<string, object?> AllFields); // Todas las columnas dinámicas
 
 public sealed class MaintenanceCatalogSaveInput
 {
     public long? Id { get; set; }
     public string Section { get; set; } = string.Empty;
-    public string Code { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public decimal? Price { get; set; }
-    public bool IsActive { get; set; } = true;
+    public Dictionary<string, object?> Fields { get; set; } = new();
+    
+    // Backward compatibility
+    public string Code { get => GetField<string>("Code") ?? string.Empty; set => Fields["Code"] = value; }
+    public string Name { get => GetField<string>("Name") ?? string.Empty; set => Fields["Name"] = value; }
+    public decimal? Price { get => GetField<decimal?>("Price"); set => Fields["Price"] = value; }
+    public bool IsActive { get => GetField<bool>("IsActive"); set => Fields["IsActive"] = value; }
+
+    private T? GetField<T>(string key) => Fields.TryGetValue(key, out var value) && value is T typed ? typed : default;
 }

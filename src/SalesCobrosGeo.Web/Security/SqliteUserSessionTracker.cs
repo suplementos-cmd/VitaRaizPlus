@@ -53,12 +53,8 @@ public sealed class SqliteUserSessionTracker : IUserSessionTracker
             return false;
         }
 
-        var user = _dbContext.Users.AsNoTracking().FirstOrDefault(x => x.Username == username);
-        if (user is null || !user.IsActive)
-        {
-            return false;
-        }
-
+        // FASE 1: Los usuarios están en Excel vía API, no en SQLite
+        // Solo validamos la sesión, no la tabla Users
         var session = _dbContext.Sessions.AsNoTracking()
             .FirstOrDefault(x => x.SessionId == sessionId && x.Username == username);
 

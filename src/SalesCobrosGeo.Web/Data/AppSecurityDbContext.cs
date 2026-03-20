@@ -32,10 +32,11 @@ public sealed class AppSecurityDbContext : DbContext
                 .WithOne(x => x.User)
                 .HasForeignKey(x => x.Username)
                 .OnDelete(DeleteBehavior.Cascade);
-            entity.HasMany(x => x.Sessions)
-                .WithOne(x => x.User)
-                .HasForeignKey(x => x.Username)
-                .OnDelete(DeleteBehavior.Cascade);
+            // REMOVIDO: Sessions FK - Los usuarios ahora están en Excel, no en SQLite
+            // entity.HasMany(x => x.Sessions)
+            //     .WithOne(x => x.User)
+            //     .HasForeignKey(x => x.Username)
+            //     .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<AppUserPermissionEntity>(entity =>
