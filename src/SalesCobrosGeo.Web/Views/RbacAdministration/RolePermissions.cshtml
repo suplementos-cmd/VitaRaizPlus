@@ -1,0 +1,715 @@
+@model SalesCobrosGeo.Web.Services.Rbac.PermissionMatrixDto
+@{
+    ViewData["Title"] = "Permisos por Rol - RBAC";
+    
+    var matrix = Model;
+    var roles = matrix?.Roles?.ToList() ?? new List<SalesCobrosGeo.Web.Services.Rbac.RoleDto>();
+    var permissions = matrix?.Permissions?.ToList() ?? new List<SalesCobrosGeo.Web.Services.Rbac.PermissionDto>();
+    var rolePermissionMap = matrix?.RolePermissionMap ?? new Dictionary<int, List<int>>();
+    
+    // Group permissions by module
+    var permissionsByModule = permissions
+        .GroupBy(p => p.ModuleCode)
+        .OrderBy(g => g.Key)
+        .ToList();
+    
+    var activeRoles = roles.Where(r => r.IsActive).ToList();
+}
+
+@Html.AntiForgeryToken()
+
+<div class="rbac-role-permissions-view">
+    <div class="admin-console-page">
+        <section class="admin-console-topbar compact-only">
+            <div>
+                <h1 class="admin-console-title">Permisos por Rol</h1>
+                <div class="admin-console-subtitle">Matriz de asignación de permisos a roles del sistema.</div>
+            </div>
+            <div class="admin-console-actions">
+                <a class="btn btn-outline-secondary" asp-action="Roles">Ver Roles</a>
+                <a class="btn btn-outline-secondary" asp-action="Permissions">Catálogo Permisos</a>
+            </div>
+        </section>
+
+        @if (TempData["Message"] != null)
+        {
+            <div class="app-toast-inline success">@TempData["Message"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="app-toast-inline error">@TempData["Error"]</div>
+        }
+
+        <section class="admin-console-layout responsive-dense">
+            <div class="admin-console-main responsive-dense">
+                <section class="rbac-matrix-section compact-shell">
+                    <div class="admin-section-head compact">
+                        <div>
+                            <h2 class="admin-section-title">Matriz de Permisos</h2>
+                            <div class="admin-section-subtitle">Configura qué permisos tiene cada rol. Los cambios se guardan automáticamente.</div>
+                        </div>
+                    </div>
+
+                    @if (!roles.Any() || !permissions.Any())
+                    {
+                        <div class="admin-empty-state">
+                            <p>No hay datos para mostrar la matriz.</p>
+                            <a class="btn btn-primary" asp-action="Roles">Gestionar Roles</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="rbac-matrix-controls">
+                            <div>
+                                <div class="btn-group" role="group" aria-label="Filtros de visualización">
+                                    <input type="radio" class="btn-check" name="rbacMatrixView" id="rbacViewActive" value="active" checked autocomplete="off" />
+                                    <label class="btn btn-outline-primary btn-sm" for="rbacViewActive">
+                                        <i class="bi bi-check-circle"></i> Solo Activos
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="rbacMatrixView" id="rbacViewAll" value="all" autocomplete="off" />
+                                    <label class="btn btn-outline-primary btn-sm" for="rbacViewAll">
+                                        <i class="bi bi-list-ul"></i> Todos
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="text-muted small">
+                                <i class="bi bi-info-circle"></i> Los cambios se guardan automáticamente
+                            </div>
+                        </div>
+
+                        <div class="rbac-matrix-container"
+                             role="region" 
+                             aria-label="Matriz de permisos por rol"
+                             tabindex="0">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered rbac-permission-matrix" id="rbacPermissionMatrix">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th class="rbac-matrix-corner" style="width: 250px;">Permiso</th>
+                                            @foreach (var role in roles.OrderBy(r => r.IsSystem ? 0 : 1).ThenBy(r => r.Code))
+                                            {
+                                                <th class="rbac-matrix-role-header @(role.IsActive ? "" : "inactive-role")" 
+                                                    data-role-id="@role.Id" 
+                                                    data-role-active="@role.IsActive.ToString().ToLower()">
+                                                    <div class="rbac-role-header-content">
+                                                        <div class="rbac-role-code">@role.Code</div>
+                                                        <small class="rbac-role-name">@role.Name</small>
+                                                        @if (role.IsSystem)
+                                                        {
+                                                            <span class="badge bg-secondary mt-1">Sistema</span>
+                                                        }
+                                                        @if (!role.IsActive)
+                                                        {
+                                                            <span class="badge bg-warning mt-1">Inactivo</span>
+                                                        }
+                                                    </div>
+                                                </th>
+                                            }
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var moduleGroup in permissionsByModule)
+                                        {
+                                            <tr class="rbac-matrix-module-separator">
+                                                <td colspan="@(roles.Count + 1)" class="rbac-module-header">
+                                                    <strong>@moduleGroup.Key</strong>
+                                                    <small class="text-muted ms-2">(@moduleGroup.Count() permisos)</small>
+                                                </td>
+                                            </tr>
+                                            
+                                            @foreach (var permission in moduleGroup.OrderBy(p => p.ActionCode))
+                                            {
+                                                <tr class="rbac-matrix-permission-row" data-permission-id="@permission.Id">
+                                                    <td class="rbac-matrix-permission-cell">
+                                                        <div class="rbac-permission-label">
+                                                            <code class="rbac-permission-code">@permission.Code</code>
+                                                            <small class="rbac-permission-desc">@permission.Description</small>
+                                                        </div>
+                                                    </td>
+                                                    @foreach (var role in roles.OrderBy(r => r.IsSystem ? 0 : 1).ThenBy(r => r.Code))
+                                                    {
+                                                        var hasPermission = rolePermissionMap.ContainsKey(role.Id) && 
+                                                                          rolePermissionMap[role.Id].Contains(permission.Id);
+                                                        
+                                                        <td class="rbac-matrix-checkbox-cell @(role.IsActive ? "" : "inactive-role")" 
+                                                            data-role-id="@role.Id" 
+                                                            data-role-active="@role.IsActive.ToString().ToLower()">
+                                                            <div class="form-check d-flex justify-content-center">
+                                                                <input class="form-check-input rbac-permission-toggle" 
+                                                                       type="checkbox" 
+                                                                       data-role-id="@role.Id" 
+                                                                       data-permission-id="@permission.Id"
+                                                                       data-role-code="@role.Code"
+                                                                       data-permission-code="@permission.Code"
+                                                                       data-original-state="@hasPermission.ToString().ToLower()"
+                                                                       @(hasPermission ? "checked" : "")
+                                                                       title="Click para @(hasPermission ? "revocar" : "otorgar") permiso" />
+                                                            </div>
+                                                        </td>
+                                                    }
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="rbac-matrix-legend mt-3">
+                            <h6 class="mb-3">
+                                <i class="bi bi-info-circle-fill text-primary"></i> Guía de Uso
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <h6 class="small fw-bold mb-2">Símbolos</h6>
+                                    <ul class="list-unstyled small mb-0">
+                                        <li class="mb-1">✓ = Permiso asignado al rol</li>
+                                        <li class="mb-1">🏷️ = Rol del sistema (predefinido)</li>
+                                        <li class="mb-1">⚠️ = Rol inactivo (oculto por defecto)</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="small fw-bold mb-2">Operación</h6>
+                                    <ul class="list-unstyled small mb-0">
+                                        <li class="mb-1"><strong>Click en checkbox</strong> = Otorgar/revocar permiso</li>
+                                        <li class="mb-1"><strong>Guardado automático</strong> = Los cambios se aplican inmediatamente</li>
+                                        <li class="mb-1"><strong>Ctrl+Shift+A</strong> = Alternar vista activos/todos</li>
+                                        <li class="mb-1"><strong>Todos los roles editables</strong> = Incluye roles del sistema</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </section>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* Layout principal - ocupar pantalla completa */
+        .rbac-role-permissions-view {
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        .admin-console-page {
+            max-width: 100%;
+            padding: 1rem;
+        }
+        
+        .admin-console-main {
+            max-width: 100%;
+        }
+        
+        .rbac-matrix-section {
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        .rbac-matrix-container {
+            max-height: calc(100vh - 280px);
+            min-height: 500px;
+            overflow: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            position: relative;
+            background-color: #ffffff;
+        }
+        
+        .rbac-permission-matrix {
+            margin-bottom: 0;
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .rbac-permission-matrix thead {
+            background-color: #f8f9fa;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+        
+        .rbac-permission-matrix thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .rbac-matrix-corner {
+            position: sticky;
+            left: 0;
+            background-color: #f8f9fa !important;
+            z-index: 11;
+            font-weight: 600;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+            min-width: 220px;
+            max-width: 280px;
+        }
+        
+        .rbac-matrix-role-header {
+            min-width: 90px;
+            max-width: 110px;
+            text-align: center;
+            vertical-align: middle;
+            padding: 0.5rem 0.25rem;
+            border-left: 1px solid #dee2e6;
+        }
+        
+        .rbac-matrix-role-header.inactive-role {
+            background-color: #fff3cd;
+        }
+        
+        .rbac-role-header-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .rbac-role-code {
+            font-weight: 600;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            line-height: 1.2;
+        }
+        
+        .rbac-role-name {
+            font-size: 0.65rem;
+            color: #6c757d;
+            text-align: center;
+            line-height: 1.1;
+            display: block;
+        }
+        
+        .rbac-matrix-module-separator {
+            background-color: #e9ecef;
+        }
+        
+        .rbac-module-header {
+            font-weight: 600;
+            padding: 0.4rem 0.75rem;
+            background-color: #e9ecef;
+            position: sticky;
+            left: 0;
+            z-index: 8;
+            border-top: 2px solid #dee2e6;
+            font-size: 0.875rem;
+        }
+        
+        .rbac-matrix-permission-cell {
+            position: sticky;
+            left: 0;
+            background-color: #fff;
+            z-index: 9;
+            border-right: 2px solid #dee2e6;
+            min-width: 220px;
+            max-width: 280px;
+            padding: 0.4rem 0.5rem;
+        }
+        
+        .rbac-permission-label {
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+        }
+        
+        .rbac-permission-code {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #0d6efd;
+            line-height: 1.2;
+        }
+        
+        .rbac-permission-desc {
+            font-size: 0.7rem;
+            color: #6c757d;
+            line-height: 1.3;
+        }
+        
+        .rbac-matrix-checkbox-cell {
+            text-align: center;
+            vertical-align: middle;
+            background-color: #fff;
+            padding: 0.3rem;
+            transition: background-color 0.15s;
+            border-left: 1px solid #dee2e6;
+        }
+        
+        .rbac-matrix-checkbox-cell:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .rbac-matrix-checkbox-cell.inactive-role {
+            background-color: #fffbf0;
+        }
+        
+        .rbac-permission-toggle {
+            cursor: pointer;
+            width: 1.15rem;
+            height: 1.15rem;
+            transition: all 0.2s;
+            margin: 0;
+        }
+        
+        .rbac-permission-toggle:hover:not(:disabled) {
+            transform: scale(1.15);
+        }
+        
+        .rbac-permission-toggle:disabled {
+            cursor: not-allowed;
+            opacity: 0.4;
+        }
+        
+        .rbac-permission-toggle.saving {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        .rbac-permission-toggle.saved {
+            animation: saveSuccess 0.5s ease;
+        }
+        
+        @@keyframes saveSuccess {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.3); }
+        }
+        
+        .rbac-permission-toggle.error {
+            animation: saveError 0.5s ease;
+        }
+        
+        @@keyframes saveError {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .rbac-matrix-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            background-color: #f8f9fa;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+        }
+        
+        .rbac-matrix-legend {
+            padding: 0.75rem 1rem;
+            background-color: #f8f9fa;
+            border-radius: 0.375rem;
+            margin-top: 1rem;
+        }
+        
+        .rbac-toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-width: 350px;
+        }
+        
+        .rbac-toast {
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideInRight 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        @@keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .rbac-toast.success {
+            background-color: #d1e7dd;
+            color: #0a3622;
+            border-left: 4px solid #198754;
+        }
+        
+        .rbac-toast.error {
+            background-color: #f8d7da;
+            color: #58151c;
+            border-left: 4px solid #dc3545;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════
+           RESPONSIVE STYLES
+           ═══════════════════════════════════════════════════════════════════ */
+        
+        @@media (max-width: 1400px) {
+            .rbac-matrix-role-header {
+                min-width: 85px;
+                max-width: 95px;
+            }
+            
+            .rbac-role-name {
+                font-size: 0.6rem;
+            }
+        }
+        
+        @@media (max-width: 1200px) {
+            .rbac-matrix-corner,
+            .rbac-matrix-permission-cell {
+                min-width: 200px;
+                max-width: 240px;
+            }
+            
+            .rbac-matrix-role-header {
+                min-width: 80px;
+                max-width: 85px;
+            }
+            
+            .rbac-role-name {
+                display: none;
+            }
+        }
+        
+        @@media (max-width: 768px) {
+            .admin-console-page {
+                padding: 0.5rem;
+            }
+            
+            .rbac-matrix-container {
+                max-height: calc(100vh - 250px);
+            }
+            
+            .rbac-matrix-corner,
+            .rbac-matrix-permission-cell {
+                min-width: 180px;
+                max-width: 200px;
+                font-size: 0.8rem;
+            }
+            
+            .rbac-matrix-role-header {
+                min-width: 70px;
+                max-width: 75px;
+                padding: 0.4rem 0.15rem;
+            }
+            
+            .rbac-role-code {
+                font-size: 0.7rem;
+            }
+            
+            .rbac-permission-code {
+                font-size: 0.7rem;
+            }
+            
+            .rbac-permission-desc {
+                font-size: 0.65rem;
+            }
+            
+            .rbac-matrix-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+        }
+        
+        @@media (max-width: 576px) {
+            .rbac-toast-container {
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+            
+            .rbac-matrix-legend {
+                font-size: 0.85rem;
+            }
+            
+            .rbac-permission-toggle {
+                width: 1rem;
+                height: 1rem;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+    (function() {
+        'use strict';
+        
+        // Get antiforgery token
+        const getAntiForgeryToken = () => {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            if (!token) {
+                const tokenMeta = document.querySelector('meta[name="__RequestVerificationToken"]');
+                return tokenMeta?.content || '';
+            }
+            return token;
+        };
+        
+        // Create toast container if doesn't exist
+        let toastContainer = document.querySelector('.rbac-toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'rbac-toast-container';
+            document.body.appendChild(toastContainer);
+        }
+        
+        const matrix = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new { 
+            roles = roles.Select(r => new { r.Id, r.Code, r.IsActive, r.IsSystem }), 
+            permissions = permissions.Select(p => new { p.Id, p.Code }), 
+            map = rolePermissionMap 
+        }));
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // TOAST NOTIFICATION
+        // ═══════════════════════════════════════════════════════════════════
+        
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `rbac-toast ${type}`;
+            
+            const icon = type === 'success' ? '✓' : '✕';
+            toast.innerHTML = `<strong>${icon}</strong> <span>${message}</span>`;
+            
+            toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // TOGGLE PERMISSION (AUTO-SAVE)
+        // ═══════════════════════════════════════════════════════════════════
+        
+        document.querySelectorAll('.rbac-permission-toggle').forEach(checkbox => {
+            checkbox.addEventListener('change', async function(e) {
+                const roleId = parseInt(this.dataset.roleId);
+                const permissionId = parseInt(this.dataset.permissionId);
+                const isGranted = this.checked;
+                const roleCode = this.dataset.roleCode || 'Rol';
+                const permissionCode = this.dataset.permissionCode || 'Permiso';
+                
+                // Add saving state
+                this.classList.add('saving');
+                this.disabled = true;
+                
+                try {
+                    const formData = new FormData();
+                    formData.append('roleId', roleId);
+                    formData.append('permissionId', permissionId);
+                    formData.append('isGranted', isGranted);
+                    
+                    const token = getAntiForgeryToken();
+                    if (token) {
+                        formData.append('__RequestVerificationToken', token);
+                    }
+                    
+                    const response = await fetch('/RbacAdministration/ToggleRolePermission', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Update original state
+                        this.dataset.originalState = isGranted.toString();
+                        this.classList.add('saved');
+                        setTimeout(() => this.classList.remove('saved'), 500);
+                        
+                        showToast(
+                            `${isGranted ? '✓ Otorgado' : '✕ Revocado'}: ${permissionCode} → ${roleCode}`,
+                            'success'
+                        );
+                    } else {
+                        // Revert checkbox
+                        this.checked = !isGranted;
+                        this.classList.add('error');
+                        setTimeout(() => this.classList.remove('error'), 500);
+                        showToast('Error: ' + (result.error || 'No se pudo actualizar el permiso'), 'error');
+                    }
+                } catch (error) {
+                    console.error('Error toggling permission:', error);
+                    // Revert checkbox
+                    this.checked = !isGranted;
+                    this.classList.add('error');
+                    setTimeout(() => this.classList.remove('error'), 500);
+                    showToast('Error de conexión. Intenta nuevamente.', 'error');
+                } finally {
+                    // Remove saving state
+                    this.classList.remove('saving');
+                    this.disabled = false;
+                }
+            });
+        });
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // VIEW FILTER (Active / All Roles)
+        // ═══════════════════════════════════════════════════════════════════
+        
+        document.querySelectorAll('input[name="rbacMatrixView"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const showAll = this.value === 'all';
+                
+                document.querySelectorAll('[data-role-active="false"]').forEach(el => {
+                    el.style.display = showAll ? '' : 'none';
+                });
+                
+                showToast(`Mostrando roles ${showAll ? 'activos e inactivos' : 'solo activos'}`, 'success');
+            });
+        });
+        
+        // Initial filter (show only active)
+        document.querySelectorAll('[data-role-active="false"]').forEach(el => {
+            el.style.display = 'none';
+        });
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // KEYBOARD SHORTCUTS
+        // ═══════════════════════════════════════════════════════════════════
+        
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + Shift + A = Toggle view filter
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'A') {
+                e.preventDefault();
+                const activeRadio = document.getElementById('rbacViewActive');
+                const allRadio = document.getElementById('rbacViewAll');
+                
+                if (activeRadio.checked) {
+                    allRadio.click();
+                } else {
+                    activeRadio.click();
+                }
+            }
+        });
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // INITIALIZE
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const editableCheckboxes = document.querySelectorAll('.rbac-permission-toggle:not(:disabled)').length;
+        const totalCheckboxes = document.querySelectorAll('.rbac-permission-toggle').length;
+        
+        console.log('✓ Matriz RBAC inicializada');
+        console.log(`  ${matrix.roles.length} roles | ${matrix.permissions.length} permisos`);
+        console.log(`  ${editableCheckboxes}/${totalCheckboxes} checkboxes editables`);
+        console.log('  Atajos: Ctrl+Shift+A = Alternar vista activos/todos');
+        console.log('  Todos los roles son editables (incluye roles del sistema)');
+        
+    })();
+    </script>
+}

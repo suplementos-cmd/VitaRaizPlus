@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SalesCobrosGeo.Web.Models.Security;
 using SalesCobrosGeo.Web.Security;
+using SalesCobrosGeo.Web.Services.Rbac;
 using System.Security.Claims;
 
 namespace SalesCobrosGeo.Web.Controllers;
@@ -12,11 +13,16 @@ public sealed class AccountController : Controller
 {
     private readonly IApplicationUserService _userService;
     private readonly IUserSessionTracker _sessionTracker;
+    private readonly IRbacService _rbacService;
 
-    public AccountController(IApplicationUserService userService, IUserSessionTracker sessionTracker)
+    public AccountController(
+        IApplicationUserService userService, 
+        IUserSessionTracker sessionTracker,
+        IRbacService rbacService)
     {
         _userService = userService;
         _sessionTracker = sessionTracker;
+        _rbacService = rbacService;
     }
 
     [AllowAnonymous]
@@ -25,7 +31,7 @@ public sealed class AccountController : Controller
     {
         if (User.Identity?.IsAuthenticated == true)
         {
-            var landing = GetLandingRoute(User);
+            var landing = await GetLandingRouteAsync(User);
             if (landing is not null)
             {
                 return RedirectToAction(landing.Value.Action, landing.Value.Controller);
@@ -56,38 +62,46 @@ public sealed class AccountController : Controller
             return View(input);
         }
 
-        var principal = _userService.ValidateCredentials(input.Username, input.Password);
+        ClaimsPrincipal? principal = null;
+        try
+        {
+            principal = _userService.ValidateCredentials(input.Username, input.Password);
+        }
+        catch (HttpRequestException ex)
+        {
+            ModelState.AddModelError(string.Empty, 
+                $"Error de conexión con el servidor API. Verifica que la API esté corriendo en http://localhost:5207. Detalles: {ex.Message}");
+            return View(input);
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(string.Empty, 
+                $"Error inesperado al validar credenciales: {ex.Message}");
+            return View(input);
+        }
+
         if (principal is null)
         {
-            ModelState.AddModelError(string.Empty, "Usuario, contrasena invalida o cuenta inactiva.");
+            ModelState.AddModelError(string.Empty, "Usuario, contraseña inválida o cuenta inactiva.");
             return View(input);
         }
 
         // Crear userSummary desde los claims del principal retornado por la API
         var fullName = principal.FindFirst(ClaimTypes.GivenName)?.Value ?? input.Username;
-        var webRole = principal.FindFirst(ClaimTypes.Role)?.Value ?? "Unknown"; // FULL, SALES, etc.
-        var displayRole = principal.FindFirst(AppClaimTypes.DisplayRole)?.Value ?? webRole; // Administrador, Vendedor, etc.
-        var permissions = principal.FindAll(AppClaimTypes.Permission).Select(c => c.Value).ToArray();
-        
-        // DEBUG: Log de permisos
-        Console.WriteLine($"[LOGIN DEBUG] Usuario: {input.Username}");
-        Console.WriteLine($"[LOGIN DEBUG] WebRole: {webRole}");
-        Console.WriteLine($"[LOGIN DEBUG] DisplayRole: {displayRole}");
-        Console.WriteLine($"[LOGIN DEBUG] Permisos: {string.Join(", ", permissions)}");
-        Console.WriteLine($"[LOGIN DEBUG] IsInRole(FULL): {principal.IsInRole(AppRoles.Full)}");
-        Console.WriteLine($"[LOGIN DEBUG] HasPermission(DashboardView): {principal.HasPermission(AppPermissions.DashboardView)}");
-        Console.WriteLine($"[LOGIN DEBUG] HasPermission(AdministrationView): {principal.HasPermission(AppPermissions.AdministrationView)}");
+        var displayRole = principal.FindFirst(AppClaimTypes.DisplayRole)?.Value ?? "Usuario";
+        var userTheme = principal.FindFirst(AppClaimTypes.Theme)?.Value ?? "root";
+        var userZone = principal.FindFirst("Zone")?.Value ?? "Default";
         
         var userSummary = new ApplicationUserSummary(
             Username: input.Username,
             DisplayName: fullName,
-            Role: webRole,
+            Role: "SALES", // Compatibilidad legacy
             RoleLabel: displayRole,
-            Zone: "Default",
-            Theme: "default",
+            Zone: userZone,
+            Theme: userTheme,
             IsActive: true,
             TwoFactorEnabled: false,
-            Permissions: permissions
+            Permissions: Array.Empty<string>() // Permisos vienen de RBAC
         );
 
         var sessionPrincipal = _sessionTracker.AttachSession(principal, userSummary, HttpContext);
@@ -102,7 +116,7 @@ public sealed class AccountController : Controller
                 ExpiresUtc = DateTimeOffset.UtcNow.AddHours(input.RememberMe ? 12 : 8)
             });
 
-        var landingRoute = GetLandingRoute(sessionPrincipal);
+        var landingRoute = await GetLandingRouteAsync(sessionPrincipal);
         if (landingRoute is null)
         {
             _sessionTracker.SignOut(sessionPrincipal);
@@ -144,28 +158,94 @@ public sealed class AccountController : Controller
         return View();
     }
 
-    private static (string Controller, string Action)? GetLandingRoute(System.Security.Claims.ClaimsPrincipal principal)
+    /// <summary>
+    /// Página de diagnóstico de permisos (solo para debugging)
+    /// NOTA: Usa métodos obsoletos para mostrar estado legacy
+    /// </summary>
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> DiagnosticPermissions()
     {
-        if (principal.HasPermission(AppPermissions.AdministrationView))
+        var userName = User.Identity?.Name ?? "N/A";
+        
+        // Obtener permisos RBAC efectivos
+        var rbacPermissions = new List<string>();
+        try
         {
-            return ("Dashboard", "Index");
+            if (!string.IsNullOrEmpty(userName) && userName != "N/A")
+            {
+                var summary = await _rbacService.GetUserEffectivePermissionsAsync(userName);
+                rbacPermissions = summary.EffectivePermissions.ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            rbacPermissions.Add($"ERROR: {ex.Message}");
         }
 
-        if (principal.HasPermission(AppPermissions.SalesView) && !principal.HasPermission(AppPermissions.CollectionsView))
+        var diagnosticInfo = new
         {
-            return ("Sales", "Index");
+            IsAuthenticated = User.Identity?.IsAuthenticated ?? false,
+            Username = userName,
+            DisplayName = User.GetDisplayName(),
+            DisplayRole = User.GetDisplayRole(),
+            Theme = User.GetTheme(),
+            
+            // Permisos RBAC (Sistema actual)
+            RbacPermissions = rbacPermissions,
+            RbacPermissionCount = rbacPermissions.Count,
+            
+            // Claims actuales
+            AllClaims = User.Claims.Select(c => new { c.Type, c.Value }).ToList()
+        };
+
+        return Json(diagnosticInfo);
+    }
+
+    /// <summary>
+    /// Determina la ruta de aterrizaje según permisos RBAC del usuario
+    /// </summary>
+    private async Task<(string Controller, string Action)?> GetLandingRouteAsync(ClaimsPrincipal principal)
+    {
+        var userName = principal.Identity?.Name;
+        if (string.IsNullOrEmpty(userName))
+        {
+            return null;
         }
 
-        if (principal.HasPermission(AppPermissions.CollectionsView) && !principal.HasPermission(AppPermissions.SalesView))
+        try
         {
-            return ("Cobros", "Index");
-        }
+            // Verificar permisos RBAC en orden de prioridad
+            if (await _rbacService.HasPermissionAsync(userName, AppPermissions.AdministrationView))
+            {
+                return ("Dashboard", "Index");
+            }
 
-        if (principal.HasPermission(AppPermissions.DashboardView))
+            var hasSales = await _rbacService.HasPermissionAsync(userName, AppPermissions.SalesView);
+            var hasCollections = await _rbacService.HasPermissionAsync(userName, AppPermissions.CollectionsView);
+
+            if (hasSales && !hasCollections)
+            {
+                return ("Sales", "Index");
+            }
+
+            if (hasCollections && !hasSales)
+            {
+                return ("Cobros", "Index");
+            }
+
+            if (await _rbacService.HasPermissionAsync(userName, AppPermissions.DashboardView))
+            {
+                return ("Dashboard", "Index");
+            }
+
+            return null;
+        }
+        catch (Exception ex)
         {
-            return ("Dashboard", "Index");
+            // En caso de error al consultar RBAC, log y retornar null
+            Console.WriteLine($"Error al determinar landing route para {userName}: {ex.Message}");
+            return null;
         }
-
-        return null;
     }
 }

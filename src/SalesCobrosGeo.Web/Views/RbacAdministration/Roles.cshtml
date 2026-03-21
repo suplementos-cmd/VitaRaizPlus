@@ -1,0 +1,481 @@
+@model IEnumerable<SalesCobrosGeo.Web.Services.Rbac.RoleDto>
+@{
+    ViewData["Title"] = "Roles - RBAC";
+    var roles = Model?.ToList() ?? new List<SalesCobrosGeo.Web.Services.Rbac.RoleDto>();
+    var totalRoles = roles.Count;
+    var activeRoles = roles.Count(r => r.IsActive);
+    var systemRoles = roles.Count(r => r.IsSystem);
+    var customRoles = roles.Count(r => !r.IsSystem);
+}
+
+@section Styles {
+    <style>
+        .rbac-roles-view,
+        .admin-console-page,
+        .admin-console-main,
+        .rbac-roles-section {
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        .admin-console-page {
+            padding: 1rem;
+        }
+        
+        .rbac-roles-container {
+            max-height: calc(100vh - 300px);
+            min-height: 500px;
+            overflow-y: auto;
+        }
+    </style>
+}
+
+<div class="rbac-roles-view">
+    <div class="admin-console-page">
+        <section class="admin-console-topbar compact-only">
+            <div>
+                <h1 class="admin-console-title">Roles del Sistema</h1>
+                <div class="admin-console-subtitle">Gestión de roles y perfiles de acceso al sistema.</div>
+            </div>
+            <div class="admin-console-actions">
+                <button type="button" class="btn btn-primary" data-rbac-open-editor="create">Crear rol</button>
+                <a class="btn btn-outline-secondary" asp-action="RolePermissions">Permisos</a>
+            </div>
+        </section>
+
+        @if (TempData["Message"] != null)
+        {
+            <div class="app-toast-inline success">@TempData["Message"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="app-toast-inline error">@TempData["Error"]</div>
+        }
+
+        <section class="admin-console-summarygrid compact-summary">
+            <article class="admin-console-summarycard primary">
+                <span>Total Roles</span>
+                <strong>@totalRoles</strong>
+                <small>Roles configurados</small>
+            </article>
+            <article class="admin-console-summarycard success">
+                <span>Activos</span>
+                <strong>@activeRoles</strong>
+                <small>Roles habilitados</small>
+            </article>
+            <article class="admin-console-summarycard info">
+                <span>Sistema</span>
+                <strong>@systemRoles</strong>
+                <small>Roles predefinidos</small>
+            </article>
+            <article class="admin-console-summarycard neutral">
+                <span>Personalizados</span>
+                <strong>@customRoles</strong>
+                <small>Roles creados</small>
+            </article>
+        </section>
+
+        <section class="admin-console-layout responsive-dense">
+            <div class="admin-console-main responsive-dense">
+                <section class="rbac-roles-section compact-shell">
+                    <div class="admin-section-head compact">
+                        <div>
+                            <h2 class="admin-section-title">Catálogo de Roles</h2>
+                            <div class="admin-section-subtitle">Roles disponibles con información de permisos asignados.</div>
+                        </div>
+                    </div>
+
+                    <div class="admin-filterline">
+                        <div class="admin-filterline-search">
+                            <span class="admin-filterline-icon">&#8981;</span>
+                            <input id="rbacRoleSearch" type="search" placeholder="Buscar por código o nombre" autocomplete="off" />
+                        </div>
+                        <select id="rbacStatusFilter" class="form-select form-select-sm">
+                            <option value="">Todos los estados</option>
+                            <option value="ACTIVE">Activo</option>
+                            <option value="INACTIVE">Inactivo</option>
+                        </select>
+                        <select id="rbacTypeFilter" class="form-select form-select-sm">
+                            <option value="">Todos los tipos</option>
+                            <option value="SYSTEM">Sistema</option>
+                            <option value="CUSTOM">Personalizado</option>
+                        </select>
+                    </div>
+
+                    <div class="rbac-roles-grid-compact denser">
+                        @if (!roles.Any())
+                        {
+                            <div class="admin-empty-state">
+                                <p>No hay roles configurados.</p>
+                                <button type="button" class="btn btn-primary" data-rbac-open-editor="create">Crear primer rol</button>
+                            </div>
+                        }
+                        else
+                        {
+                            foreach (var role in roles.OrderBy(r => r.IsSystem ? 0 : 1).ThenBy(r => r.Code))
+                            {
+                                var roleSearch = $"{role.Code} {role.Name} {role.Description}".ToUpperInvariant();
+                                <article class="admin-user-rowcard rbac-role-card @(role.IsActive ? "is-active" : "is-inactive")"
+                                         data-role-id="@role.Id"
+                                         data-role-search="@roleSearch"
+                                         data-role-status="@(role.IsActive ? "ACTIVE" : "INACTIVE")"
+                                         data-role-type="@(role.IsSystem ? "SYSTEM" : "CUSTOM")">
+                                    <div class="admin-user-rowmain">
+                                        <div class="admin-user-rowtop">
+                                            <div>
+                                                <div class="admin-user-rowname">@role.Name</div>
+                                                <div class="admin-user-rowusername">@role.Code</div>
+                                            </div>
+                                            <div class="admin-user-rowchips">
+                                                @if (role.IsSystem)
+                                                {
+                                                    <span class="admin-user-rolepill system">SISTEMA</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="admin-user-rolepill custom">CUSTOM</span>
+                                                }
+                                                <span class="admin-user-statusbadge @(role.IsActive ? "active" : "inactive")">
+                                                    @(role.IsActive ? "Activo" : "Inactivo")
+                                                </span>
+                                            </div>
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(role.Description))
+                                        {
+                                            <div class="rbac-role-description">@role.Description</div>
+                                        }
+                                        <div class="admin-user-rowmeta compact-grid">
+                                            <span><strong>Permisos</strong> @role.PermissionCount</span>
+                                            <span><strong>Tipo</strong> @(role.IsSystem ? "Sistema" : "Personalizado")</span>
+                                            <span><strong>Estado</strong> @(role.IsActive ? "Activo" : "Inactivo")</span>
+                                        </div>
+                                    </div>
+                                    <div class="admin-user-rowactions compact-row">
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-primary" 
+                                                data-rbac-open-editor="edit"
+                                                data-role-id="@role.Id"
+                                                data-role-code="@role.Code"
+                                                data-role-name="@role.Name"
+                                                data-role-description="@role.Description"
+                                                data-role-active="@role.IsActive.ToString().ToLower()"
+                                                data-role-system="@role.IsSystem.ToString().ToLower()">
+                                            Editar
+                                        </button>
+                                        <a class="btn btn-sm btn-outline-secondary" 
+                                           asp-action="RolePermissions" 
+                                           asp-route-roleId="@role.Id">
+                                            Permisos
+                                        </a>
+                                        @if (!role.IsSystem)
+                                        {
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-danger" 
+                                                    data-rbac-delete-role="@role.Id"
+                                                    data-role-name="@role.Name">
+                                                Eliminar
+                                            </button>
+                                        }
+                                    </div>
+                                </article>
+                            }
+                        }
+                    </div>
+                </section>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal Editor -->
+    <div class="modal fade" id="rbacRoleEditorModal" tabindex="-1" aria-labelledby="rbacRoleEditorTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rbacRoleEditorTitle">Crear Rol</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form id="rbacRoleEditorForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="roleEditorId" name="id" value="" />
+                        
+                        <div class="mb-3">
+                            <label for="roleCode" class="form-label">Código <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="roleCode" 
+                                   name="code" 
+                                   required 
+                                   maxlength="50"
+                                   placeholder="SALES_MANAGER" />
+                            <div class="form-text">Identificador único en mayúsculas (ej: ADMIN, SALES_REP)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="roleName" class="form-label">Nombre <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="roleName" 
+                                   name="name" 
+                                   required 
+                                   maxlength="100"
+                                   placeholder="Gerente de Ventas" />
+                            <div class="form-text">Nombre descriptivo del rol</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="roleDescription" class="form-label">Descripción</label>
+                            <textarea class="form-control" 
+                                      id="roleDescription" 
+                                      name="description" 
+                                      rows="3"
+                                      maxlength="500"
+                                      placeholder="Rol con permisos completos sobre ventas y reportes..."></textarea>
+                            <div class="form-text">Descripción opcional del propósito del rol</div>
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   id="roleIsActive" 
+                                   name="isActive" 
+                                   checked />
+                            <label class="form-check-label" for="roleIsActive">
+                                Activo
+                            </label>
+                        </div>
+
+                        <div class="form-check form-switch mb-3" id="roleIsSystemContainer" style="display: none;">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   id="roleIsSystem" 
+                                   name="isSystem"
+                                   disabled />
+                            <label class="form-check-label" for="roleIsSystem">
+                                Rol del sistema (no editable)
+                            </label>
+                        </div>
+
+                        <div class="alert alert-info" id="roleEditorSystemWarning" style="display: none;">
+                            <i class="bi bi-info-circle"></i> Los roles del sistema no pueden ser eliminados.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="rbacRoleEditorSaveBtn">
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            <span class="btn-text">Guardar</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    (function() {
+        'use strict';
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // FILTER / SEARCH
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const searchInput = document.getElementById('rbacRoleSearch');
+        const statusFilter = document.getElementById('rbacStatusFilter');
+        const typeFilter = document.getElementById('rbacTypeFilter');
+        const roleCards = document.querySelectorAll('.rbac-role-card');
+        
+        function applyFilters() {
+            const searchTerm = searchInput.value.toUpperCase();
+            const statusValue = statusFilter.value;
+            const typeValue = typeFilter.value;
+            
+            roleCards.forEach(card => {
+                const roleSearch = card.dataset.roleSearch || '';
+                const roleStatus = card.dataset.roleStatus || '';
+                const roleType = card.dataset.roleType || '';
+                
+                const matchesSearch = !searchTerm || roleSearch.includes(searchTerm);
+                const matchesStatus = !statusValue || roleStatus === statusValue;
+                const matchesType = !typeValue || roleType === typeValue;
+                
+                if (matchesSearch && matchesStatus && matchesType) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        
+        if (searchInput) searchInput.addEventListener('input', applyFilters);
+        if (statusFilter) statusFilter.addEventListener('change', applyFilters);
+        if (typeFilter) typeFilter.addEventListener('change', applyFilters);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // MODAL EDITOR
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const editorModal = document.getElementById('rbacRoleEditorModal');
+        const editorForm = document.getElementById('rbacRoleEditorForm');
+        const editorTitle = document.getElementById('rbacRoleEditorTitle');
+        const editorId = document.getElementById('roleEditorId');
+        const editorCode = document.getElementById('roleCode');
+        const editorName = document.getElementById('roleName');
+        const editorDescription = document.getElementById('roleDescription');
+        const editorIsActive = document.getElementById('roleIsActive');
+        const editorIsSystem = document.getElementById('roleIsSystem');
+        const editorSystemContainer = document.getElementById('roleIsSystemContainer');
+        const editorSystemWarning = document.getElementById('roleEditorSystemWarning');
+        const editorSaveBtn = document.getElementById('rbacRoleEditorSaveBtn');
+        
+        let editorBsModal = null;
+        if (editorModal) {
+            editorBsModal = new bootstrap.Modal(editorModal);
+        }
+        
+        // Open editor for CREATE
+        document.querySelectorAll('[data-rbac-open-editor="create"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                editorTitle.textContent = 'Crear Rol';
+                editorForm.reset();
+                editorId.value = '';
+                editorCode.disabled = false;
+                editorIsActive.checked = true;
+                editorIsSystem.checked = false;
+                editorSystemContainer.style.display = 'none';
+                editorSystemWarning.style.display = 'none';
+                editorBsModal.show();
+            });
+        });
+        
+        // Open editor for EDIT
+        document.querySelectorAll('[data-rbac-open-editor="edit"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const roleId = btn.dataset.roleId;
+                const roleCode = btn.dataset.roleCode || '';
+                const roleName = btn.dataset.roleName || '';
+                const roleDescription = btn.dataset.roleDescription || '';
+                const roleActive = btn.dataset.roleActive === 'true';
+                const roleSystem = btn.dataset.roleSystem === 'true';
+                
+                editorTitle.textContent = 'Editar Rol';
+                editorId.value = roleId;
+                editorCode.value = roleCode;
+                editorCode.disabled = true; // No se puede cambiar el código
+                editorName.value = roleName;
+                editorDescription.value = roleDescription;
+                editorIsActive.checked = roleActive;
+                editorIsSystem.checked = roleSystem;
+                
+                if (roleSystem) {
+                    editorSystemContainer.style.display = 'block';
+                    editorSystemWarning.style.display = 'block';
+                } else {
+                    editorSystemContainer.style.display = 'none';
+                    editorSystemWarning.style.display = 'none';
+                }
+                
+                editorBsModal.show();
+            });
+        });
+        
+        // Form submit
+        if (editorForm) {
+            editorForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const roleId = editorId.value;
+                const isEdit = !!roleId;
+                
+                const payload = {
+                    code: editorCode.value.trim().toUpperCase(),
+                    name: editorName.value.trim(),
+                    description: editorDescription.value.trim(),
+                    isActive: editorIsActive.checked,
+                    isSystem: editorIsSystem.checked
+                };
+                
+                // Validación básica
+                if (!payload.code || !payload.name) {
+                    alert('Código y Nombre son obligatorios.');
+                    return;
+                }
+                
+                // Show loading
+                const spinner = editorSaveBtn.querySelector('.spinner-border');
+                const btnText = editorSaveBtn.querySelector('.btn-text');
+                spinner.classList.remove('d-none');
+                btnText.textContent = 'Guardando...';
+                editorSaveBtn.disabled = true;
+                
+                try {
+                    const url = isEdit 
+                        ? `/RbacAdministration/UpdateRole/${roleId}`
+                        : '/RbacAdministration/CreateRole';
+                    
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        editorBsModal.hide();
+                        window.location.reload(); // Reload para mostrar cambios
+                    } else {
+                        alert('Error: ' + (result.error || 'No se pudo guardar el rol'));
+                    }
+                } catch (error) {
+                    console.error('Error saving role:', error);
+                    alert('Error de conexión al guardar el rol.');
+                } finally {
+                    spinner.classList.add('d-none');
+                    btnText.textContent = 'Guardar';
+                    editorSaveBtn.disabled = false;
+                }
+            });
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // DELETE ROLE
+        // ═══════════════════════════════════════════════════════════════════
+        
+        document.querySelectorAll('[data-rbac-delete-role]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const roleId = btn.dataset.rbacDeleteRole;
+                const roleName = btn.dataset.roleName || 'este rol';
+                
+                if (!confirm(`¿Eliminar el rol "${roleName}"? Esta acción no se puede deshacer.`)) {
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`/RbacAdministration/DeleteRole/${roleId}`, {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + (result.error || 'No se pudo eliminar el rol'));
+                    }
+                } catch (error) {
+                    console.error('Error deleting role:', error);
+                    alert('Error de conexión al eliminar el rol.');
+                }
+            });
+        });
+    })();
+    </script>
+}

@@ -116,15 +116,18 @@ public sealed class ExcelSalesStore : ISalesStore
 
             _logger.LogInformation("Guardando venta en Excel...");
             await _excelService.AppendRowAsync("Sales", saleData);
-            _logger.LogInformation("Venta guardada exitosamente: {IdV}", idV);
 
+            // Verificar que realmente se guardó recuperando de Excel
             var result = await GetSaleByIdAsync(idV);
             if (result == null)
             {
-                _logger.LogWarning("No se pudo recuperar la venta recién creada, usando MapInputToRecord");
-                result = MapInputToRecord(input, idV, numVenta, totalAmount, productsCount);
+                var errorMsg = $"La venta con ID '{idV}' no se guardó correctamente en Excel. " +
+                              $"AppendRowAsync no lanzó error pero la venta no se puede recuperar.";
+                _logger.LogError(errorMsg);
+                throw new InvalidOperationException(errorMsg);
             }
             
+            _logger.LogInformation("Venta guardada y verificada exitosamente: {IdV} - {NumVenta}", idV, numVenta);
             return result;
         }
         catch (Exception ex)

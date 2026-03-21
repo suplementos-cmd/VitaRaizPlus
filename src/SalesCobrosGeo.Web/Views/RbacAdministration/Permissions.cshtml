@@ -1,0 +1,351 @@
+@model IEnumerable<SalesCobrosGeo.Web.Services.Rbac.PermissionDto>
+@{
+    ViewData["Title"] = "Catálogo de Permisos - RBAC";
+    
+    var permissions = Model?.ToList() ?? new List<SalesCobrosGeo.Web.Services.Rbac.PermissionDto>();
+    var modules = ViewBag.Modules as IEnumerable<SalesCobrosGeo.Web.Services.Rbac.ModuleDto> 
+                 ?? Enumerable.Empty<SalesCobrosGeo.Web.Services.Rbac.ModuleDto>();
+    var actions = ViewBag.Actions as IEnumerable<SalesCobrosGeo.Web.Services.Rbac.ActionDto> 
+                 ?? Enumerable.Empty<SalesCobrosGeo.Web.Services.Rbac.ActionDto>();
+    
+    var totalPermissions = permissions.Count;
+    var moduleCount = permissions.Select(p => p.ModuleCode).Distinct().Count();
+    var actionCount = permissions.Select(p => p.ActionCode).Distinct().Count();
+    
+    // Group by module
+    var permissionsByModule = permissions
+        .GroupBy(p => p.ModuleCode)
+        .OrderBy(g => g.Key)
+        .ToList();
+}
+
+<div class="rbac-permissions-view">
+    <div class="admin-console-page">
+        <section class="admin-console-topbar compact-only">
+            <div>
+                <h1 class="admin-console-title">Catálogo de Permisos</h1>
+                <div class="admin-console-subtitle">Permisos disponibles en el sistema organizados por módulo.</div>
+            </div>
+            <div class="admin-console-actions">
+                <a class="btn btn-outline-secondary" asp-action="Roles">Ver Roles</a>
+                <a class="btn btn-outline-secondary" asp-action="RolePermissions">Matriz Permisos</a>
+            </div>
+        </section>
+
+        @if (TempData["Message"] != null)
+        {
+            <div class="app-toast-inline success">@TempData["Message"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="app-toast-inline error">@TempData["Error"]</div>
+        }
+
+        <section class="admin-console-summarygrid compact-summary">
+            <article class="admin-console-summarycard primary">
+                <span>Total Permisos</span>
+                <strong>@totalPermissions</strong>
+                <small>Permisos configurados</small>
+            </article>
+            <article class="admin-console-summarycard info">
+                <span>Módulos</span>
+                <strong>@moduleCount</strong>
+                <small>Módulos del sistema</small>
+            </article>
+            <article class="admin-console-summarycard success">
+                <span>Acciones</span>
+                <strong>@actionCount</strong>
+                <small>Tipos de acciones</small>
+            </article>
+        </section>
+
+        <section class="admin-console-layout responsive-dense">
+            <div class="admin-console-main responsive-dense">
+                <section class="rbac-permissions-section compact-shell">
+                    <div class="admin-section-head compact">
+                        <div>
+                            <h2 class="admin-section-title">Permisos del Sistema</h2>
+                            <div class="admin-section-subtitle">Catálogo read-only de todos los permisos disponibles.</div>
+                        </div>
+                    </div>
+
+                    <div class="admin-filterline">
+                        <div class="admin-filterline-search">
+                            <span class="admin-filterline-icon">&#8981;</span>
+                            <input id="rbacPermissionSearch" type="search" placeholder="Buscar por código o descripción" autocomplete="off" />
+                        </div>
+                        <select id="rbacModuleFilter" class="form-select form-select-sm">
+                            <option value="">Todos los módulos</option>
+                            @foreach (var module in modules.OrderBy(m => m.Code))
+                            {
+                                <option value="@module.Code">@module.Name</option>
+                            }
+                        </select>
+                        <select id="rbacActionFilter" class="form-select form-select-sm">
+                            <option value="">Todas las acciones</option>
+                            @foreach (var action in actions.OrderBy(a => a.Code))
+                            {
+                                <option value="@action.Code">@action.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    @if (!permissions.Any())
+                    {
+                        <div class="admin-empty-state">
+                            <p>No hay permisos configurados en el sistema.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="rbac-permissions-list">
+                            @foreach (var moduleGroup in permissionsByModule)
+                            {
+                                var moduleName = modules.FirstOrDefault(m => m.Code == moduleGroup.Key)?.Name ?? moduleGroup.Key;
+                                
+                                <article class="rbac-module-section" data-module-code="@moduleGroup.Key">
+                                    <div class="rbac-module-header">
+                                        <h5 class="rbac-module-title">
+                                            <span class="rbac-module-icon">📦</span>
+                                            @moduleName
+                                        </h5>
+                                        <span class="badge bg-primary">@moduleGroup.Count() permisos</span>
+                                    </div>
+                                    
+                                    <div class="rbac-permissions-grid">
+                                        @foreach (var permission in moduleGroup.OrderBy(p => p.ActionCode))
+                                        {
+                                            var permissionSearch = $"{permission.Code} {permission.Description}".ToUpperInvariant();
+                                            
+                                            <div class="rbac-permission-card" 
+                                                 data-permission-search="@permissionSearch"
+                                                 data-module-code="@permission.ModuleCode"
+                                                 data-action-code="@permission.ActionCode">
+                                                <div class="rbac-permission-header">
+                                                    <code class="rbac-permission-code">@permission.Code</code>
+                                                    <span class="rbac-permission-id badge bg-secondary">#@permission.Id</span>
+                                                </div>
+                                                <div class="rbac-permission-body">
+                                                    <p class="rbac-permission-description">@permission.Description</p>
+                                                    <div class="rbac-permission-meta">
+                                                        <span class="rbac-permission-tag">
+                                                            <strong>Módulo:</strong> @permission.ModuleCode
+                                                        </span>
+                                                        <span class="rbac-permission-tag">
+                                                            <strong>Acción:</strong> @permission.ActionCode
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </article>
+                            }
+                        </div>
+                        
+                        <div class="rbac-permissions-legend mt-4">
+                            <h6>Información</h6>
+                            <ul class="list-unstyled small">
+                                <li><strong>Código:</strong> Identificador único del permiso (módulo:acción)</li>
+                                <li><strong>Descripción:</strong> Explicación del permiso</li>
+                                <li><strong>Módulo:</strong> Área del sistema a la que pertenece</li>
+                                <li><strong>Acción:</strong> Operación permitida (VIEW, CREATE, UPDATE, etc.)</li>
+                            </ul>
+                            <div class="alert alert-info mt-3">
+                                <i class="bi bi-info-circle"></i> Este catálogo es de solo lectura. Los permisos se definen en el archivo Excel y no se pueden crear/editar desde la UI.
+                            </div>
+                        </div>
+                    }
+                </section>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* Full-screen layout styles */
+        .rbac-permissions-view,
+        .admin-console-page,
+        .admin-console-main,
+        .rbac-permissions-section {
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        .admin-console-page {
+            padding: 1rem;
+        }
+        
+        .rbac-permissions-container {
+            max-height: calc(100vh - 300px);
+            min-height: 500px;
+            overflow-y: auto;
+        }
+        
+        /* Permission list and card styles */
+        .rbac-permissions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        
+        .rbac-module-section {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+        
+        .rbac-module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #0d6efd;
+        }
+        
+        .rbac-module-title {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .rbac-module-icon {
+            font-size: 1.5rem;
+        }
+        
+        .rbac-permissions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+        }
+        
+        .rbac-permission-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .rbac-permission-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .rbac-permission-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .rbac-permission-code {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #0d6efd;
+            background: #e7f1ff;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+        }
+        
+        .rbac-permission-id {
+            font-size: 0.75rem;
+        }
+        
+        .rbac-permission-body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .rbac-permission-description {
+            margin: 0;
+            font-size: 0.875rem;
+            color: #495057;
+        }
+        
+        .rbac-permission-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+        }
+        
+        .rbac-permission-tag {
+            padding: 0.25rem 0.5rem;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+        }
+        
+        .rbac-permissions-legend {
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 0.375rem;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+    (function() {
+        'use strict';
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // FILTER / SEARCH
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const searchInput = document.getElementById('rbacPermissionSearch');
+        const moduleFilter = document.getElementById('rbacModuleFilter');
+        const actionFilter = document.getElementById('rbacActionFilter');
+        const permissionCards = document.querySelectorAll('.rbac-permission-card');
+        const moduleSections = document.querySelectorAll('.rbac-module-section');
+        
+        function applyFilters() {
+            const searchTerm = searchInput.value.toUpperCase();
+            const moduleValue = moduleFilter.value;
+            const actionValue = actionFilter.value;
+            
+            // Filter individual cards
+            permissionCards.forEach(card => {
+                const permissionSearch = card.dataset.permissionSearch || '';
+                const moduleCode = card.dataset.moduleCode || '';
+                const actionCode = card.dataset.actionCode || '';
+                
+                const matchesSearch = !searchTerm || permissionSearch.includes(searchTerm);
+                const matchesModule = !moduleValue || moduleCode === moduleValue;
+                const matchesAction = !actionValue || actionCode === actionValue;
+                
+                if (matchesSearch && matchesModule && matchesAction) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Hide/show module sections if all cards are hidden
+            moduleSections.forEach(section => {
+                const visibleCards = section.querySelectorAll('.rbac-permission-card:not([style*="display: none"])');
+                
+                if (visibleCards.length === 0) {
+                    section.style.display = 'none';
+                } else {
+                    section.style.display = '';
+                }
+            });
+        }
+        
+        if (searchInput) searchInput.addEventListener('input', applyFilters);
+        if (moduleFilter) moduleFilter.addEventListener('change', applyFilters);
+        if (actionFilter) actionFilter.addEventListener('change', applyFilters);
+    })();
+    </script>
+}

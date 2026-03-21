@@ -21,7 +21,9 @@ public sealed record AdminUserCard(
     string AccessLabel,
     string Theme,
     bool TwoFactorEnabled,
-    int PermissionCount);
+    int PermissionCount,
+    int RbacActiveRoles = 0,
+    int RbacTotalPermissions = 0);
 
 public sealed record AdminSessionCard(
     string Username,
@@ -58,6 +60,7 @@ public sealed class AdministrationPageViewModel
     public IReadOnlyList<AdminUserCard> Users { get; init; } = [];
     public IReadOnlyList<AdminSessionCard> Sessions { get; init; } = [];
     public UserEditViewModel Editor { get; init; } = new(string.Empty, new UserAdminInput(), [], [], []);
+    public UserWithRbacEditViewModel EditorWithRbac { get; init; } = new(string.Empty, new UserWithRbacInput(), [], [], [], [], [], [], []);
     public bool ShowEditor { get; init; }
     public IReadOnlyList<AdminSummaryCard> SummaryCards { get; init; } = [];
     public int AuditTotal { get; init; }

@@ -48,13 +48,18 @@ builder.Services.AddRateLimiter(options =>
 
 // ── Servicios de datos basados en Excel (reemplaza InMemory stores) ───────────────
 var excelFilePath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "SalesCobrosGeo.xlsx");
-builder.Services.AddSingleton(new ExcelDataService(excelFilePath));
-builder.Services.AddSingleton<IUserStore, ExcelUserStore>();
+builder.Services.AddSingleton<ExcelDataService>(sp => 
+    new ExcelDataService(excelFilePath, sp.GetRequiredService<ILogger<ExcelDataService>>()));
+builder.Services.AddSingleton<ExcelUserStore>();
+builder.Services.AddSingleton<IUserStore>(sp => sp.GetRequiredService<ExcelUserStore>());
 builder.Services.AddSingleton<ITokenService, InMemoryTokenService>(); // Tokens siguen en memoria (sesiones temporales)
 builder.Services.AddSingleton<IAuditTrailStore, ExcelAuditTrailStore>();
 builder.Services.AddSingleton<IBusinessStore, ExcelBusinessStore>();
 builder.Services.AddSingleton<ICatalogService, ExcelCatalogService>();
 builder.Services.AddScoped<ISalesStore, ExcelSalesStore>(); // Fase 2: Ventas y cobros desde Excel
+
+// ── Sistema RBAC de Permisos basado en Excel ──────────────────────────────────────
+builder.Services.AddSingleton<SalesCobrosGeo.Api.Services.IPermissionService, SalesCobrosGeo.Api.Services.ExcelPermissionService>();
 
 // ── Autenticación Bearer personalizada ────────────────────────────────────────────
 builder.Services

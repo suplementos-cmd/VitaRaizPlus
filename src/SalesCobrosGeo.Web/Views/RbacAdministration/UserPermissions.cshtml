@@ -1,0 +1,499 @@
+@model IEnumerable<SalesCobrosGeo.Web.Services.Rbac.UserPermissionDto>
+@{
+    ViewData["Title"] = "Permisos Custom de Usuario - RBAC";
+    
+    var userPermissions = Model?.ToList() ?? new List<SalesCobrosGeo.Web.Services.Rbac.UserPermissionDto>();
+    var allPermissions = ViewBag.Permissions as IEnumerable<SalesCobrosGeo.Web.Services.Rbac.PermissionDto> 
+                        ?? Enumerable.Empty<SalesCobrosGeo.Web.Services.Rbac.PermissionDto>();
+    var selectedUserName = ViewBag.SelectedUserName as string;
+    
+    var totalGrants = userPermissions.Count(p => p.IsGranted);
+    var totalDenies = userPermissions.Count(p => !p.IsGranted);
+    var activeOverrides = userPermissions.Count(p => p.IsCurrentlyValid);
+}
+
+<div class="rbac-user-permissions-view">
+    <div class="admin-console-page">
+        <section class="admin-console-topbar compact-only">
+            <div>
+                <h1 class="admin-console-title">Permisos Custom por Usuario</h1>
+                <div class="admin-console-subtitle">Otorgar o denegar permisos específicos a usuarios (override de roles).</div>
+            </div>
+            <div class="admin-console-actions">
+                <button type="button" class="btn btn-primary" data-rbac-grant-permission="open" @(!string.IsNullOrEmpty(selectedUserName) ? "" : "disabled")>
+                    Otorgar Permiso
+                </button>
+                <a class="btn btn-outline-secondary" asp-action="UserRoles">Roles de Usuarios</a>
+            </div>
+        </section>
+
+        @if (TempData["Message"] != null)
+        {
+            <div class="app-toast-inline success">@TempData["Message"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="app-toast-inline error">@TempData["Error"]</div>
+        }
+
+        <section class="admin-console-summarygrid compact-summary">
+            <article class="admin-console-summarycard success">
+                <span>Permisos Otorgados</span>
+                <strong>@totalGrants</strong>
+                <small>Grants</small>
+            </article>
+            <article class="admin-console-summarycard danger">
+                <span>Permisos Denegados</span>
+                <strong>@totalDenies</strong>
+                <small>Denies</small>
+            </article>
+            <article class="admin-console-summarycard info">
+                <span>Vigentes</span>
+                <strong>@activeOverrides</strong>
+                <small>Activos ahora</small>
+            </article>
+        </section>
+
+        <section class="admin-console-layout responsive-dense">
+            <div class="admin-console-main responsive-dense">
+                <section class="rbac-user-permissions-section compact-shell">
+                    <div class="admin-section-head compact">
+                        <div>
+                            <h2 class="admin-section-title">Permisos Custom</h2>
+                            <div class="admin-section-subtitle">Permisos específicos otorgados o denegados a usuarios (sobreescriben roles).</div>
+                        </div>
+                    </div>
+
+                    <div class="admin-filterline">
+                        <div class="admin-filterline-search">
+                            <span class="admin-filterline-icon">&#8981;</span>
+                            <input id="rbacUserSearch" type="search" placeholder="Buscar por usuario" autocomplete="off" value="@selectedUserName" />
+                        </div>
+                        <button type="button" class="btn btn-sm btn-primary" id="rbacSearchUserBtn">Buscar</button>
+                    </div>
+
+                    @if (string.IsNullOrEmpty(selectedUserName))
+                    {
+                        <div class="admin-empty-state">
+                            <p>Ingrese un nombre de usuario para ver sus permisos custom.</p>
+                            <div class="input-group" style="max-width: 400px; margin: 1rem auto;">
+                                <input type="text" class="form-control" id="rbacQuickUserSearch" placeholder="username" />
+                                <button class="btn btn-primary" type="button" id="rbacQuickSearchBtn">Buscar</button>
+                            </div>
+                        </div>
+                    }
+                    else if (!userPermissions.Any())
+                    {
+                        <div class="admin-empty-state">
+                            <p>El usuario <strong>@selectedUserName</strong> no tiene permisos custom asignados.</p>
+                            <button type="button" class="btn btn-primary" data-rbac-grant-permission="open">Otorgar primer permiso</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="rbac-user-current-label mb-3">
+                            <h5>Usuario: <strong>@selectedUserName</strong></h5>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="rbacChangeUserBtn">Cambiar usuario</button>
+                        </div>
+                        
+                        <div class="rbac-user-permissions-list">
+                            @foreach (var permission in userPermissions.OrderByDescending(p => p.CreatedAt))
+                            {
+                                var isActive = permission.IsCurrentlyValid;
+                                var statusClass = isActive ? "active" : 
+                                                permission.EndDate.HasValue && permission.EndDate.Value < DateTime.Now ? "expired" : "future";
+                                var statusText = isActive ? "Vigente" :
+                                               permission.EndDate.HasValue && permission.EndDate.Value < DateTime.Now ? "Expirado" : "Futuro";
+                                
+                                <article class="rbac-user-permission-card @statusClass @(permission.IsGranted ? "granted" : "denied")"
+                                         data-permission-id="@permission.Id"
+                                         data-status="@statusClass.ToUpperInvariant()">
+                                    <div class="rbac-permission-card-header">
+                                        <div class="rbac-permission-info">
+                                            <code class="rbac-permission-code">@permission.PermissionCode</code>
+                                            <span class="badge bg-@(permission.IsGranted ? "success" : "danger")">
+                                                @(permission.IsGranted ? "✓ GRANT" : "✗ DENY")
+                                            </span>
+                                            <span class="badge bg-@(isActive ? "info" : statusClass == "expired" ? "secondary" : "warning")">
+                                                @statusText
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="rbac-permission-card-body">
+                                        <div class="rbac-permission-dates">
+                                            @if (permission.StartDate.HasValue)
+                                            {
+                                                <small><strong>Inicio:</strong> @permission.StartDate.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                                            }
+                                            @if (permission.EndDate.HasValue)
+                                            {
+                                                <small><strong>Fin:</strong> @permission.EndDate.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                                            }
+                                            else
+                                            {
+                                                <small class="text-muted">Sin fecha de fin (permanente)</small>
+                                            }
+                                        </div>
+                                        
+                                        @if (permission.CreatedAt.HasValue)
+                                        {
+                                            <div class="rbac-permission-meta">
+                                                <small class="text-muted">Creado: @permission.CreatedAt.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                                            </div>
+                                        }
+                                    </div>
+                                    
+                                    <div class="rbac-permission-card-actions">
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-danger"
+                                                data-rbac-revoke-permission="@permission.Id"
+                                                data-permission-code="@permission.PermissionCode">
+                                            Revocar
+                                        </button>
+                                    </div>
+                                </article>
+                            }
+                        </div>
+                    }
+                </section>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal Grant Permission -->
+    <div class="modal fade" id="rbacGrantPermissionModal" tabindex="-1" aria-labelledby="rbacGrantPermissionTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rbacGrantPermissionTitle">Otorgar/Denegar Permiso Custom</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form id="rbacGrantPermissionForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="grantUserName" class="form-label">Usuario <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="grantUserName" 
+                                   name="userName" 
+                                   required 
+                                   value="@selectedUserName"
+                                   readonly />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="grantPermissionId" class="form-label">Permiso <span class="text-danger">*</span></label>
+                            <select class="form-select" id="grantPermissionId" name="permissionId" required>
+                                <option value="">-- Seleccionar Permiso --</option>
+                                @foreach (var perm in allPermissions.OrderBy(p => p.Code))
+                                {
+                                    <option value="@perm.Id" data-permission-code="@perm.Code">
+                                        @perm.Code - @perm.Description
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Override <span class="text-danger">*</span></label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="isGranted" id="grantRadioGrant" value="true" checked autocomplete="off" />
+                                <label class="btn btn-outline-success" for="grantRadioGrant">✓ GRANT (Otorgar)</label>
+                                
+                                <input type="radio" class="btn-check" name="isGranted" id="grantRadioDeny" value="false" autocomplete="off" />
+                                <label class="btn btn-outline-danger" for="grantRadioDeny">✗ DENY (Denegar)</label>
+                            </div>
+                            <div class="form-text">
+                                <strong>GRANT:</strong> Otorga el permiso aunque el rol no lo tenga.<br/>
+                                <strong>DENY:</strong> Deniega el permiso aunque el rol lo tenga.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="grantStartDate" class="form-label">Fecha de Inicio</label>
+                            <input type="datetime-local" class="form-control" id="grantStartDate" name="startDate" />
+                            <div class="form-text">Dejar vacío para inicio inmediato</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="grantEndDate" class="form-label">Fecha de Fin</label>
+                            <input type="datetime-local" class="form-control" id="grantEndDate" name="endDate" />
+                            <div class="form-text">Dejar vacío para override permanente</div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> Los permisos custom sobreescriben los permisos heredados de los roles. Úsalos con precaución.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="rbacGrantPermissionSaveBtn">
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            <span class="btn-text">Guardar</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* Full-screen layout styles */
+        .rbac-user-permissions-view,
+        .admin-console-page,
+        .admin-console-main,
+        .rbac-user-permissions-section {
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        .admin-console-page {
+            padding: 1rem;
+        }
+        
+        .rbac-user-permissions-container {
+            max-height: calc(100vh - 300px);
+            min-height: 500px;
+            overflow-y: auto;
+        }
+        
+        /* User permissions list and card styles */
+        .rbac-user-current-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: #e7f1ff;
+            border-radius: 0.375rem;
+        }
+        
+        .rbac-user-permissions-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .rbac-user-permission-card {
+            background: #fff;
+            border: 2px solid #dee2e6;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .rbac-user-permission-card.granted {
+            border-color: #198754;
+            background: #f0fdf4;
+        }
+        
+        .rbac-user-permission-card.denied {
+            border-color: #dc3545;
+            background: #fef2f2;
+        }
+        
+        .rbac-user-permission-card.expired {
+            opacity: 0.6;
+            border-style: dashed;
+        }
+        
+        .rbac-user-permission-card.future {
+            border-color: #ffc107;
+        }
+        
+        .rbac-permission-card-header {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .rbac-permission-info {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .rbac-permission-code {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: #0d6efd;
+            background: #fff;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            border: 1px solid #0d6efd;
+        }
+        
+        .rbac-permission-card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .rbac-permission-dates {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .rbac-permission-meta {
+            padding-top: 0.5rem;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .rbac-permission-card-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+    (function() {
+        'use strict';
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // SEARCH USER
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const userSearch = document.getElementById('rbacUserSearch');
+        const searchBtn = document.getElementById('rbacSearchUserBtn');
+        const quickUserSearch = document.getElementById('rbacQuickUserSearch');
+        const quickSearchBtn = document.getElementById('rbacQuickSearchBtn');
+        const changeUserBtn = document.getElementById('rbacChangeUserBtn');
+        
+        function navigateToUser() {
+            const userName = userSearch?.value.trim() || quickUserSearch?.value.trim();
+            if (userName) {
+                window.location.href = `/RbacAdministration/UserPermissions?userName=${encodeURIComponent(userName)}`;
+            }
+        }
+        
+        if (searchBtn) searchBtn.addEventListener('click', navigateToUser);
+        if (quickSearchBtn) quickSearchBtn.addEventListener('click', navigateToUser);
+        if (userSearch) userSearch.addEventListener('keypress', e => { if (e.key === 'Enter') navigateToUser(); });
+        if (quickUserSearch) quickUserSearch.addEventListener('keypress', e => { if (e.key === 'Enter') navigateToUser(); });
+        if (changeUserBtn) changeUserBtn.addEventListener('click', () => { window.location.href = '/RbacAdministration/UserPermissions'; });
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // MODAL GRANT PERMISSION
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const grantModal = document.getElementById('rbacGrantPermissionModal');
+        const grantForm = document.getElementById('rbacGrantPermissionForm');
+        const grantUserName = document.getElementById('grantUserName');
+        const grantPermissionId = document.getElementById('grantPermissionId');
+        const grantStartDate = document.getElementById('grantStartDate');
+        const grantEndDate = document.getElementById('grantEndDate');
+        const grantSaveBtn = document.getElementById('rbacGrantPermissionSaveBtn');
+        
+        let grantBsModal = null;
+        if (grantModal) {
+            grantBsModal = new bootstrap.Modal(grantModal);
+        }
+        
+        // Open modal
+        document.querySelectorAll('[data-rbac-grant-permission="open"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                grantForm.reset();
+                grantUserName.value = '@selectedUserName';
+                grantBsModal.show();
+            });
+        });
+        
+        // Form submit
+        if (grantForm) {
+            grantForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const isGrantedRadio = document.querySelector('input[name="isGranted"]:checked');
+                
+                const payload = {
+                    userName: grantUserName.value.trim(),
+                    permissionId: parseInt(grantPermissionId.value),
+                    isGranted: isGrantedRadio.value === 'true',
+                    startDate: grantStartDate.value || null,
+                    endDate: grantEndDate.value || null
+                };
+                
+                if (!payload.userName || !payload.permissionId) {
+                    alert('Usuario y Permiso son obligatorios.');
+                    return;
+                }
+                
+                // Show loading
+                const spinner = grantSaveBtn.querySelector('.spinner-border');
+                const btnText = grantSaveBtn.querySelector('.btn-text');
+                spinner.classList.remove('d-none');
+                btnText.textContent = 'Guardando...';
+                grantSaveBtn.disabled = true;
+                
+                try {
+                    const response = await fetch('/RbacAdministration/GrantUserPermission', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        grantBsModal.hide();
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + (result.error || 'No se pudo guardar'));
+                    }
+                } catch (error) {
+                    console.error('Error granting permission:', error);
+                    alert('Error de conexión al guardar.');
+                } finally {
+                    spinner.classList.add('d-none');
+                    btnText.textContent = 'Guardar';
+                    grantSaveBtn.disabled = false;
+                }
+            });
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // REVOKE PERMISSION
+        // ═══════════════════════════════════════════════════════════════════
+        
+        document.querySelectorAll('[data-rbac-revoke-permission]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const permissionId = btn.dataset.rbacRevokePermission;
+                const permissionCode = btn.dataset.permissionCode || 'este permiso';
+                
+                if (!confirm(`¿Revocar el override del permiso "${permissionCode}"?`)) {
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`/RbacAdministration/RevokeUserPermission/${permissionId}`, {
+                        method: 'POST'
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + (result.error || 'No se pudo revocar'));
+                    }
+                } catch (error) {
+                    console.error('Error revoking permission:', error);
+                    alert('Error de conexión al revocar.');
+                }
+            });
+        });
+    })();
+    </script>
+}

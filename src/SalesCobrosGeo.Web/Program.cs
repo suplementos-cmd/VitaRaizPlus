@@ -9,7 +9,9 @@ using SalesCobrosGeo.Api.Data;
 using SalesCobrosGeo.Web.Data;
 using SalesCobrosGeo.Web.Security;
 using SalesCobrosGeo.Web.Services.Catalogs;
+using SalesCobrosGeo.Web.Services.Rbac;
 using SalesCobrosGeo.Web.Services.Sales;
+using SalesCobrosGeo.Web.Services.Users;
 
 var builder = WebApplication.CreateBuilder(args);
 var secureCookiePolicy = builder.Environment.IsDevelopment()
@@ -22,6 +24,8 @@ builder.Services.AddControllersWithViews(options =>
 });
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IRbacService, ApiRbacService>();
+builder.Services.AddScoped<IUserManagementService, ApiUserManagementService>();
 
 // Configurar sesiones para almacenar token de API
 builder.Services.AddDistributedMemoryCache();
@@ -35,7 +39,7 @@ builder.Services.AddSession(options =>
 
 // Servicios de catálogos compartidos con API (usando Excel)
 var excelFilePath = Path.Combine(builder.Environment.ContentRootPath, "..", "SalesCobrosGeo.Api", "App_Data", "SalesCobrosGeo.xlsx");
-builder.Services.AddSingleton(new ExcelDataService(excelFilePath));
+builder.Services.AddSingleton<ExcelDataService>(sp => new ExcelDataService(excelFilePath, sp.GetRequiredService<ILogger<ExcelDataService>>()));
 builder.Services.AddSingleton<ICatalogService, ExcelCatalogService>();
 builder.Services.AddScoped<ICatalogViewService, CatalogViewService>();
 
@@ -48,6 +52,14 @@ var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5207";
 
 // Registrar handler que inyecta el token en cada petición
 builder.Services.AddTransient<ApiTokenDelegatingHandler>();
+
+// HttpClient compartido para servicios que consumen la API
+builder.Services.AddHttpClient("ApiClient", client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+})
+.AddHttpMessageHandler<ApiTokenDelegatingHandler>();
 
 // HttpClient para autenticación
 builder.Services.AddHttpClient<IApplicationUserService, ApiAuthenticationService>(client =>
@@ -98,26 +110,32 @@ builder.Services
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
     });
 
+// ═══════════════════════════════════════════════════════════════════
+// AUTORIZACIÓN CON RBAC INTEGRADO
+// ═══════════════════════════════════════════════════════════════════
+builder.Services.AddScoped<IAuthorizationHandler, RbacPermissionHandler>();
+
 builder.Services.AddAuthorization(options =>
 {
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
 
+    // Políticas basadas en RBAC + Legacy (compatibilidad total)
     options.AddPolicy(AppPolicies.DashboardAccess, policy =>
-        policy.RequireAssertion(context => context.User.HasPermission(AppPermissions.DashboardView)));
+        policy.Requirements.Add(new RbacPermissionRequirement(AppPermissions.DashboardView)));
 
     options.AddPolicy(AppPolicies.SalesAccess, policy =>
-        policy.RequireAssertion(context => context.User.HasPermission(AppPermissions.SalesView)));
+        policy.Requirements.Add(new RbacPermissionRequirement(AppPermissions.SalesView)));
 
     options.AddPolicy(AppPolicies.CollectionsAccess, policy =>
-        policy.RequireAssertion(context => context.User.HasPermission(AppPermissions.CollectionsView)));
+        policy.Requirements.Add(new RbacPermissionRequirement(AppPermissions.CollectionsView)));
 
     options.AddPolicy(AppPolicies.MaintenanceAccess, policy =>
-        policy.RequireAssertion(context => context.User.HasPermission(AppPermissions.MaintenanceView)));
+        policy.Requirements.Add(new RbacPermissionRequirement(AppPermissions.MaintenanceView)));
 
     options.AddPolicy(AppPolicies.AdministrationAccess, policy =>
-        policy.RequireAssertion(context => context.User.HasPermission(AppPermissions.AdministrationView)));
+        policy.Requirements.Add(new RbacPermissionRequirement(AppPermissions.AdministrationView)));
 });
 
 var app = builder.Build();

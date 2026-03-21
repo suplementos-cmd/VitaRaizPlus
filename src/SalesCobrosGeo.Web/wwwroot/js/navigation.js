@@ -1,8 +1,8 @@
 /**
- * Navigation Controls Enhancement
+ * Navigation Controls Enhancement v2.0
  * Manages browser history navigation buttons state (← →)
- * Architecture: Global navigation system for entire application
- * Tracks AJAX partial view navigation and section changes
+ * Architecture: Discrete, state-aware navigation system
+ * Features: Memory of navigation stack, state restoration, AJAX support
  */
 
 (function () {
@@ -11,28 +11,28 @@
   // Navigation state tracking
   let navigationStack = [];
   let currentIndex = -1;
+  let isInitialized = false;
 
   /**
    * Update button states based on navigation stack
+   * Buttons are shown/hidden via CSS based on :disabled state
    */
   function updateNavigationButtons() {
     const backButtons = document.querySelectorAll('.app-nav-back');
     const forwardButtons = document.querySelectorAll('.app-nav-forward');
 
-    // Can go back if we have previous entries
-    const canGoBack = currentIndex > 0;
+    // Can go back if we have previous entries in our stack OR browser history
+    const canGoBack = currentIndex > 0 || window.history.length > 1;
     backButtons.forEach(btn => {
       btn.disabled = !canGoBack;
-      btn.setAttribute('aria-disabled', !canGoBack);
-      btn.style.display = canGoBack ? '' : 'none';
+      btn.setAttribute('aria-disabled', String(!canGoBack));
     });
 
-    // Can go forward if we're not at the end
+    // Can go forward if we're not at the end of our stack
     const canGoForward = currentIndex < navigationStack.length - 1;
     forwardButtons.forEach(btn => {
       btn.disabled = !canGoForward;
-      btn.setAttribute('aria-disabled', !canGoForward);
-      btn.style.display = canGoForward ? '' : 'none';
+      btn.setAttribute('aria-disabled', String(!canGoForward));
     });
   }
 
@@ -46,6 +46,13 @@
     // Remove any forward history when pushing new navigation
     if (currentIndex < navigationStack.length - 1) {
       navigationStack = navigationStack.slice(0, currentIndex + 1);
+    }
+
+    // Avoid duplicate entries for the same URL
+    const lastEntry = navigationStack[navigationStack.length - 1];
+    if (lastEntry && lastEntry.url === (url || window.location.href)) {
+      updateNavigationButtons();
+      return;
     }
 
     navigationStack.push({
@@ -110,6 +117,21 @@
   };
 
   /**
+   * Intercept replaceState for better tracking
+   */
+  const originalReplaceState = history.replaceState;
+  history.replaceState = function (state, title, url) {
+    const result = originalReplaceState.call(this, state, title, url);
+    // Update current entry only
+    if (navigationStack[currentIndex]) {
+      navigationStack[currentIndex].url = url?.toString() || window.location.href;
+      navigationStack[currentIndex].title = title || document.title;
+    }
+    updateNavigationButtons();
+    return result;
+  };
+
+  /**
    * Track AJAX navigation (data-ajax-link)
    */
   document.addEventListener('click', function (e) {
@@ -134,7 +156,7 @@
   }
 
   /**
-   * Enhanced back button with stack navigation
+   * Enhanced navigation button click handlers
    */
   window.addEventListener('click', function (e) {
     const backBtn = e.target.closest('.app-nav-back');
@@ -142,20 +164,12 @@
 
     if (backBtn && !backBtn.disabled) {
       e.preventDefault();
-      if (currentIndex > 0) {
-        currentIndex--;
-        const entry = navigationStack[currentIndex];
-        history.back();
-      }
-      updateNavigationButtons();
+      e.stopPropagation();
+      history.back();
     } else if (forwardBtn && !forwardBtn.disabled) {
       e.preventDefault();
-      if (currentIndex < navigationStack.length - 1) {
-        currentIndex++;
-        const entry = navigationStack[currentIndex];
-        history.forward();
-      }
-      updateNavigationButtons();
+      e.stopPropagation();
+      history.forward();
     }
   });
 
@@ -163,6 +177,9 @@
    * Initialize navigation system
    */
   function init() {
+    if (isInitialized) return;
+    isInitialized = true;
+
     // Initialize stack with current page
     navigationStack = [{
       url: window.location.href,
@@ -186,6 +203,11 @@
         updateNavigationButtons();
       }
     });
+
+    // Update on focus (handles returning from external navigation)
+    window.addEventListener('focus', function() {
+      setTimeout(updateNavigationButtons, 100);
+    });
   }
 
   // Initialize when DOM is ready
@@ -195,6 +217,10 @@
     init();
   }
 
-  // Periodic update as fallback (reduced frequency)
-  setInterval(updateNavigationButtons, 2000);
+  // Expose for debugging (optional)
+  window.NavigationDebug = {
+    getStack: () => navigationStack,
+    getCurrentIndex: () => currentIndex,
+    refresh: updateNavigationButtons
+  };
 })();

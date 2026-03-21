@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using OfficeOpenXml;
 using System.Collections.Concurrent;
 
@@ -10,13 +11,15 @@ namespace SalesCobrosGeo.Api.Data;
 public sealed class ExcelDataService : IDisposable
 {
     private readonly string _filePath;
+    private readonly ILogger<ExcelDataService> _logger;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
     private readonly FileSystemWatcher? _watcher;
     private volatile bool _disposed;
 
-    public ExcelDataService(string filePath)
+    public ExcelDataService(string filePath, ILogger<ExcelDataService> logger)
     {
         _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         
         // Configurar licencia de EPPlus (modo no comercial)
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
@@ -425,17 +428,25 @@ public sealed class ExcelDataService : IDisposable
         await _semaphore.WaitAsync();
         try
         {
+            _logger.LogDebug("AppendRowAsync iniciado para sheet '{SheetName}' con {RowDataCount} columnas", sheetName, rowData.Count);
+            
             using var package = new ExcelPackage(new FileInfo(_filePath));
             var sheet = package.Workbook.Worksheets[sheetName];
             
             if (sheet == null)
             {
-                throw new InvalidOperationException($"Sheet '{sheetName}' not found.");
+                var availableSheets = string.Join(", ", package.Workbook.Worksheets.Select(w => w.Name));
+                var errorMsg = $"Sheet '{sheetName}' no encontrada. Sheets disponibles: {availableSheets}";
+                _logger.LogError(errorMsg);
+                throw new InvalidOperationException(errorMsg);
             }
 
             var rowCount = sheet.Dimension?.Rows ?? 1;
             var colCount = sheet.Dimension?.Columns ?? 0;
             var nextRow = rowCount + 1;
+
+            _logger.LogDebug("Sheet '{SheetName}' tiene {RowCount} filas, {ColCount} columnas. Nueva fila será {NextRow}", 
+                sheetName, rowCount, colCount, nextRow);
 
             // Leer encabezados
             var headers = new List<string>();
@@ -445,16 +456,28 @@ public sealed class ExcelDataService : IDisposable
             }
 
             // Escribir nueva fila
+            int writtenCols = 0;
             for (int col = 0; col < headers.Count; col++)
             {
                 var key = headers[col];
                 if (rowData.TryGetValue(key, out var value))
                 {
                     sheet.Cells[nextRow, col + 1].Value = value;
+                    writtenCols++;
                 }
             }
 
+            _logger.LogDebug("Escribiendo {WrittenCols} de {TotalCols} columnas en fila {NextRow}", writtenCols, headers.Count, nextRow);
+
             await package.SaveAsync();
+            
+            _logger.LogInformation("AppendRowAsync completado exitosamente: sheet '{SheetName}', fila {NextRow}, {WrittenCols} columnas escritas", 
+                sheetName, nextRow, writtenCols);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error en AppendRowAsync para sheet '{SheetName}': {ErrorMessage}", sheetName, ex.Message);
+            throw;
         }
         finally
         {

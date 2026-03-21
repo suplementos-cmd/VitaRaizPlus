@@ -1,6 +1,8 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using SalesCobrosGeo.Web.Data;
 
@@ -9,6 +11,8 @@ namespace SalesCobrosGeo.Web.Security;
 public sealed class SqliteUserSessionTracker : IUserSessionTracker
 {
     private readonly AppSecurityDbContext _dbContext;
+    private static readonly ConcurrentDictionary<string, DateTime> _lastUpdateTimes = new();
+    private static readonly TimeSpan _updateThrottle = TimeSpan.FromSeconds(30);
 
     public SqliteUserSessionTracker(AppSecurityDbContext dbContext)
     {
@@ -69,11 +73,51 @@ public sealed class SqliteUserSessionTracker : IUserSessionTracker
             return;
         }
 
-        session.LastSeenUtc = DateTime.UtcNow;
+        // Throttling: Solo actualizar si han pasado más de 30 segundos desde la última actualización
+        var now = DateTime.UtcNow;
+        if (_lastUpdateTimes.TryGetValue(session.SessionId, out var lastUpdate))
+        {
+            if (now - lastUpdate < _updateThrottle)
+            {
+                return; // Skip update - demasiado pronto
+            }
+        }
+
+        session.LastSeenUtc = now;
         session.LastPath = httpContext.Request.Path.Value ?? session.LastPath;
         session.LastIp = ResolveIp(httpContext);
         session.LastUserAgent = ResolveAgent(httpContext);
-        _dbContext.SaveChanges();
+
+        // Retry logic para manejar "database is locked"
+        var maxRetries = 3;
+        for (int retry = 0; retry < maxRetries; retry++)
+        {
+            try
+            {
+                _dbContext.SaveChanges();
+                _lastUpdateTimes[session.SessionId] = now;
+                break; // Éxito - salir del loop
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is SqliteException sqliteEx && sqliteEx.SqliteErrorCode == 5)
+            {
+                // Error 5 = database is locked
+                if (retry == maxRetries - 1)
+                {
+                    // Último intento falló - log y continuar sin romper la app
+                    Console.WriteLine($"[WARNING] Failed to update session {session.SessionId} after {maxRetries} retries: database locked");
+                    return;
+                }
+                
+                // Esperar un poco antes de reintentar (exponential backoff)
+                Thread.Sleep(50 * (retry + 1));
+            }
+            catch (Exception ex)
+            {
+                // Otros errores - log y continuar
+                Console.WriteLine($"[ERROR] Failed to update session {session.SessionId}: {ex.Message}");
+                return;
+            }
+        }
     }
 
     public void SignOut(ClaimsPrincipal principal)

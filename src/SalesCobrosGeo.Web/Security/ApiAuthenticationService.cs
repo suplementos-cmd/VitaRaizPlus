@@ -4,28 +4,33 @@ using System.Security.Claims;
 using System.Text.Json;
 using SalesCobrosGeo.Api.Data;
 using SalesCobrosGeo.Web.Models.Administration;
+using SalesCobrosGeo.Web.Services.Rbac;
 
 namespace SalesCobrosGeo.Web.Security;
 
 /// <summary>
 /// Servicio de autenticación que consume la API (Excel como fuente de datos)
 /// Reemplaza SqliteApplicationUserService para unificar datos en Excel
+/// INTEGRACIÓN RBAC: Carga permisos efectivos del usuario desde RBAC al login
 /// </summary>
 public sealed class ApiAuthenticationService : IApplicationUserService
 {
     private readonly HttpClient _httpClient;
     private readonly ExcelDataService _excelService;
+    private readonly IRbacService _rbacService;
     private readonly ILogger<ApiAuthenticationService> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public ApiAuthenticationService(
         HttpClient httpClient,
         ExcelDataService excelService,
+        IRbacService rbacService,
         ILogger<ApiAuthenticationService> logger,
         IHttpContextAccessor httpContextAccessor)
     {
         _httpClient = httpClient;
         _excelService = excelService;
+        _rbacService = rbacService;
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
     }
@@ -45,7 +50,13 @@ public sealed class ApiAuthenticationService : IApplicationUserService
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Autenticación fallida para usuario: {UserName}", username);
+                var statusCode = (int)response.StatusCode;
+                _logger.LogWarning("Autenticación fallida para usuario: {UserName}, Status: {StatusCode}", username, statusCode);
+                
+                // Log del contenido de error para debugging
+                var errorContent = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                _logger.LogWarning("Error de API: {ErrorContent}", errorContent);
+                
                 return null;
             }
 
@@ -69,24 +80,29 @@ public sealed class ApiAuthenticationService : IApplicationUserService
                 httpContext.Session.SetString("ApiTokenExpiry", loginResponse.ExpiresAtUtc.ToString("O"));
             }
 
-            // Mapear rol del API a rol del Web y permisos
-            var (webRole, permissions) = MapRoleToPermissions(loginResponse.Role);
+            // ═══════════════════════════════════════════════════════════════════
+            // OBTENER DATOS COMPLETOS DEL USUARIO DESDE EXCEL (Tema, Zona, etc)
+            // ═══════════════════════════════════════════════════════════════════
+            var userSummary = GetUser(loginResponse.UserName);
+            var userTheme = userSummary?.Theme ?? "root";
+            var userZone = userSummary?.Zone ?? "Default";
 
-            // Crear ClaimsPrincipal compatible con el sistema existente
+            // ═══════════════════════════════════════════════════════════════════
+            // SISTEMA RBAC PURO: Solo cargar claims básicos, permisos vienen de RBAC
+            // ═══════════════════════════════════════════════════════════════════
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, loginResponse.UserName),
                 new Claim(ClaimTypes.GivenName, loginResponse.FullName),
-                new Claim(ClaimTypes.Role, webRole),
                 new Claim(AppClaimTypes.DisplayRole, loginResponse.Role),
-                new Claim("ApiToken", loginResponse.AccessToken)
+                new Claim(AppClaimTypes.Theme, userTheme),
+                new Claim("ApiToken", loginResponse.AccessToken),
+                new Claim("Zone", userZone)
             };
 
-            // Agregar claims de permisos
-            foreach (var permission in permissions)
-            {
-                claims.Add(new Claim(AppClaimTypes.Permission, permission));
-            }
+            _logger.LogInformation(
+                "Claims básicos creados para {UserName} (Tema: {Theme}, Zona: {Zone}). Permisos se validarán via RBAC en tiempo real.",
+                loginResponse.UserName, userTheme, userZone);
 
             var identity = new ClaimsIdentity(claims, "ApiAuth");
             return new ClaimsPrincipal(identity);
@@ -125,18 +141,9 @@ public sealed class ApiAuthenticationService : IApplicationUserService
 
     public IReadOnlyList<LoginCredentialHint> GetLoginHints()
     {
-        try
-        {
-            // TODO: Implementar endpoint en API para hints de login
-            // Por ahora retornar lista vacía
-            _logger.LogWarning("GetLoginHints() no implementado aún en API");
-            return Array.Empty<LoginCredentialHint>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al obtener hints de login via API");
-            return Array.Empty<LoginCredentialHint>();
-        }
+        // Login hints (sugerencias visuales) no implementadas
+        // Funcionalidad opcional que no afecta autenticación
+        return Array.Empty<LoginCredentialHint>();
     }
 
     public bool SetActive(string username, bool isActive)
@@ -283,40 +290,6 @@ public sealed class ApiAuthenticationService : IApplicationUserService
             _logger.LogError(ex, "Error al resetear contraseña para usuario {Username}", username);
             return false;
         }
-    }
-
-    /// <summary>
-    /// Mapea el rol del API (Administrador, Vendedor, etc.) al rol del Web (FULL, SALES, etc.)
-    /// y retorna los permisos correspondientes
-    /// </summary>
-    private static (string WebRole, string[] Permissions) MapRoleToPermissions(string apiRole)
-    {
-        return apiRole switch
-        {
-            "Administrador" => (AppRoles.Full, new[]
-            {
-                AppPermissions.DashboardView,
-                AppPermissions.SalesView,
-                AppPermissions.CollectionsView,
-                AppPermissions.MaintenanceView,
-                AppPermissions.AdministrationView
-            }),
-            "Vendedor" or "SupervisorVentas" => (AppRoles.Sales, new[]
-            {
-                AppPermissions.DashboardView,
-                AppPermissions.SalesView
-            }),
-            "Cobrador" or "SupervisorCobranza" => (AppRoles.Collections, new[]
-            {
-                AppPermissions.DashboardView,
-                AppPermissions.CollectionsView
-            }),
-            _ => (AppRoles.Sales, new[]
-            {
-                AppPermissions.DashboardView,
-                AppPermissions.SalesView
-            })
-        };
     }
 
     #region Helper Methods

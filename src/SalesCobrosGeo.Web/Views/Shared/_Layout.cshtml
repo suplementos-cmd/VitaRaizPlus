@@ -1,17 +1,27 @@
 @using SalesCobrosGeo.Web.Models.Shared
 @using SalesCobrosGeo.Web.Security
+@using SalesCobrosGeo.Web.Services.Rbac
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@inject IRbacService RbacService
 @{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
     var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+    var userName = User.Identity?.Name ?? string.Empty;
+    
+    // Consultar permisos RBAC del usuario
+    var userPermissions = isAuthenticated && !string.IsNullOrEmpty(userName)
+        ? await RbacService.GetUserEffectivePermissionsAsync(userName)
+        : null;
+    var effectivePermissions = userPermissions?.EffectivePermissions?.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    
     var rawTheme = isAuthenticated ? User.GetTheme() : "public";
     var theme = rawTheme == "root"
-        ? (isAuthenticated && User.HasPermission(AppPermissions.AdministrationView)
+        ? (isAuthenticated && effectivePermissions.Contains(AppPermissions.AdministrationView)
             ? "graphite"
-            : isAuthenticated && User.HasPermission(AppPermissions.CollectionsView) && !User.HasPermission(AppPermissions.SalesView)
+            : isAuthenticated && effectivePermissions.Contains(AppPermissions.CollectionsView) && !effectivePermissions.Contains(AppPermissions.SalesView)
                 ? "collections"
-                : isAuthenticated && User.HasPermission(AppPermissions.SalesView) && !User.HasPermission(AppPermissions.CollectionsView)
+                : isAuthenticated && effectivePermissions.Contains(AppPermissions.SalesView) && !effectivePermissions.Contains(AppPermissions.CollectionsView)
                     ? "sales"
                     : "graphite")
         : rawTheme;
@@ -26,11 +36,11 @@
     };
     var displayName = isAuthenticated ? User.GetDisplayName() : "Invitado";
     var displayRole = isAuthenticated ? User.GetDisplayRole() : "Acceso publico";
-    var canDashboard = isAuthenticated && User.HasPermission(AppPermissions.DashboardView);
-    var canSales = isAuthenticated && User.HasPermission(AppPermissions.SalesView);
-    var canCollections = isAuthenticated && User.HasPermission(AppPermissions.CollectionsView);
-    var canMaintenance = isAuthenticated && User.HasPermission(AppPermissions.MaintenanceView);
-    var canAdministration = isAuthenticated && User.HasPermission(AppPermissions.AdministrationView);
+    var canDashboard = isAuthenticated && effectivePermissions.Contains(AppPermissions.DashboardView);
+    var canSales = isAuthenticated && effectivePermissions.Contains(AppPermissions.SalesView);
+    var canCollections = isAuthenticated && effectivePermissions.Contains(AppPermissions.CollectionsView);
+    var canMaintenance = isAuthenticated && effectivePermissions.Contains(AppPermissions.MaintenanceView);
+    var canAdministration = isAuthenticated && effectivePermissions.Contains(AppPermissions.AdministrationView);
     var landingController = canAdministration ? "Dashboard" : canSales && !canCollections ? "Sales" : canCollections && !canSales ? "Cobros" : canDashboard ? "Dashboard" : "Account";
     var landingAction = "Index";
     var antiForgeryToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
@@ -94,6 +104,8 @@
     <link rel="stylesheet" href="~/css/modules/administration.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/modules/security.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/SalesCobrosGeo.Web.styles.css" asp-append-version="true" />
+    
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body data-role-theme="@theme" data-authenticated="@(isAuthenticated ? "true" : "false")" data-controller="@currentController.ToLowerInvariant()" data-action="@currentAction.ToLowerInvariant()">
     <div class="app-shell">
@@ -115,12 +127,12 @@
                             {
                                 @* Navigation buttons using browser history *@
                                 <div class="app-nav-controls">
-                                    <button type="button" class="app-nav-btn app-nav-back" onclick="window.history.back()" aria-label="Atrás" title="Atrás">
+                                    <button type="button" class="app-nav-btn app-nav-back" aria-label="Atrás" title="Atrás">
                                         <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                             <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd"/>
                                         </svg>
                                     </button>
-                                    <button type="button" class="app-nav-btn app-nav-forward" onclick="window.history.forward()" aria-label="Adelante" title="Adelante">
+                                    <button type="button" class="app-nav-btn app-nav-forward" aria-label="Adelante" title="Adelante">
                                         <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                             <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/>
                                         </svg>
@@ -179,12 +191,12 @@
                     @if (isAuthenticated)
                     {
                         <div class="app-desktop-nav-controls d-none d-lg-flex">
-                            <button type="button" class="app-desktop-nav-btn app-nav-back" onclick="window.history.back()" aria-label="Atrás" title="Atrás">
+                            <button type="button" class="app-desktop-nav-btn app-nav-back" aria-label="Atrás" title="Atrás">
                                 <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                     <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd"/>
                                 </svg>
                             </button>
-                            <button type="button" class="app-desktop-nav-btn app-nav-forward" onclick="window.history.forward()" aria-label="Adelante" title="Adelante">
+                            <button type="button" class="app-desktop-nav-btn app-nav-forward" aria-label="Adelante" title="Adelante">
                                 <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                     <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/>
                                 </svg>
@@ -238,6 +250,20 @@
                                         <a class="nav-link text-light @(currentController == "Administration" ? "active" : string.Empty)" asp-area="" asp-controller="Administration" asp-action="Users">
                                         <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
                                         <span class="nav-label">Usuarios</span></a>
+                                    </li>
+                                    <li class="nav-item dropdown">
+                                        <a class="nav-link dropdown-toggle text-light @(currentController == "RbacAdministration" ? "active" : string.Empty)" href="#" id="rbacDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                                            <span class="nav-label">RBAC</span>
+                                        </a>
+                                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="rbacDropdown">
+                                            <li><a class="dropdown-item" asp-controller="RbacAdministration" asp-action="Roles">Roles</a></li>
+                                            <li><a class="dropdown-item" asp-controller="RbacAdministration" asp-action="Permissions">Permisos</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item" asp-controller="RbacAdministration" asp-action="RolePermissions">Matriz Roles-Permisos</a></li>
+                                            <li><a class="dropdown-item" asp-controller="RbacAdministration" asp-action="UserRoles">Roles de Usuarios</a></li>
+                                            <li><a class="dropdown-item" asp-controller="RbacAdministration" asp-action="UserPermissions">Permisos Custom</a></li>
+                                        </ul>
                                     </li>
                                 }
                             </ul>
@@ -293,6 +319,22 @@
                             <a class="mobile-more-link" asp-controller="Administration" asp-action="Users">
                             <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
                             <span class="nav-label">Usuarios y permisos</span></a>
+                            
+                            <div class="mobile-rbac-links mt-2">
+                                <small class="text-muted ms-3 mb-1 d-block">RBAC</small>
+                                <a class="mobile-more-link" asp-controller="RbacAdministration" asp-action="Roles">
+                                    <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                                    <span class="nav-label">Roles</span>
+                                </a>
+                                <a class="mobile-more-link" asp-controller="RbacAdministration" asp-action="RolePermissions">
+                                    <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                                    <span class="nav-label">Matriz Roles-Permisos</span>
+                                </a>
+                                <a class="mobile-more-link" asp-controller="RbacAdministration" asp-action="UserRoles">
+                                    <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                                    <span class="nav-label">Roles de Usuarios</span>
+                                </a>
+                            </div>
                         }
                         @if (canDashboard)
                         {

@@ -118,10 +118,20 @@
                                         </span>
                                         <span><strong>Permisos</strong> @user.PermissionCount</span>
                                         <span><strong>2FA</strong> @(user.TwoFactorEnabled ? "Si" : "No")</span>
+                                        @if (user.RbacActiveRoles > 0 || user.RbacTotalPermissions > 0)
+                                        {
+                                            <span><strong>Roles RBAC</strong> <span class="badge bg-primary">@user.RbacActiveRoles activos</span></span>
+                                            @if (user.RbacTotalPermissions > 0)
+                                            {
+                                                <span><strong>Permisos Custom</strong> <span class="badge bg-info">@user.RbacTotalPermissions</span></span>
+                                            }
+                                        }
                                     </div>
                                 </div>
                                 <div class="admin-user-rowactions compact-row">
                                     <a class="btn btn-sm btn-outline-primary" asp-action="Users" asp-route-editUsername="@user.Username" data-ajax-link="true" data-ajax-target=".admin-users-view">Editar</a>
+                                    <a class="btn btn-sm btn-outline-info" asp-controller="RbacAdministration" asp-action="UserRoles" asp-route-userName="@user.Username" title="Gestionar roles RBAC">Roles RBAC</a>
+                                    <a class="btn btn-sm btn-outline-secondary" asp-controller="RbacAdministration" asp-action="UserPermissions" asp-route-userName="@user.Username" title="Gestionar permisos personalizados">Permisos</a>
                                     <form asp-action="SetUserStatus" method="post" class="admin-status-form admin-inline-toggle-form @(isProtectedAdmin ? "is-locked" : string.Empty)" data-ajaxify="true" data-ajax-target=".admin-users-view">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="username" value="@user.Username" />
@@ -159,7 +169,7 @@
                                     <div class="admin-session-rowtop">
                                         <div>
                                             <div class="admin-user-rowname">@session.DisplayName</div>
-                                            <div class="admin-user-rowusername">@session.Username � @session.RoleLabel</div>
+                                            <div class="admin-user-rowusername">@session.Username � @session.RoleLabel</div>
                                         </div>
                                         <span class="admin-session-badge @(session.IsConnected ? "connected" : session.IsActive ? "idle" : "inactive")">
                                             @(session.IsConnected ? "Conectado" : session.IsActive ? "Sin sesion" : "Inactivo")
@@ -187,125 +197,207 @@
                 </section>
             </div>
         </section>
+
+        <section class="admin-rbac-quicklink">
+            <div class="alert alert-info d-flex align-items-center justify-content-between">
+                <div>
+                    <strong>Sistema RBAC:</strong> Para gestión avanzada de roles, permisos y asignaciones, visita el módulo completo de RBAC.
+                </div>
+                <div>
+                    <a class="btn btn-sm btn-primary" asp-controller="RbacAdministration" asp-action="Roles">Ir a RBAC</a>
+                    <a class="btn btn-sm btn-outline-primary" asp-controller="RbacAdministration" asp-action="UserRoles">Roles Usuarios</a>
+                    <a class="btn btn-sm btn-outline-primary" asp-controller="RbacAdministration" asp-action="RolePermissions">Matriz Permisos</a>
+                </div>
+            </div>
+        </section>
     </div>
 
     @if (Model.ShowEditor)
     {
-        <div class="admin-editor-modal" role="dialog" aria-modal="true" aria-labelledby="adminEditorTitle">
-            <div class="admin-editor-backdrop">
-                <a class="admin-editor-backdrop-close" asp-action="Users" aria-label="Cerrar" data-ajax-link="true" data-ajax-target=".admin-users-view"></a>
-            </div>
-            <aside class="admin-editor-dialog" style="--admin-theme-tone:@selectedTheme.Tone; --admin-theme-accent:@selectedTheme.Accent; --admin-theme-surface:@selectedTheme.Surface;">
-                <div class="admin-section-head compact sticky-head">
-                    <div>
-                        <h2 class="admin-section-title" id="adminEditorTitle">@Model.Editor.Title</h2>
-                        <div class="admin-section-subtitle">Editor compacto, centrado y comodo para trabajar en pantalla grande.</div>
-                    </div>
-                    <a class="btn btn-sm btn-outline-secondary" asp-action="Users" data-ajax-link="true" data-ajax-target=".admin-users-view">Cerrar</a>
-                </div>
-
-                <form asp-action="SaveUser" method="post" class="admin-user-form compact" data-ajaxify="true" data-ajax-target=".admin-users-view">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="OriginalUsername" value="@editor.OriginalUsername" />
-
-                    <div class="admin-form-grid compact single admin-editor-grid">
-                        <div>
-                            <label class="form-label" for="username">Usuario</label>
-                            <input class="form-control" id="username" name="Username" value="@editor.Username" />
-                        </div>
-                        <div>
-                            <label class="form-label" for="displayName">Nombre</label>
-                            <input class="form-control" id="displayName" name="DisplayName" value="@editor.DisplayName" />
-                        </div>
-                        <div>
-                            <label class="form-label" for="zone">Zona</label>
-                            <input class="form-control" id="zone" name="Zone" value="@editor.Zone" />
-                        </div>
-                        <div>
-                            <label class="form-label" for="theme">Tema</label>
-                            <select class="form-select admin-theme-select" id="theme" name="Theme">
-                                @foreach (var theme in themeCatalog)
-                                {
-                                    if (theme.Code == editor.Theme)
-                                    {
-                                        <option value="@theme.Code" data-theme-tone="@theme.Tone" data-theme-accent="@theme.Accent" data-theme-surface="@theme.Surface" selected>@theme.Name</option>
-                                    }
-                                    else
-                                    {
-                                        <option value="@theme.Code" data-theme-tone="@theme.Tone" data-theme-accent="@theme.Accent" data-theme-surface="@theme.Surface">@theme.Name</option>
-                                    }
-                                }
-                            </select>
-                            <div class="admin-theme-help">El tema colorea navegacion, fondos, botones de enfasis y superficies del sistema.</div>
-                            <button type="button" class="btn btn-sm btn-outline-secondary admin-theme-suggest" data-role-theme-suggest="true">Aplicar sugerido por perfil</button>
-                        </div>
-                        <div>
-                            <label class="form-label" for="role">Perfil base</label>
-                            <select class="form-select admin-role-select" id="role" name="Role">
-                                @if (editor.Role == AppRoles.Full) { <option value="@AppRoles.Full" data-default-theme="root" selected>@AppRoles.Full</option> } else { <option value="@AppRoles.Full" data-default-theme="root">@AppRoles.Full</option> }
-                                @if (editor.Role == AppRoles.Sales) { <option value="@AppRoles.Sales" data-default-theme="sales" selected>@AppRoles.Sales</option> } else { <option value="@AppRoles.Sales" data-default-theme="sales">@AppRoles.Sales</option> }
-                                @if (editor.Role == AppRoles.Collections) { <option value="@AppRoles.Collections" data-default-theme="collections" selected>@AppRoles.Collections</option> } else { <option value="@AppRoles.Collections" data-default-theme="collections">@AppRoles.Collections</option> }
-                            </select>
-                            <div class="admin-theme-help">Cada perfil propone un tema base y luego puedes personalizarlo por usuario.</div>
-                        </div>
-                        <div>
-                            <label class="form-label" for="password">Contrasena @(string.IsNullOrWhiteSpace(editor.OriginalUsername) ? "inicial" : "nueva")</label>
-                            <input class="form-control" id="password" name="Password" type="password" autocomplete="new-password" />
-                        </div>
-                    </div>
-
-                    <div class="admin-form-switches compact">
-                        <label class="admin-check-chip">
-                            <input type="hidden" name="IsActive" value="false" />
-                            <input type="checkbox" name="IsActive" value="true" @(editor.IsActive ? "checked" : null) />
-                            <span>Activo</span>
-                        </label>
-                        <label class="admin-check-chip">
-                            <input type="hidden" name="TwoFactorEnabled" value="false" />
-                            <input type="checkbox" name="TwoFactorEnabled" value="true" @(editor.TwoFactorEnabled ? "checked" : null) />
-                            <span>2FA requerido</span>
-                        </label>
-                    </div>
-
-                    <div>
-                        <div class="admin-role-block-title mb-2">Permisos por vista</div>
-                        <div class="admin-permissions-grid compact single admin-permissions-editor-grid">
-                            @foreach (var permission in Model.Editor.AvailablePermissions)
-                            {
-                                var isChecked = editor.Permissions.Contains(permission);
-                                <label class="admin-permission-chip">
-                                    <input type="checkbox" name="Permissions" value="@permission" @(isChecked ? "checked" : null) />
-                                    <span>@permission</span>
-                                </label>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="admin-editor-actions compact">
-                        <a class="btn btn-outline-secondary" asp-action="Users" data-ajax-link="true" data-ajax-target=".admin-users-view">Cancelar</a>
-                        <button type="submit" class="btn btn-primary admin-save-button" data-working-label="Guardando...">Guardar cambios</button>
-                    </div>
-                </form>
-
-                @if (!string.IsNullOrWhiteSpace(editor.Username))
-                {
-                    <form asp-action="ResetPassword" method="post" class="admin-reset-form compact" data-ajaxify="true" data-ajax-target=".admin-users-view">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="username" value="@editor.Username" />
-                        <div class="admin-role-block-title mb-2">Reset de contrasena</div>
-                        <div class="input-group">
-                            <input class="form-control" type="password" name="newPassword" placeholder="Nueva contrasena segura" autocomplete="new-password" />
-                            <button type="submit" class="btn btn-outline-warning">Reset</button>
-                        </div>
-                    </form>
-                }
-            </aside>
-        </div>
+        <partial name="_UserEditorRbacModal" model="Model.EditorWithRbac" />
     }
 </div>
 
+@section Styles {
+    <style>
+        /* Modal RBAC Styles */
+        .admin-editor-dialog-wide {
+            max-width: 1000px;
+            width: 95%;
+        }
 
+        .nav-tabs .nav-link {
+            font-weight: 500;
+        }
+
+        .rbac-role-row:hover,
+        .rbac-permission-row:hover {
+            background-color: #f8f9fa;
+        }
+
+        .rbac-role-checkbox:checked ~ td {
+            background-color: #e7f3ff;
+        }
+
+        .admin-theme-help {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
+
+        .sticky-top {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #f8f9fa;
+        }
+    </style>
+}
 
 @section Scripts {
     <script src="~/js/modules/administration-state.js" asp-append-version="true"></script>
+    <script>
+    (function() {
+        'use strict';
+
+        const form = document.getElementById('adminUserRbacForm');
+        if (!form) return;
+
+        const rolesCountBadge = document.getElementById('rolesCount');
+        const permissionsCountBadge = document.getElementById('permissionsCount');
+        const rbacHiddenFields = document.getElementById('rbacHiddenFields');
+        const permissionsSearch = document.getElementById('permissionsSearch');
+
+        // ═══════════════════════════════════════════════════════════════════
+        // SELECT ALL ROLES
+        // ═══════════════════════════════════════════════════════════════════
+        document.getElementById('selectAllRoles')?.addEventListener('change', function(e) {
+            document.querySelectorAll('.rbac-role-checkbox').forEach(cb => {
+                cb.checked = e.target.checked;
+            });
+            updateCounts();
+        });
+
+        // ═══════════════════════════════════════════════════════════════════
+        // UPDATE COUNTS ON CHECKBOX/SELECT CHANGE
+        // ═══════════════════════════════════════════════════════════════════
+        document.querySelectorAll('.rbac-role-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateCounts);
+        });
+
+        document.querySelectorAll('.rbac-permission-action').forEach(select => {
+            select.addEventListener('change', updateCounts);
+        });
+
+        function updateCounts() {
+            const rolesChecked = document.querySelectorAll('.rbac-role-checkbox:checked').length;
+            const permissionsSet = Array.from(document.querySelectorAll('.rbac-permission-action'))
+                .filter(s => s.value !== 'none').length;
+
+            rolesCountBadge.textContent = rolesChecked;
+            permissionsCountBadge.textContent = permissionsSet;
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // SEARCH PERMISSIONS
+        // ═══════════════════════════════════════════════════════════════════
+        permissionsSearch?.addEventListener('input', function(e) {
+            const search = e.target.value.toUpperCase();
+            document.querySelectorAll('.rbac-permission-row').forEach(row => {
+                const searchText = row.dataset.search || '';
+                row.style.display = searchText.includes(search) ? '' : 'none';
+            });
+        });
+
+        // ═══════════════════════════════════════════════════════════════════
+        // FORM SUBMISSION - BUILD RBAC PAYLOAD
+        // ═══════════════════════════════════════════════════════════════════
+        form.addEventListener('submit', function(e) {
+            // Clear previous hidden fields
+            rbacHiddenFields.innerHTML = '';
+
+            // Build RbacRoles array
+            let roleIndex = 0;
+            document.querySelectorAll('.rbac-role-checkbox:checked').forEach(cb => {
+                const roleId = cb.dataset.roleId;
+                const startDate = document.querySelector(`.rbac-role-start[data-role-id="${roleId}"]`)?.value || '';
+                const endDate = document.querySelector(`.rbac-role-end[data-role-id="${roleId}"]`)?.value || '';
+
+                rbacHiddenFields.innerHTML += `
+                    <input type="hidden" name="RbacRoles[${roleIndex}].RoleId" value="${roleId}" />
+                    <input type="hidden" name="RbacRoles[${roleIndex}].StartDate" value="${startDate}" />
+                    <input type="hidden" name="RbacRoles[${roleIndex}].EndDate" value="${endDate}" />
+                `;
+                roleIndex++;
+            });
+
+            // Build CustomPermissions array
+            let permIndex = 0;
+            document.querySelectorAll('.rbac-permission-action').forEach(select => {
+                if (select.value === 'none') return;
+
+                const permissionId = select.dataset.permissionId;
+                const isGranted = select.value === 'grant';
+                const startDate = document.querySelector(`.rbac-permission-start[data-permission-id="${permissionId}"]`)?.value || '';
+                const endDate = document.querySelector(`.rbac-permission-end[data-permission-id="${permissionId}"]`)?.value || '';
+
+                rbacHiddenFields.innerHTML += `
+                    <input type="hidden" name="CustomPermissions[${permIndex}].PermissionId" value="${permissionId}" />
+                    <input type="hidden" name="CustomPermissions[${permIndex}].IsGranted" value="${isGranted}" />
+                    <input type="hidden" name="CustomPermissions[${permIndex}].StartDate" value="${startDate}" />
+                    <input type="hidden" name="CustomPermissions[${permIndex}].EndDate" value="${endDate}" />
+                `;
+                permIndex++;
+            });
+
+            // Debug logging
+            const hiddenInputs = rbacHiddenFields.querySelectorAll('input[type="hidden"]');
+            const payloadDebug = {
+                rolesCount: roleIndex,
+                permissionsCount: permIndex,
+                totalHiddenInputs: hiddenInputs.length,
+                hiddenFieldNames: Array.from(hiddenInputs).map(i => i.name),
+                hiddenFieldValues: Array.from(hiddenInputs).map(i => ({ name: i.name, value: i.value }))
+            };
+            
+            console.log('═══ RBAC Payload Debug ═══');
+            console.log('Roles:', roleIndex);
+            console.log('Permissions:', permIndex);
+            console.log('Total hidden inputs:', hiddenInputs.length);
+            console.log('Field names:', payloadDebug.hiddenFieldNames);
+            console.log('Full payload:', payloadDebug);
+            console.log('═══════════════════════════');
+        });
+
+        // ═══════════════════════════════════════════════════════════════════
+        // ROLE THEME SUGGESTION (legacy feature)
+        // ═══════════════════════════════════════════════════════════════════
+        document.querySelectorAll('[data-role-theme-suggest]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const roleSelect = document.getElementById('role');
+                const themeSelect = document.getElementById('theme');
+                const selectedOption = roleSelect.options[roleSelect.selectedIndex];
+                const suggestedTheme = selectedOption.dataset.defaultTheme;
+
+                if (suggestedTheme) {
+                    themeSelect.value = suggestedTheme;
+                    const themeOption = themeSelect.options[themeSelect.selectedIndex];
+                    updateThemePreview(themeOption);
+                }
+            });
+        });
+
+        function updateThemePreview(themeOption) {
+            const dialog = document.querySelector('.admin-editor-dialog');
+            if (dialog && themeOption) {
+                dialog.style.setProperty('--admin-theme-tone', themeOption.dataset.themeTone);
+                dialog.style.setProperty('--admin-theme-accent', themeOption.dataset.themeAccent);
+                dialog.style.setProperty('--admin-theme-surface', themeOption.dataset.themeSurface);
+            }
+        }
+
+        // Initial count
+        updateCounts();
+    })();
+    </script>
 }

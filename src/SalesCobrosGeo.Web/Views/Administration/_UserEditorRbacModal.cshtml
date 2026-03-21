@@ -1,0 +1,247 @@
+@model SalesCobrosGeo.Web.Models.Administration.UserWithRbacEditViewModel
+@{
+    var themeCatalog = new[]
+    {
+        new { Code = "root", Name = "Azul ejecutivo", Tone = "#203a72", Accent = "#5f8cff", Surface = "#eef3ff" },
+        new { Code = "sales", Name = "Azul claro", Tone = "#2f7dff", Accent = "#8bc2ff", Surface = "#eff7ff" },
+        new { Code = "forest", Name = "Verde operativo", Tone = "#1f8a63", Accent = "#64d2a2", Surface = "#edf9f3" },
+        new { Code = "sunset", Name = "Rosa comercial", Tone = "#c64d83", Accent = "#f59bc5", Surface = "#fff0f7" },
+        new { Code = "collections", Name = "Morado ejecutivo", Tone = "#6d4fd5", Accent = "#b39afc", Surface = "#f3efff" },
+        new { Code = "graphite", Name = "Gris profesional", Tone = "#516176", Accent = "#95a6bc", Surface = "#f2f5f8" }
+    };
+    var zoneCatalog = new[]
+    {
+        new { Code = "CENTRO", Name = "Zona Centro" },
+        new { Code = "NORTE", Name = "Zona Norte" },
+        new { Code = "SUR", Name = "Zona Sur" },
+        new { Code = "ESTE", Name = "Zona Este" },
+        new { Code = "OESTE", Name = "Zona Oeste" }
+    };
+    var selectedTheme = themeCatalog.FirstOrDefault(x => x.Code == Model.Input.Theme) ?? themeCatalog[0];
+}
+
+<div class="admin-editor-modal" role="dialog" aria-modal="true" aria-labelledby="adminEditorTitle">
+    <div class="admin-editor-backdrop">
+        <a class="admin-editor-backdrop-close" asp-action="Users" aria-label="Cerrar" data-ajax-link="true" data-ajax-target=".admin-users-view"></a>
+    </div>
+    <aside class="admin-editor-dialog admin-editor-dialog-wide" style="--admin-theme-tone:@selectedTheme.Tone; --admin-theme-accent:@selectedTheme.Accent; --admin-theme-surface:@selectedTheme.Surface;">
+        <div class="admin-section-head compact sticky-head">
+            <div>
+                <h2 class="admin-section-title" id="adminEditorTitle">@Model.Title</h2>
+                <div class="admin-section-subtitle">Editor unificado: datos básicos + roles RBAC + permisos personalizados</div>
+            </div>
+            <a class="btn btn-sm btn-outline-secondary" asp-action="Users" data-ajax-link="true" data-ajax-target=".admin-users-view">Cerrar</a>
+        </div>
+
+        <form asp-action="SaveUserWithRbac" method="post" class="admin-user-form compact" id="adminUserRbacForm" data-ajaxify="true" data-ajax-target=".admin-users-view">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="OriginalUsername" value="@Model.Input.OriginalUsername" />
+
+            <!-- Nav Tabs -->
+            <ul class="nav nav-tabs mb-3" id="userEditorTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic-panel" type="button" role="tab">
+                        📋 Datos Básicos
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="roles-tab" data-bs-toggle="tab" data-bs-target="#roles-panel" type="button" role="tab">
+                        👥 Roles RBAC <span class="badge bg-primary ms-1" id="rolesCount">0</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="permissions-tab" data-bs-toggle="tab" data-bs-target="#permissions-panel" type="button" role="tab">
+                        🔐 Permisos Personalizados <span class="badge bg-info ms-1" id="permissionsCount">0</span>
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="userEditorTabContent">
+                <!-- TAB 1: DATOS BÁSICOS -->
+                <div class="tab-pane fade show active" id="basic-panel" role="tabpanel">
+                    <div class="alert alert-info mb-3">
+                        <strong>✨ Sistema RBAC:</strong> Los permisos se gestionan exclusivamente mediante <strong>Roles RBAC</strong> (pestaña siguiente) y <strong>Permisos Personalizados</strong>. Configure roles empresariales para otorgar conjuntos de permisos, o ajuste permisos individuales según necesidades específicas.
+                    </div>
+
+                    <div class="admin-form-grid compact single admin-editor-grid">
+                        <div>
+                            <label class="form-label" for="username">Usuario</label>
+                            <input class="form-control" id="username" name="Username" value="@Model.Input.Username" required />
+                        </div>
+                        <div>
+                            <label class="form-label" for="displayName">Nombre Completo</label>
+                            <input class="form-control" id="displayName" name="DisplayName" value="@Model.Input.DisplayName" required />
+                        </div>
+                        <div>
+                            <label class="form-label" for="zone">Zona de Trabajo</label>
+                            <select class="form-select" id="zone" name="Zone">
+                                <option value="">-- Seleccionar zona --</option>
+                                @foreach (var zone in zoneCatalog)
+                                {
+                                    <option value="@zone.Code" selected="@(zone.Code == Model.Input.Zone)">@zone.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label" for="theme">Tema Visual</label>
+                            <select class="form-select admin-theme-select" id="theme" name="Theme">
+                                @foreach (var theme in themeCatalog)
+                                {
+                                    <option value="@theme.Code" data-theme-tone="@theme.Tone" data-theme-accent="@theme.Accent" data-theme-surface="@theme.Surface" selected="@(theme.Code == Model.Input.Theme)">@theme.Name</option>
+                                }
+                            </select>
+                            <div class="admin-theme-help">Personaliza colores de navegación, botones y superficies del sistema.</div>
+                        </div>
+                        <div>
+                            <label class="form-label" for="password">Contraseña @(string.IsNullOrWhiteSpace(Model.Input.OriginalUsername) ? "inicial" : "nueva (dejar vacío para mantener)")</label>
+                            <input class="form-control" id="password" name="Password" type="password" autocomplete="new-password" />
+                            @if (!string.IsNullOrWhiteSpace(Model.Input.OriginalUsername))
+                            {
+                                <div class="admin-theme-help">Solo ingresa una contraseña si deseas cambiarla.</div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="admin-form-switches compact mt-3">
+                        <label class="admin-check-chip">
+                            <input type="checkbox" name="IsActive" value="true" checked="@Model.Input.IsActive" />
+                            <span>✓ Usuario Activo</span>
+                        </label>
+                        <label class="admin-check-chip">
+                            <input type="checkbox" name="TwoFactorEnabled" value="true" checked="@Model.Input.TwoFactorEnabled" />
+                            <span>🔐 2FA Requerido</span>
+                        </label>
+                    </div>
+
+                    <!-- Campos legacy ocultos para compatibilidad con backend -->
+                    <input type="hidden" name="Role" value="SALES" />
+                    <input type="hidden" name="RoleLabel" value="Usuario" />
+                </div>
+
+                <!-- TAB 2: ROLES RBAC -->
+                <div class="tab-pane fade" id="roles-panel" role="tabpanel">
+                    <div class="alert alert-info">
+                        <strong>ℹ️ Roles RBAC:</strong> Asigna roles empresariales al usuario. Cada rol incluye un conjunto de permisos predefinidos. Opcionalmente configura fechas de vigencia temporal.
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;"><input type="checkbox" id="selectAllRoles" title="Seleccionar todos" /></th>
+                                    <th>Rol</th>
+                                    <th>Código</th>
+                                    <th>Descripción</th>
+                                    <th style="width: 150px;">Desde</th>
+                                    <th style="width: 150px;">Hasta</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var role in Model.RbacRoles)
+                                {
+                                    var currentRole = Model.CurrentUserRoles.FirstOrDefault(ur => ur.RoleId == role.Id);
+                                    var isAssigned = currentRole != null;
+                                    <tr class="rbac-role-row" data-role-id="@role.Id">
+                                        <td>
+                                            <input type="checkbox" class="rbac-role-checkbox" data-role-id="@role.Id" @(isAssigned ? "checked" : "") />
+                                        </td>
+                                        <td><strong>@role.Name</strong></td>
+                                        <td><span class="badge bg-secondary">@role.Code</span></td>
+                                        <td><small class="text-muted">@role.Description</small></td>
+                                        <td>
+                                            <input type="date" class="form-control form-control-sm rbac-role-start" data-role-id="@role.Id" 
+                                                   value="@(currentRole?.StartDate.ToString("yyyy-MM-dd"))" />
+                                        </td>
+                                        <td>
+                                            <input type="date" class="form-control form-control-sm rbac-role-end" data-role-id="@role.Id" 
+                                                   value="@(currentRole?.EndDate?.ToString("yyyy-MM-dd"))" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 3: PERMISOS PERSONALIZADOS -->
+                <div class="tab-pane fade" id="permissions-panel" role="tabpanel">
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Permisos Personalizados:</strong> Otorga o deniega permisos específicos que sobrescriben los permisos heredados de roles. Usar solo para excepciones.
+                    </div>
+
+                    <div class="mb-3">
+                        <input type="search" class="form-control" id="permissionsSearch" placeholder="Buscar permiso..." />
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th style="width: 110px;">Acción</th>
+                                    <th>Permiso</th>
+                                    <th>Módulo</th>
+                                    <th>Acción</th>
+                                    <th style="width: 150px;">Desde</th>
+                                    <th style="width: 150px;">Hasta</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var permission in Model.RbacPermissions)
+                                {
+                                    var currentPerm = Model.CurrentUserPermissions.FirstOrDefault(up => up.PermissionId == permission.Id);
+                                    var isGranted = currentPerm?.IsGranted ?? false;
+                                    var isDenied = currentPerm?.IsGranted == false;
+                                    <tr class="rbac-permission-row" data-permission-id="@permission.Id" 
+                                        data-search="@permission.Code.ToUpperInvariant() @permission.Description.ToUpperInvariant() @permission.ModuleCode.ToUpperInvariant()">
+                                        <td>
+                                            <select class="form-select form-select-sm rbac-permission-action" data-permission-id="@permission.Id">
+                                                <option value="none" selected="@(currentPerm == null)">--</option>
+                                                <option value="grant" selected="@(isGranted)">✓ Otorgar</option>
+                                                <option value="deny" selected="@(isDenied)">✕ Denegar</option>
+                                            </select>
+                                        </td>
+                                        <td><strong>@permission.Code</strong></td>
+                                        <td><span class="badge bg-primary">@permission.ModuleCode</span></td>
+                                        <td><span class="badge bg-secondary">@permission.ActionCode</span></td>
+                                        <td>
+                                            <input type="date" class="form-control form-control-sm rbac-permission-start" data-permission-id="@permission.Id" 
+                                                   value="@(currentPerm?.StartDate?.ToString("yyyy-MM-dd"))" />
+                                        </td>
+                                        <td>
+                                            <input type="date" class="form-control form-control-sm rbac-permission-end" data-permission-id="@permission.Id" 
+                                                   value="@(currentPerm?.EndDate?.ToString("yyyy-MM-dd"))" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hidden fields for RBAC data (populated by JS) -->
+            <div id="rbacHiddenFields"></div>
+
+            <div class="admin-editor-actions compact mt-4">
+                <a class="btn btn-outline-secondary" asp-action="Users" data-ajax-link="true" data-ajax-target=".admin-users-view">Cancelar</a>
+                <button type="submit" class="btn btn-primary admin-save-button" data-working-label="Guardando...">
+                    💾 Guardar Todo (Datos + Roles + Permisos)
+                </button>
+            </div>
+        </form>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Input.Username))
+        {
+            <form asp-action="ResetPassword" method="post" class="admin-reset-form compact mt-3" data-ajaxify="true" data-ajax-target=".admin-users-view">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="username" value="@Model.Input.Username" />
+                <div class="admin-role-block-title mb-2">Reset de contraseña</div>
+                <div class="input-group">
+                    <input class="form-control" type="password" name="newPassword" placeholder="Nueva contraseña segura" autocomplete="new-password" />
+                    <button type="submit" class="btn btn-outline-warning">Reset</button>
+                </div>
+            </form>
+        }
+    </aside>
+</div>

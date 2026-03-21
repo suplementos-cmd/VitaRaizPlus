@@ -1,0 +1,544 @@
+@model IEnumerable<SalesCobrosGeo.Web.Services.Rbac.UserRoleDto>
+@{
+    ViewData["Title"] = "Asignación de Roles a Usuarios - RBAC";
+    
+    var userRoles = Model?.ToList() ?? new List<SalesCobrosGeo.Web.Services.Rbac.UserRoleDto>();
+    var availableRoles = ViewBag.Roles as IEnumerable<SalesCobrosGeo.Web.Services.Rbac.RoleDto> 
+                        ?? Enumerable.Empty<SalesCobrosGeo.Web.Services.Rbac.RoleDto>();
+    var selectedUserName = ViewBag.SelectedUserName as string;
+    
+    var totalAssignments = userRoles.Count;
+    var activeAssignments = userRoles.Count(ur => ur.IsCurrentlyActive);
+    var uniqueUsers = userRoles.Select(ur => ur.UserName).Distinct().Count();
+    
+    // Group by user for better visualization
+    var userRolesGrouped = userRoles
+        .GroupBy(ur => ur.UserName)
+        .OrderBy(g => g.Key)
+        .ToList();
+}
+
+<div class="rbac-user-roles-view">
+    <div class="admin-console-page">
+        <section class="admin-console-topbar compact-only">
+            <div>
+                <h1 class="admin-console-title">Roles de Usuarios</h1>
+                <div class="admin-console-subtitle">Asignación de roles a usuarios con vigencias temporales.</div>
+            </div>
+            <div class="admin-console-actions">
+                <button type="button" class="btn btn-primary" data-rbac-assign-role="open">Asignar Rol</button>
+                <a class="btn btn-outline-secondary" asp-action="Roles">Ver Roles</a>
+            </div>
+        </section>
+
+        @if (TempData["Message"] != null)
+        {
+            <div class="app-toast-inline success">@TempData["Message"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="app-toast-inline error">@TempData["Error"]</div>
+        }
+
+        <section class="admin-console-summarygrid compact-summary">
+            <article class="admin-console-summarycard primary">
+                <span>Total Asignaciones</span>
+                <strong>@totalAssignments</strong>
+                <small>Roles asignados</small>
+            </article>
+            <article class="admin-console-summarycard success">
+                <span>Vigentes</span>
+                <strong>@activeAssignments</strong>
+                <small>Activas ahora</small>
+            </article>
+            <article class="admin-console-summarycard info">
+                <span>Usuarios</span>
+                <strong>@uniqueUsers</strong>
+                <small>Con roles asignados</small>
+            </article>
+        </section>
+
+        <section class="admin-console-layout responsive-dense">
+            <div class="admin-console-main responsive-dense">
+                <section class="rbac-user-roles-section compact-shell">
+                    <div class="admin-section-head compact">
+                        <div>
+                            <h2 class="admin-section-title">Asignaciones Usuario-Rol</h2>
+                            <div class="admin-section-subtitle">Control de roles asignados a cada usuario con fechas de vigencia.</div>
+                        </div>
+                    </div>
+
+                    <div class="admin-filterline">
+                        <div class="admin-filterline-search">
+                            <span class="admin-filterline-icon">&#8981;</span>
+                            <input id="rbacUserRoleSearch" type="search" placeholder="Buscar por usuario" autocomplete="off" value="@selectedUserName" />
+                        </div>
+                        <select id="rbacStatusFilter" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <option value="ACTIVE">Vigentes</option>
+                            <option value="EXPIRED">Expirados</option>
+                            <option value="FUTURE">Futuros</option>
+                        </select>
+                    </div>
+
+                    @if (!userRoles.Any())
+                    {
+                        <div class="admin-empty-state">
+                            <p>No hay asignaciones de roles a usuarios.</p>
+                            <button type="button" class="btn btn-primary" data-rbac-assign-role="open">Asignar primer rol</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="rbac-user-roles-list">
+                            @foreach (var userGroup in userRolesGrouped)
+                            {
+                                var userName = userGroup.Key;
+                                var userSearch = userName.ToUpperInvariant();
+                                var userAssignments = userGroup.ToList();
+                                
+                                <article class="rbac-user-group-card" data-user-search="@userSearch">
+                                    <div class="rbac-user-group-header">
+                                        <div>
+                                            <h5 class="rbac-user-group-name">@userName</h5>
+                                            <small class="text-muted">@userAssignments.Count rol(es) asignado(s)</small>
+                                        </div>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-primary" 
+                                                data-rbac-assign-role="open"
+                                                data-user-name="@userName">
+                                            + Asignar Rol
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="rbac-user-roles-grid">
+                                        @foreach (var assignment in userAssignments.OrderByDescending(a => a.StartDate))
+                                        {
+                                            var isActive = assignment.IsCurrentlyActive;
+                                            var statusClass = isActive ? "active" : 
+                                                            assignment.EndDate.HasValue && assignment.EndDate.Value < DateTime.Now ? "expired" : "future";
+                                            var statusText = isActive ? "Vigente" :
+                                                           assignment.EndDate.HasValue && assignment.EndDate.Value < DateTime.Now ? "Expirado" : "Futuro";
+                                            
+                                            <div class="rbac-user-role-assignment @statusClass" 
+                                                 data-assignment-id="@assignment.Id"
+                                                 data-assignment-status="@statusClass.ToUpperInvariant()">
+                                                <div class="rbac-assignment-main">
+                                                    <div class="rbac-assignment-info">
+                                                        <span class="rbac-assignment-role">@assignment.RoleCode</span>
+                                                        <span class="badge bg-@(isActive ? "success" : statusClass == "expired" ? "secondary" : "warning")">
+                                                            @statusText
+                                                        </span>
+                                                    </div>
+                                                    <div class="rbac-assignment-dates">
+                                                        <small>
+                                                            <span><strong>Inicio:</strong> @assignment.StartDate.ToString("dd/MM/yyyy")</span>
+                                                            @if (assignment.EndDate.HasValue)
+                                                            {
+                                                                <span class="ms-2"><strong>Fin:</strong> @assignment.EndDate.Value.ToString("dd/MM/yyyy")</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="ms-2 text-muted">Sin fecha de fin</span>
+                                                            }
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                                <div class="rbac-assignment-actions">
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-outline-primary"
+                                                            data-rbac-edit-assignment="@assignment.Id"
+                                                            data-user-name="@assignment.UserName"
+                                                            data-role-id="@assignment.RoleId"
+                                                            data-start-date="@assignment.StartDate.ToString("yyyy-MM-dd")"
+                                                            data-end-date="@(assignment.EndDate?.ToString("yyyy-MM-dd"))">
+                                                        Editar
+                                                    </button>
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-outline-danger"
+                                                            data-rbac-remove-assignment="@assignment.Id"
+                                                            data-user-name="@assignment.UserName"
+                                                            data-role-code="@assignment.RoleCode">
+                                                        Remover
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </article>
+                            }
+                        </div>
+                    }
+                </section>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal Assign/Edit Role -->
+    <div class="modal fade" id="rbacAssignRoleModal" tabindex="-1" aria-labelledby="rbacAssignRoleTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rbacAssignRoleTitle">Asignar Rol a Usuario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form id="rbacAssignRoleForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="assignmentId" name="id" value="" />
+                        
+                        <div class="mb-3">
+                            <label for="assignUserName" class="form-label">Usuario <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="assignUserName" 
+                                   name="userName" 
+                                   required 
+                                   placeholder="username" />
+                            <div class="form-text">Nombre de usuario del sistema</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="assignRoleId" class="form-label">Rol <span class="text-danger">*</span></label>
+                            <select class="form-select" id="assignRoleId" name="roleId" required>
+                                <option value="">-- Seleccionar Rol --</option>
+                                @foreach (var role in availableRoles.Where(r => r.IsActive).OrderBy(r => r.Code))
+                                {
+                                    <option value="@role.Id">@role.Code - @role.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="assignStartDate" class="form-label">Fecha de Inicio</label>
+                            <input type="date" class="form-control" id="assignStartDate" name="startDate" />
+                            <div class="form-text">Dejar vacío para inicio inmediato</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="assignEndDate" class="form-label">Fecha de Fin</label>
+                            <input type="date" class="form-control" id="assignEndDate" name="endDate" />
+                            <div class="form-text">Dejar vacío para asignación permanente</div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Las fechas permiten asignaciones temporales. Si no se especifica fecha de fin, el rol estará asignado permanentemente.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="rbacAssignRoleSaveBtn">
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            <span class="btn-text">Guardar</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* Full-screen layout styles */
+        .rbac-user-roles-view,
+        .admin-console-page,
+        .admin-console-main,
+        .rbac-user-roles-section {
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        .admin-console-page {
+            padding: 1rem;
+        }
+        
+        .rbac-user-roles-container {
+            max-height: calc(100vh - 300px);
+            min-height: 500px;
+            overflow-y: auto;
+        }
+        
+        /* User roles list and card styles */
+        .rbac-user-roles-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .rbac-user-group-card {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+        
+        .rbac-user-group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .rbac-user-group-name {
+            margin: 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+        
+        .rbac-user-roles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        
+        .rbac-user-role-assignment {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .rbac-user-role-assignment.active {
+            background: #d1e7dd;
+            border-color: #0f5132;
+        }
+        
+        .rbac-user-role-assignment.expired {
+            background: #e2e3e5;
+            border-color: #6c757d;
+            opacity: 0.7;
+        }
+        
+        .rbac-user-role-assignment.future {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+        
+        .rbac-assignment-main {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .rbac-assignment-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .rbac-assignment-role {
+            font-weight: 600;
+            font-size: 0.9375rem;
+        }
+        
+        .rbac-assignment-dates {
+            font-size: 0.8125rem;
+            color: #6c757d;
+        }
+        
+        .rbac-assignment-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+    (function() {
+        'use strict';
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // FILTER
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const searchInput = document.getElementById('rbacUserRoleSearch');
+        const statusFilter = document.getElementById('rbacStatusFilter');
+        const userCards = document.querySelectorAll('.rbac-user-group-card');
+        
+        function applyFilters() {
+            const searchTerm = searchInput.value.toUpperCase();
+            const statusValue = statusFilter.value;
+            
+            userCards.forEach(card => {
+                const userSearch = card.dataset.userSearch || '';
+                const matchesSearch = !searchTerm || userSearch.includes(searchTerm);
+                
+                // Get all assignments in this card
+                const assignments = card.querySelectorAll('.rbac-user-role-assignment');
+                let hasMatchingStatus = false;
+                
+                assignments.forEach(assignment => {
+                    const assignmentStatus = assignment.dataset.assignmentStatus || '';
+                    const matchesStatus = !statusValue || assignmentStatus === statusValue;
+                    
+                    if (matchesStatus) {
+                        hasMatchingStatus = true;
+                        assignment.style.display = '';
+                    } else {
+                        assignment.style.display = 'none';
+                    }
+                });
+                
+                // Show card if search matches and at least one assignment matches status
+                if (matchesSearch && (hasMatchingStatus || !statusValue)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        
+        if (searchInput) searchInput.addEventListener('input', applyFilters);
+        if (statusFilter) statusFilter.addEventListener('change', applyFilters);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // MODAL ASSIGN/EDIT
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const assignModal = document.getElementById('rbacAssignRoleModal');
+        const assignForm = document.getElementById('rbacAssignRoleForm');
+        const assignTitle = document.getElementById('rbacAssignRoleTitle');
+        const assignmentIdField = document.getElementById('assignmentId');
+        const assignUserName = document.getElementById('assignUserName');
+        const assignRoleId = document.getElementById('assignRoleId');
+        const assignStartDate = document.getElementById('assignStartDate');
+        const assignEndDate = document.getElementById('assignEndDate');
+        const assignSaveBtn = document.getElementById('rbacAssignRoleSaveBtn');
+        
+        let assignBsModal = null;
+        if (assignModal) {
+            assignBsModal = new bootstrap.Modal(assignModal);
+        }
+        
+        // Open for CREATE
+        document.querySelectorAll('[data-rbac-assign-role="open"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                assignTitle.textContent = 'Asignar Rol a Usuario';
+                assignForm.reset();
+                assignmentIdField.value = '';
+                assignUserName.value = btn.dataset.userName || '';
+                assignUserName.disabled = false;
+                assignBsModal.show();
+            });
+        });
+        
+        // Open for EDIT
+        document.querySelectorAll('[data-rbac-edit-assignment]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const assignmentId = btn.dataset.rbacEditAssignment;
+                const userName = btn.dataset.userName || '';
+                const roleId = btn.dataset.roleId || '';
+                const startDate = btn.dataset.startDate || '';
+                const endDate = btn.dataset.endDate || '';
+                
+                assignTitle.textContent = 'Editar Asignación de Rol';
+                assignmentIdField.value = assignmentId;
+                assignUserName.value = userName;
+                assignUserName.disabled = true; // No se puede cambiar el usuario
+                assignRoleId.value = roleId;
+                assignStartDate.value = startDate;
+                assignEndDate.value = endDate;
+                assignBsModal.show();
+            });
+        });
+        
+        // Form submit
+        if (assignForm) {
+            assignForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const assignmentId = assignmentIdField.value;
+                const isEdit = !!assignmentId;
+                
+                const payload = {
+                    userName: assignUserName.value.trim(),
+                    roleId: parseInt(assignRoleId.value),
+                    startDate: assignStartDate.value || null,
+                    endDate: assignEndDate.value || null
+                };
+                
+                if (!payload.userName || !payload.roleId) {
+                    alert('Usuario y Rol son obligatorios.');
+                    return;
+                }
+                
+                // Show loading
+                const spinner = assignSaveBtn.querySelector('.spinner-border');
+                const btnText = assignSaveBtn.querySelector('.btn-text');
+                spinner.classList.remove('d-none');
+                btnText.textContent = 'Guardando...';
+                assignSaveBtn.disabled = true;
+                
+                try {
+                    const url = isEdit 
+                        ? `/RbacAdministration/UpdateUserRole/${assignmentId}`
+                        : '/RbacAdministration/AssignUserRole';
+                    
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        assignBsModal.hide();
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + (result.error || 'No se pudo guardar'));
+                    }
+                } catch (error) {
+                    console.error('Error saving assignment:', error);
+                    alert('Error de conexión al guardar.');
+                } finally {
+                    spinner.classList.add('d-none');
+                    btnText.textContent = 'Guardar';
+                    assignSaveBtn.disabled = false;
+                }
+            });
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // REMOVE ASSIGNMENT
+        // ═══════════════════════════════════════════════════════════════════
+        
+        document.querySelectorAll('[data-rbac-remove-assignment]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const assignmentId = btn.dataset.rbacRemoveAssignment;
+                const userName = btn.dataset.userName || '';
+                const roleCode = btn.dataset.roleCode || '';
+                
+                if (!confirm(`¿Remover rol "${roleCode}" del usuario "${userName}"?`)) {
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`/RbacAdministration/RemoveUserRole/${assignmentId}`, {
+                        method: 'POST'
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + (result.error || 'No se pudo remover'));
+                    }
+                } catch (error) {
+                    console.error('Error removing assignment:', error);
+                    alert('Error de conexión al remover.');
+                }
+            });
+        });
+    })();
+    </script>
+}
